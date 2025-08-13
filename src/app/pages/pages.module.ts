@@ -38,6 +38,7 @@ import { IconsModule } from './icons/icons.module';
 import { ChartModule } from './chart/chart.module';
 import { CalendarComponent } from './calendar/calendar.component';
 import { MapsModule } from './maps/maps.module';
+import { EventsModule } from './events/events.module';
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { ChatComponent } from './chat/chat.component';
 
@@ -68,6 +69,7 @@ import { FilemanagerComponent } from './filemanager/filemanager.component';
         ChartModule,
         WidgetModule,
         MapsModule,
+        EventsModule,
         FullCalendarModule,
         TabsModule.forRoot(),
         TooltipModule.forRoot(),

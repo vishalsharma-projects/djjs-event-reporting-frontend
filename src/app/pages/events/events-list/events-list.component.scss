@@ -1,0 +1,116 @@
+.branch-header {
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+  }
+  
+  .branch-icon {
+    font-size: 18px;
+    font-weight: 600;
+  }
+}
+
+.table {
+  th {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+    font-weight: 600;
+    color: #495057;
+    padding: 12px 8px;
+  }
+  
+  td {
+    padding: 12px 8px;
+    vertical-align: middle;
+  }
+  
+  .badge {
+    font-size: 0.75rem;
+    padding: 6px 10px;
+  }
+  
+  .btn-outline-secondary {
+    border-color: #6c757d;
+    color: #6c757d;
+    
+    &:hover {
+      background-color: #6c757d;
+      border-color: #6c757d;
+      color: white;
+    }
+  }
+}
+
+.page-title-box {
+  padding: 20px 0;
+  
+  h4 {
+    color: #495057;
+    font-weight: 600;
+  }
+  
+  .btn-primary {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    border: none;
+    padding: 10px 20px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background: linear-gradient(135deg, #e55a2b, #e0851a);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+    }
+  }
+}
+
+.form-label {
+  font-weight: 500;
+  color: #495057;
+  margin-bottom: 8px;
+}
+
+.form-select, .form-control {
+  border-color: #dee2e6;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  
+  &:focus {
+    border-color: #ff6b35;
+    box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25);
+  }
+}
+
+.input-group-text {
+  background-color: #f8f9fa;
+  border-color: #dee2e6;
+  color: #6c757d;
+}
+
+.card {
+  border: none;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  
+  .card-body {
+    padding: 25px;
+  }
+}
+
+// Enhanced button styles to match the orange theme
+.btn {
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  &.btn-outline-secondary:hover {
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+  }
+}
