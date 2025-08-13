@@ -18,6 +18,31 @@ export const MENU: MenuItem[] = [
         icon: 'bx-calendar-event',
         link: '/events',
     },
+    {
+        id: 4,
+        label: 'Areas',
+        icon: 'bx-map',
+        link: '/areas',
+    },
+    {
+        id: 5,
+        label: 'Districts',
+        icon: 'bx bxs-inbox',
+        link: '/districts',
+    },
+    {
+        id: 6,
+        label: 'Branches',
+        icon: 'bx bx-git-pull-request',
+        link: '/branches',
+    },
+    {
+        id: 7,
+        label: 'Users',
+        icon: 'bx-user',
+        link: '/users',
+    },
+
     // {
     //     id: 1,
     //     label: 'MENUITEMS.MENU.TEXT',
