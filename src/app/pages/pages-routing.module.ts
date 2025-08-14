@@ -177,6 +177,7 @@ const routes: Routes = [
     loadChildren: () =>
       import("./events/events.module").then((m) => m.EventsModule),
   },
+   { path: 'branch' , loadChildren: ()=> import('./branch/branch.module').then(m => m.BranchModule ) }
 ];
 
 @NgModule({
