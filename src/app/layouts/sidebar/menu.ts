@@ -44,7 +44,7 @@ export const MENU: MenuItem[] = [
             },
             {
                 id: 62,
-                label: 'Branch Assistance',
+                label: 'User',
                 link: '/branch/branchAssistance',
                 parentId: 6
             },
