@@ -6,8 +6,16 @@ import { NgStepperModule } from 'angular-ng-stepper';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { BsDatepickerModule } from 'ngx-bootstrap/datepicker';
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
-import { TooltipModule } from 'ngx-bootstrap/tooltip';
 import { DropzoneModule } from 'ngx-dropzone-wrapper';
+
+// PrimeNG Modules
+import { TableModule } from 'primeng/table';
+import { ButtonModule } from 'primeng/button';
+import { TagModule } from 'primeng/tag';
+import { ToastModule } from 'primeng/toast';
+import { TooltipModule } from 'primeng/tooltip';
+import { RippleModule } from 'primeng/ripple';
+import { MessageService } from 'primeng/api';
 
 import { UIModule } from '../../shared/ui/ui.module';
 import { EventsRoutingModule } from './events-routing.module';
@@ -20,8 +28,8 @@ import { DropzoneConfigInterface } from 'ngx-dropzone-wrapper';
 
 const DEFAULT_DROPZONE_CONFIG: DropzoneConfigInterface = {
   url: 'https://httpbin.org/post',
-  maxFilesize: 50,
-  acceptedFiles: 'image/*,video/*,.pdf,.doc,.docx'
+  acceptedFiles: 'image/*,application/pdf,.doc,.docx',
+  createImageThumbnails: true
 };
 
 @NgModule({
@@ -33,16 +41,23 @@ const DEFAULT_DROPZONE_CONFIG: DropzoneConfigInterface = {
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    EventsRoutingModule,
-    UIModule,
     NgStepperModule,
     NgSelectModule,
     BsDatepickerModule.forRoot(),
     BsDropdownModule.forRoot(),
-    TooltipModule.forRoot(),
-    DropzoneModule
+    DropzoneModule,
+    // PrimeNG Modules
+    TableModule,
+    ButtonModule,
+    TagModule,
+    ToastModule,
+    TooltipModule,
+    RippleModule,
+    UIModule,
+    EventsRoutingModule
   ],
   providers: [
+    MessageService,
     {
       provide: DROPZONE_CONFIG,
       useValue: DEFAULT_DROPZONE_CONFIG

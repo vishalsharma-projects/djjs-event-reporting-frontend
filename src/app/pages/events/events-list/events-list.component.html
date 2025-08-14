@@ -40,103 +40,285 @@
           </div>
         </div>
 
-        <!-- Branch Section -->
-        <div class="row mb-3">
-          <div class="col-12">
-            <div class="branch-header" style="background: linear-gradient(135deg, #ff6b35, #f7931e); color: white; padding: 15px; border-radius: 8px; cursor: pointer;">
-              <div class="d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center">
-                  <div class="branch-icon me-3" style="width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">
-                    A
-                  </div>
-                  <h5 class="mb-0">Branch name 1</h5>
-                </div>
-                <i class="fas fa-chevron-up"></i>
-              </div>
+        <!-- PrimeNG Row Expansion Table -->
+        <p-toast />
+        <p-table 
+          [value]="branches" 
+          dataKey="id" 
+          [expandedRowKeys]="expandedRows" 
+          (onRowExpand)="onRowExpand($event)" 
+          (onRowCollapse)="onRowCollapse($event)"
+          [rowHover]="true"
+          [paginator]="true"
+          [rows]="rows"
+          [first]="first"
+          [rowsPerPageOptions]="rowsPerPageOptions"
+          [globalFilterFields]="['branchName', 'branchManagerName', 'assistantBranchManagerName']"
+          (onPageChange)="onPageChange($event)"
+          (onSort)="onSort($event)"
+          [sortMode]="'single'"
+          [tableStyle]="{ 'min-width': '100%' }">
+          
+          <!-- Caption with Expand/Collapse All buttons -->
+          <ng-template pTemplate="caption">
+            <div class="d-flex justify-content-end gap-2">
+              <p-button label="Expand All" icon="pi pi-plus" text (onClick)="expandAll()" />
+              <p-button label="Collapse All" icon="pi pi-minus" text (onClick)="collapseAll()" />
             </div>
-          </div>
-        </div>
+          </ng-template>
 
-        <!-- Events Table Placeholder -->
-        <div class="row">
-          <div class="col-12">
-            <div class="table-responsive">
-              <table class="table table-bordered table-hover">
-                <thead class="table-light">
-                  <tr>
-                    <th>Event type</th>
-                    <th>Name</th>
-                    <th>Duration</th>
-                    <th>Timing</th>
-                    <th>State</th>
-                    <th>City</th>
-                    <th>Spiritual Orator</th>
-                    <th>Language</th>
-                    <th>Beneficiaries</th>
-                    <th>Initiation</th>
-                    <th>Special Guests</th>
-                    <th>Volunteers</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td><span class="badge bg-success">Katha(S)</span></td>
-                    <td>Bhagwat Katha</td>
-                    <td>5 May 2024 - 16 May 2024</td>
-                    <td>5:30pm - 7:30pm</td>
-                    <td>Karnataka</td>
-                    <td>Bangalore</td>
-                    <td>Dr. Anya Sharma</td>
-                    <td>English</td>
-                    <td>50 <i class="fas fa-info-circle text-primary ms-1" data-bs-toggle="tooltip" title="50 Men, 30 Women, 20 Children"></i></td>
-                    <td>50 <i class="fas fa-info-circle text-primary ms-1" data-bs-toggle="tooltip" title="50 Men, 30 Women, 20 Children"></i></td>
-                    <td>3</td>
-                    <td>32</td>
-                    <td>
-                      <div class="dropdown">
-                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                          <i class="fas fa-ellipsis-v"></i>
-                        </button>
-                        <ul class="dropdown-menu">
-                          <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Edit</a></li>
-                          <li><a class="dropdown-item" href="#"><i class="fas fa-eye me-2"></i>More details</a></li>
-                          <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2"></i>Download</a></li>
-                        </ul>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td><span class="badge bg-warning">Katha(M)</span></td>
-                    <td>Bhagwat Katha</td>
-                    <td>5 May 2024 - 16 May 2024</td>
-                    <td>5:30pm - 7:30pm</td>
-                    <td>Karnataka</td>
-                    <td>Bangalore</td>
-                    <td>Mr. Rohan Verma</td>
-                    <td>Hindi</td>
-                    <td>100 <i class="fas fa-info-circle text-primary ms-1" data-bs-toggle="tooltip" title="100 Men, 60 Women, 40 Children"></i></td>
-                    <td>100 <i class="fas fa-info-circle text-primary ms-1" data-bs-toggle="tooltip" title="100 Men, 60 Women, 40 Children"></i></td>
-                    <td>3</td>
-                    <td>32</td>
-                    <td>
-                      <div class="dropdown">
-                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                          <i class="fas fa-ellipsis-v"></i>
-                        </button>
-                        <ul class="dropdown-menu">
-                          <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Edit</a></li>
-                          <li><a class="dropdown-item" href="#"><i class="fas fa-eye me-2"></i>More details</a></li>
-                          <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2"></i>Download</a></li>
-                        </ul>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+          <!-- Global Filter -->
+          <ng-template pTemplate="header">
+            <tr>
+              <th style="width: 5rem"></th>
+              <th>
+                <div class="d-flex align-items-center justify-content-between">
+                  <span>Branch Name</span>
+                  <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-link p-0" (click)="toggleColumnPin('branchName')" [class.text-warning]="isColumnPinned('branchName')">
+                      <i class="pi pi-thumbtack"></i>
+                    </button>
+                    <button class="btn btn-sm btn-link p-0" (click)="showFilter('branchName')">
+                      <i class="pi pi-filter"></i>
+                    </button>
+                  </div>
+                </div>
+                <div *ngIf="activeFilter === 'branchName'" class="mt-2">
+                  <input type="text" pInputText class="form-control form-control-sm" placeholder="Filter Branch Name" 
+                         [(ngModel)]="filters['branchName']" (input)="applyFilter()" />
+                  <button class="btn btn-sm btn-link p-0 ms-1" (click)="clearFilter('branchName')">
+                    <i class="pi pi-times"></i>
+                  </button>
+                </div>
+              </th>
+              <th>
+                <div class="d-flex align-items-center justify-content-between">
+                  <span>Branch Manager Name</span>
+                  <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-link p-0" (click)="toggleColumnPin('branchManagerName')" [class.text-warning]="isColumnPinned('branchManagerName')">
+                      <i class="pi pi-thumbtack"></i>
+                    </button>
+                    <button class="btn btn-sm btn-link p-0" (click)="showFilter('branchManagerName')">
+                      <i class="pi pi-filter"></i>
+                    </button>
+                  </div>
+                </div>
+                <div *ngIf="activeFilter === 'branchManagerName'" class="mt-2">
+                  <input type="text" pInputText class="form-control form-control-sm" placeholder="Filter Manager Name" 
+                         [(ngModel)]="filters['branchManagerName']" (input)="applyFilter()" />
+                  <button class="btn btn-sm btn-link p-0 ms-1" (click)="clearFilter('branchManagerName')">
+                    <i class="pi pi-times"></i>
+                  </button>
+                </div>
+              </th>
+              <th>
+                <div class="d-flex align-items-center justify-content-between">
+                  <span>Assistant Branch Manager Name</span>
+                  <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-link p-0" (click)="toggleColumnPin('assistantBranchManagerName')" [class.text-warning]="isColumnPinned('assistantBranchManagerName')">
+                      <i class="pi pi-thumbtack"></i>
+                    </button>
+                    <button class="btn btn-sm btn-link p-0" (click)="showFilter('assistantBranchManagerName')">
+                      <i class="pi pi-filter"></i>
+                    </button>
+                  </div>
+                </div>
+                <div *ngIf="activeFilter === 'assistantBranchManagerName'" class="mt-2">
+                  <input type="text" pInputText class="form-control form-control-sm" placeholder="Filter Assistant Manager" 
+                         [(ngModel)]="filters['assistantBranchManagerName']" (input)="applyFilter()" />
+                  <button class="btn btn-sm btn-link p-0 ms-1" (click)="clearFilter('assistantBranchManagerName')">
+                    <i class="pi pi-times"></i>
+                  </button>
+                </div>
+              </th>
+            </tr>
+          </ng-template>
+
+          <!-- Table Body -->
+          <ng-template pTemplate="body" let-branch let-expanded="expanded">
+            <tr>
+              <td>
+                <p-button 
+                  type="button" 
+                  pRipple 
+                  [pRowToggler]="branch" 
+                  [text]="true" 
+                  severity="secondary"  
+                  [rounded]="true" 
+                  [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'" />
+              </td>
+              <td>{{ branch.branchName }}</td>
+              <td>{{ branch.branchManagerName }}</td>
+              <td>{{ branch.assistantBranchManagerName }}</td>
+            </tr>
+          </ng-template>
+
+          <!-- Expanded Row Template -->
+          <ng-template pTemplate="rowexpansion" let-branch>
+            <tr>
+              <td colspan="4">
+                <div class="p-4">
+                  <h5>Events for {{ branch.branchName }}</h5>
+                  <p-table [value]="branch.events" dataKey="id" [paginator]="true" [rows]="5" [rowsPerPageOptions]="[5, 10]">
+                    <ng-template pTemplate="header">
+                      <tr>
+                        <th pSortableColumn="eventType">
+                          <div class="d-flex align-items-center gap-2">
+                            Event Type (Scale)
+                            <p-sortIcon field="eventType" />
+                          </div>
+                        </th>
+                        <th pSortableColumn="name">
+                          <div class="d-flex align-items-center gap-2">
+                            Name
+                            <p-sortIcon field="name" />
+                          </div>
+                        </th>
+                        <th pSortableColumn="duration">
+                          <div class="d-flex align-items-center gap-2">
+                            Duration
+                            <p-sortIcon field="duration" />
+                          </div>
+                        </th>
+                        <th pSortableColumn="timing">
+                          <div class="d-flex align-items-center gap-2">
+                            Timing
+                            <p-sortIcon field="timing" />
+                          </div>
+                        </th>
+                        <th pSortableColumn="state">
+                          <div class="d-flex align-items-center gap-2">
+                            State
+                            <p-sortIcon field="state" />
+                          </div>
+                        </th>
+                        <th pSortableColumn="city">
+                          <div class="d-flex align-items-center gap-2">
+                            City
+                            <p-sortIcon field="city" />
+                          </div>
+                        </th>
+                        <th pSortableColumn="spiritualOrator">
+                          <div class="d-flex align-items-center gap-2">
+                            Spiritual Orator
+                            <p-sortIcon field="spiritualOrator" />
+                          </div>
+                        </th>
+                        <th pSortableColumn="language">
+                          <div class="d-flex align-items-center gap-2">
+                            Language
+                            <p-sortIcon field="language" />
+                          </div>
+                        </th>
+                        <th pSortableColumn="beneficiaries.total">
+                          <div class="d-flex align-items-center gap-2">
+                            Beneficiaries
+                            <p-sortIcon field="beneficiaries.total" />
+                          </div>
+                        </th>
+                        <th pSortableColumn="initiation.total">
+                          <div class="d-flex align-items-center gap-2">
+                            Initiation
+                            <p-sortIcon field="initiation.total" />
+                          </div>
+                        </th>
+                        <th pSortableColumn="specialGuests">
+                          <div class="d-flex align-items-center gap-2">
+                            Special Guests
+                            <p-sortIcon field="specialGuests" />
+                          </div>
+                        </th>
+                        <th pSortableColumn="volunteers">
+                          <div class="d-flex align-items-center gap-2">
+                            Volunteers
+                            <p-sortIcon field="volunteers" />
+                          </div>
+                        </th>
+                        <th>Actions</th>
+                      </tr>
+                    </ng-template>
+                    <ng-template pTemplate="body" let-event>
+                      <tr>
+                        <td>
+                          <p-tag 
+                            [value]="getEventTypeDisplay(event)" 
+                            [severity]="getSeverity(event.scale)" />
+                        </td>
+                        <td>{{ event.name }}</td>
+                        <td>{{ event.duration }}</td>
+                        <td>{{ event.timing }}</td>
+                        <td>{{ event.state }}</td>
+                        <td>{{ event.city }}</td>
+                        <td>{{ event.spiritualOrator || '-' }}</td>
+                        <td>{{ event.language }}</td>
+                        <td>
+                          {{ event.beneficiaries.total }}
+                          <i class="pi pi-info-circle text-primary ms-1" 
+                             pTooltip="{{ getTooltipText('beneficiaries', event) }}"
+                             tooltipPosition="top"></i>
+                        </td>
+                        <td>
+                          {{ event.initiation.total }}
+                          <i class="pi pi-info-circle text-primary ms-1" 
+                             pTooltip="{{ getTooltipText('initiation', event) }}"
+                             tooltipPosition="top"></i>
+                        </td>
+                        <td>{{ event.specialGuests }}</td>
+                        <td>{{ event.volunteers }}</td>
+                        <td>
+                          <div class="d-flex gap-1">
+                            <p-button 
+                              type="button" 
+                              icon="pi pi-pencil" 
+                              size="small"
+                              severity="secondary"
+                              (onClick)="editEvent(event.id)"
+                              pTooltip="Edit Event"
+                              tooltipPosition="top" />
+                            <p-button 
+                              type="button" 
+                              icon="pi pi-eye" 
+                              size="small"
+                              severity="info"
+                              (onClick)="viewEventDetails(event.id)"
+                              pTooltip="View Details"
+                              tooltipPosition="top" />
+                            <p-button 
+                              type="button" 
+                              icon="pi pi-download" 
+                              size="small"
+                              severity="success"
+                              (onClick)="downloadEvent(event.id)"
+                              pTooltip="Download"
+                              tooltipPosition="top" />
+                          </div>
+                        </td>
+                      </tr>
+                    </ng-template>
+                    <ng-template pTemplate="emptymessage">
+                      <tr>
+                        <td colspan="13" class="text-center p-4">
+                          <i class="pi pi-inbox text-muted" style="font-size: 2rem;"></i>
+                          <p class="text-muted mt-2">No events found for this branch.</p>
+                        </td>
+                      </tr>
+                    </ng-template>
+                  </p-table>
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+
+          <!-- Empty Message -->
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="4" class="text-center p-4">
+                <i class="pi pi-inbox text-muted" style="font-size: 2rem;"></i>
+                <p class="text-muted mt-2">No branches found.</p>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
       </div>
     </div>
   </div>

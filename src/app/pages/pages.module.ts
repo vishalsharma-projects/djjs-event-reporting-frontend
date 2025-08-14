@@ -47,7 +47,7 @@ import {
 import { ChatComponent } from "./chat/chat.component";
 
 import { FilemanagerComponent } from "./filemanager/filemanager.component";
-import { AreaModule } from "./area/area.module";
+// import { AreaModule } from "./area/area.module";
 
 @NgModule({
   declarations: [

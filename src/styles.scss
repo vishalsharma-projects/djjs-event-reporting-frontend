@@ -2,7 +2,12 @@
 // @import '~bootstrap/scss/bootstrap';
 
 /* You can add global styles to this file, and also import other style files */
-@import '~dropzone/dist/min/dropzone.min.css';
+@import url('https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+// PrimeNG Styles - Version 18 doesn't include external CSS files
+// The components will use their built-in styles
+@import "primeicons/primeicons.css";
 
 .modal-holder {
   animation-name: example;
