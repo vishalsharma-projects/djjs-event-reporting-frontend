@@ -1,0 +1,91 @@
+.page-title-box {
+  padding: 20px 0;
+
+  h4 {
+    color: #495057;
+    font-weight: 600;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    border: none;
+    padding: 10px 20px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: linear-gradient(135deg, #e55a2b, #e0851a);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+    }
+  }
+}
+
+.p-datatable {
+  .p-datatable-header {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+  }
+
+  .p-datatable-thead > tr > th {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    font-weight: 600;
+    color: #495057;
+    padding: 0.75rem;
+  }
+
+  .p-datatable-tbody > tr > td {
+    border: 1px solid #dee2e6;
+    padding: 0.75rem;
+    vertical-align: middle;
+  }
+
+  .p-datatable-tbody > tr:hover {
+    background-color: #f8f9fa;
+  }
+
+  .p-button.p-button-text {
+    color: #6c757d;
+    &:hover {
+      color: #ff6b35;
+      background-color: rgba(255, 107, 53, 0.1);
+    }
+  }
+}
+
+.p-table {
+  .p-datatable-thead > tr > th {
+    background-color: #e9ecef;
+    font-size: 0.875rem;
+    padding: 0.5rem;
+  }
+
+  .p-datatable-tbody > tr > td {
+    font-size: 0.875rem;
+    padding: 0.5rem;
+  }
+}
+
+.btn-outline-secondary {
+  &:hover {
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+  }
+}
+
+.pi {
+  font-family: "PrimeIcons" !important;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+}
+
+.pi-chevron-right:before {
+  content: "\e901";
+}
+
+.pi-chevron-down:before {
+  content: "\e900";
+}

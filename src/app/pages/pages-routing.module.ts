@@ -176,6 +176,7 @@ const routes: Routes = [
     loadChildren: () =>
       import("./events/events.module").then((m) => m.EventsModule),
   },
+  { path: 'branch', loadChildren: () => import('./branch/branch.module').then(m => m.BranchModule) },
   {
     path: "areas",
     loadChildren: () => import("./area/area.module").then((m) => m.AreaModule),
@@ -191,4 +192,4 @@ const routes: Routes = [
   imports: [RouterModule.forChild(routes)],
   exports: [RouterModule],
 })
-export class PagesRoutingModule {}
+export class PagesRoutingModule { }
