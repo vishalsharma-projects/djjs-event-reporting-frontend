@@ -3,7 +3,6 @@ import { Routes, RouterModule } from "@angular/router";
 
 import { CalendarComponent } from "./calendar/calendar.component";
 import { ChatComponent } from "./chat/chat.component";
-import { DefaultComponent } from "./dashboards/default/default.component";
 import { FilemanagerComponent } from "./filemanager/filemanager.component";
 import { DashboardComponent } from "./dashboard/dashboard.component";
 
@@ -176,6 +175,15 @@ const routes: Routes = [
     path: "events",
     loadChildren: () =>
       import("./events/events.module").then((m) => m.EventsModule),
+  },
+  {
+    path: "areas",
+    loadChildren: () => import("./area/area.module").then((m) => m.AreaModule),
+  },
+  {
+    path: "districts",
+    loadChildren: () =>
+      import("./districts/districts.module").then((m) => m.DistrictModule),
   },
 ];
 
