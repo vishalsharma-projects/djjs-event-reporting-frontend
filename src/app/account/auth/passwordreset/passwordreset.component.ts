@@ -58,13 +58,15 @@ export class PasswordresetComponent implements OnInit, AfterViewInit {
     
     if (environment.defaultauth === 'firebase') {
       this.authenticationService.resetPassword(this.f.email.value)
-        .then(() => {
-          this.success = 'Password reset instructions have been sent to your email!';
-          this.loading = false;
-        })
-        .catch(error => {
-          this.error = error ? error : 'An error occurred while sending reset instructions.';
-          this.loading = false;
+        .subscribe({
+          next: () => {
+            this.success = 'Password reset instructions have been sent to your email!';
+            this.loading = false;
+          },
+          error: (error) => {
+            this.error = error ? error.message : 'An error occurred while sending reset instructions.';
+            this.loading = false;
+          }
         });
     } else {
       // For non-firebase auth, simulate success

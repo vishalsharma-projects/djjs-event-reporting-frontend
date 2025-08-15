@@ -30,6 +30,7 @@ export class BranchListComponent implements OnInit {
   rows = 10;
   rowsPerPageOptions = [5, 10, 20, 50];
   globalFilterValue = '';
+  totalRecords: number = 0;
 
   // Per-column filter, dropdown, and pinning state
   filters: { [key: string]: string } = {};
@@ -44,54 +45,59 @@ export class BranchListComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    // Comment out this.loadBranches();
-    // this.loadBranches();
-
-    // Dummy data for testing
-    this.branches = [
-      {
-        id: '1',
-        branchName: 'Delhi Ashram',
-        coordinatorName: 'Sunita Verma',
-        state: 'Delhi',
-        city: 'New Delhi',
-        establishedOn: new Date(2001, 4, 15),
-        ashramArea: '5000 sq ft',
-        members: [
-          { name: 'Ravi', role: 'Member', responsibility: 'Seva', age: 30, dateOfSamarpan: '2015-06-10', qualification: 'B.Sc' }
-        ]
-      },
-      {
-        id: '2',
-        branchName: 'Mumbai Center',
-        coordinatorName: 'Rajesh Kumar',
-        state: 'Maharashtra',
-        city: 'Mumbai',
-        establishedOn: new Date(2010, 10, 20),
-        ashramArea: '3000 sq ft',
-        members: [
-          { name: 'Anita', role: 'Member', responsibility: 'Kitchen', age: 28, dateOfSamarpan: '2018-03-15', qualification: 'M.A.' }
-        ]
-      }
-      // Add more objects as needed
-    ];
+    // Load branches from service
+    this.loadBranches();
   }
 
   loadBranches(sortField?: string, sortOrder?: number) {
     this.loading = true;
-    // If you want to support per-column filtering on backend, pass this.filters as well
-    this.branchService.getBranches(
-      this.first,
-      this.rows,
-      this.globalFilterValue,
-      sortField,
-      sortOrder
-      // , this.filters // Uncomment and implement in service if needed
-    ).subscribe(data => {
-      this.branches = data.branches || [];
-      this.loading = false;
-    }, () => {
-      this.loading = false;
+    this.branchService.getBranches().subscribe({
+      next: (branches: any[]) => {
+        // Convert Branch data to BranchData format for compatibility
+        let convertedBranches: BranchData[] = branches.map(branch => ({
+          id: branch.id,
+          branchName: branch.areaName,
+          coordinatorName: 'Not specified', // Default value since our Branch doesn't have this
+          state: branch.district, // Using district as state for compatibility
+          city: branch.areaName, // Using areaName as city for compatibility
+          establishedOn: branch.createdAt,
+          ashramArea: `${branch.areaCoverage} sq km`,
+          members: [] // Default empty array since our Branch doesn't have members
+        }));
+
+        // Apply sorting if provided
+        if (sortField && sortOrder) {
+          convertedBranches.sort((a, b) => {
+            const aValue = a[sortField as keyof BranchData];
+            const bValue = b[sortField as keyof BranchData];
+            if (aValue < bValue) return sortOrder === 1 ? -1 : 1;
+            if (aValue > bValue) return sortOrder === 1 ? 1 : -1;
+            return 0;
+          });
+        }
+
+        // Apply global filter
+        if (this.globalFilterValue) {
+          const filterValue = this.globalFilterValue.toLowerCase();
+          convertedBranches = convertedBranches.filter(branch =>
+            branch.branchName.toLowerCase().includes(filterValue) ||
+            branch.coordinatorName.toLowerCase().includes(filterValue) ||
+            branch.state.toLowerCase().includes(filterValue) ||
+            branch.city.toLowerCase().includes(filterValue)
+          );
+        }
+
+        // Apply pagination
+        const start = this.first;
+        const end = start + this.rows;
+        this.branches = convertedBranches.slice(start, end);
+        this.totalRecords = convertedBranches.length;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading branches:', error);
+        this.loading = false;
+      }
     });
   }
 

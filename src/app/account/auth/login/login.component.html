@@ -26,7 +26,15 @@
         <!-- Login Form -->
         <form class="login-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
           @if(error){
-          <div class="error-alert">{{ error }}</div>
+          <div class="error-alert">
+            <div class="error-content">
+              <i class="mdi mdi-alert-circle"></i>
+              <span class="error-text">{{ error }}</span>
+            </div>
+            <button type="button" class="error-close" (click)="clearError()">
+              <i class="mdi mdi-close"></i>
+            </button>
+          </div>
           }
           
           <div class="form-group">
@@ -38,6 +46,7 @@
               id="username" 
               placeholder="Enter branch email ID"
               [ngClass]="{ 'is-invalid': submitted && f.email.errors }" 
+              [disabled]="loading"
             />
             @if(submitted && f.email.errors){
             <div class="error-message">
@@ -59,11 +68,13 @@
                 formControlName="password" 
                 placeholder="Enter password"
                 [ngClass]="{ 'is-invalid': submitted && f.password.errors }"
+                [disabled]="loading"
               >
               <button 
                 type="button" 
                 class="password-toggle" 
                 (click)="toggleFieldTextType()"
+                [disabled]="loading"
               >
                 <i class="mdi" [ngClass]="{'mdi-eye-off-outline': !fieldTextType, 'mdi-eye-outline': fieldTextType}"></i>
               </button>
@@ -77,8 +88,13 @@
           </div>
           
           <div class="form-actions">
-            <button class="login-button" type="submit">
-              Login
+            <button class="login-button" type="submit" [disabled]="loading || loginForm.invalid">
+              @if(loading){
+                <i class="mdi mdi-loading mdi-spin"></i>
+                Logging in...
+              } @else {
+                Login
+              }
             </button>
           </div>
           
