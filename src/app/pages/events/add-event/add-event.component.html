@@ -44,6 +44,7 @@
       <div class="card-body">
         <form #eventForm="ngForm">
 
+
           <!-- Step 1: General Details -->
           <div *ngIf="currentStep === 1">
             <h5 class="mb-4">Event details</h5>
@@ -123,37 +124,36 @@
                 </div>
               </div>
 
-              <div class="row">
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">Duration</label>
-                  <input type="text" class="form-control" [formControl]="generalDetailsForm.get('duration')"
-                    placeholder="dd MMM yyyy - dd MMM, yyyy">
-                </div>
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">Daily start time</label>
-                  <select class="form-select" [formControl]="generalDetailsForm.get('dailyStartTime')">
-                    <option value="">Select</option>
-                    <option value="06:00">6:00 AM</option>
-                    <option value="07:00">7:00 AM</option>
-                    <option value="08:00">8:00 AM</option>
-                    <option value="17:30">5:30 PM</option>
-                    <option value="18:00">6:00 PM</option>
-                    <option value="19:00">7:00 PM</option>
-                  </select>
-                </div>
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">Daily end time</label>
-                  <select class="form-select" [formControl]="generalDetailsForm.get('dailyEndTime')">
-                    <option value="">Select</option>
-                    <option value="07:30">7:30 AM</option>
-                    <option value="08:30">8:30 AM</option>
-                    <option value="09:30">9:30 AM</option>
-                    <option value="19:30">7:30 PM</option>
-                    <option value="20:30">8:30 PM</option>
-                    <option value="21:30">9:30 PM</option>
-                  </select>
-                </div>
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Duration</label>
+                <input type="text" class="form-control" [formControl]="generalDetailsForm.get('duration')" placeholder="dd MMM yyyy - dd MMM, yyyy">
               </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Daily start time</label>
+                <select class="form-select" [formControl]="generalDetailsForm.get('dailyStartTime')">
+                  <option value="">Select</option>
+                  <option value="06:00">6:00 AM</option>
+                  <option value="07:00">7:00 AM</option>
+                  <option value="08:00">8:00 AM</option>
+                  <option value="17:30">5:30 PM</option>
+                  <option value="18:00">6:00 PM</option>
+                  <option value="19:00">7:00 PM</option>
+                </select>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Daily end time</label>
+                <select class="form-select" [formControl]="generalDetailsForm.get('dailyEndTime')">
+                  <option value="">Select</option>
+                  <option value="07:30">7:30 AM</option>
+                  <option value="08:30">8:30 AM</option>
+                  <option value="09:30">9:30 AM</option>
+                  <option value="19:30">7:30 PM</option>
+                  <option value="20:30">8:30 PM</option>
+                  <option value="21:30">9:30 PM</option>
+                </select>
+              </div>
+            </div>
 
               <div class="row">
                 <div class="col-md-4 mb-3">
@@ -167,130 +167,122 @@
                 </div>
               </div>
 
-              <h5 class="mb-4 mt-4">Venue</h5>
-              <div class="row">
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">Country *</label>
-                  <select class="form-select" [formControl]="generalDetailsForm.get('country')">
-                    <option value="">Select</option>
-                    <option *ngFor="let country of countries" [value]="country">{{country}}</option>
-                  </select>
-                </div>
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">Pincode</label>
-                  <input type="text" class="form-control" [formControl]="generalDetailsForm.get('pincode')"
-                    placeholder="Pincode">
-                </div>
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">Post office *</label>
-                  <select class="form-select" [formControl]="generalDetailsForm.get('postOffice')">
-                    <option *ngFor="let state of states" [value]="state">{{state}}</option>
-                  </select>
-                </div>
+            <h5 class="mb-4 mt-4">Venue</h5>
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Country *</label>
+                <select class="form-select" [formControl]="generalDetailsForm.get('country')">
+                  <option value="">Select</option>
+                  <option *ngFor="let country of countries" [value]="country">{{country}}</option>
+                </select>
               </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Pincode</label>
+                <input type="text" class="form-control" [formControl]="generalDetailsForm.get('pincode')" placeholder="Pincode">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Post office *</label>
+                <select class="form-select" [formControl]="generalDetailsForm.get('postOffice')">
+                  <option *ngFor="let state of states" [value]="state">{{state}}</option>
+                </select>
+              </div>
+            </div>
 
-              <div class="row">
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">Thana</label>
-                  <input type="text" class="form-control" [formControl]="generalDetailsForm.get('thana')"
-                    placeholder="Enter">
-                </div>
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">Tehsil</label>
-                  <input type="text" class="form-control" [formControl]="generalDetailsForm.get('tehsil')"
-                    placeholder="Enter">
-                </div>
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">State *</label>
-                  <select class="form-select" [formControl]="generalDetailsForm.get('state')">
-                    <option *ngFor="let state of states" [value]="state">{{state}}</option>
-                  </select>
-                </div>
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Thana</label>
+                <input type="text" class="form-control" [formControl]="generalDetailsForm.get('thana')" placeholder="Enter">
               </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Tehsil</label>
+                <input type="text" class="form-control" [formControl]="generalDetailsForm.get('tehsil')" placeholder="Enter">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">State *</label>
+                <select class="form-select" [formControl]="generalDetailsForm.get('state')">
+                  <option *ngFor="let state of states" [value]="state">{{state}}</option>
+                </select>
+              </div>
+            </div>
 
-              <div class="row">
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">City</label>
-                  <select class="form-select" [formControl]="generalDetailsForm.get('city')">
-                    <option *ngFor="let city of cities" [value]="city">{{city}}</option>
-                  </select>
-                </div>
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">Address type *</label>
-                  <select class="form-select" [formControl]="generalDetailsForm.get('addressType')">
-                    <option value="">Select</option>
-                    <option *ngFor="let type of addressTypes" [value]="type">{{type}}</option>
-                  </select>
-                </div>
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">Address *</label>
-                  <input type="text" class="form-control" [formControl]="generalDetailsForm.get('address')"
-                    placeholder="Enter">
-                </div>
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">City</label>
+                <select class="form-select" [formControl]="generalDetailsForm.get('city')">
+                  <option *ngFor="let city of cities" [value]="city">{{city}}</option>
+                </select>
               </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Address type *</label>
+                <select class="form-select" [formControl]="generalDetailsForm.get('addressType')">
+                  <option value="">Select</option>
+                  <option *ngFor="let type of addressTypes" [value]="type">{{type}}</option>
+                </select>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Address *</label>
+                <input type="text" class="form-control" [formControl]="generalDetailsForm.get('address')" placeholder="Enter">
+              </div>
+            </div>
 
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Prachar *</label>
-                  <div class="form-control" style="min-height: 38px;">
-                    <span class="badge bg-primary me-2" *ngFor="let item of generalDetailsForm.get('prachar')?.value">
-                      {{item}} <i class="fas fa-times ms-1" style="cursor: pointer;"></i>
-                    </span>
-                  </div>
-                  <small class="text-muted">This hint text is only for Peace Procession:</small>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Prachar *</label>
+                <div class="form-control" style="min-height: 38px;">
+                  <span class="badge bg-primary me-2" *ngFor="let item of generalDetailsForm.get('prachar')?.value">
+                    {{item}} <i class="fas fa-times ms-1" style="cursor: pointer;"></i>
+                  </span>
                 </div>
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Area covered</label>
-                  <input type="text" class="form-control" [formControl]="generalDetailsForm.get('areaCovered')"
-                    placeholder="0.00 Sq km">
-                </div>
+                <small class="text-muted">This hint text is only for Peace Procession:</small>
               </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Area covered</label>
+                <input type="text" class="form-control" [formControl]="generalDetailsForm.get('areaCovered')" placeholder="0.00 Sq km">
+              </div>
+            </div>
 
-              <h5 class="mb-4 mt-4">Donations</h5>
-              <div class="row">
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">Donation type</label>
-                  <select class="form-select" [formControl]="generalDetailsForm.get('donationType')">
-                    <option *ngFor="let type of donationTypeOptions" [value]="type">{{type}}</option>
-                  </select>
-                </div>
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">Amount</label>
-                  <div class="input-group">
-                    <span class="input-group-text">₹</span>
-                    <input type="number" class="form-control" [formControl]="generalDetailsForm.get('cashAmount')"
-                      placeholder="Amount in Rupees">
-                  </div>
-                  <small class="text-muted">Keep the cash by default added</small>
-                </div>
+            <h5 class="mb-4 mt-4">Donations</h5>
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Donation type</label>
+                <select class="form-select" [formControl]="generalDetailsForm.get('donationType')">
+                  <option *ngFor="let type of donationTypeOptions" [value]="type">{{type}}</option>
+                </select>
               </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Amount</label>
+                <div class="input-group">
+                  <span class="input-group-text">₹</span>
+                  <input type="number" class="form-control" [formControl]="generalDetailsForm.get('cashAmount')" placeholder="Amount in Rupees">
+                </div>
+                <small class="text-muted">Keep the cash by default added</small>
+              </div>
+            </div>
 
-              <div class="row">
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">Donation type</label>
-                  <select class="form-select" [formControl]="generalDetailsForm.get('inKindType')">
-                    <option value="In-kind">In-kind</option>
-                  </select>
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Donation type</label>
+                <select class="form-select" [formControl]="generalDetailsForm.get('inKindType')">
+                  <option value="In-kind">In-kind</option>
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">In-kind type</label>
+                <div class="form-control" style="min-height: 38px;">
+                  <span class="badge bg-primary me-2" *ngFor="let item of generalDetailsForm.get('inKindItems')?.value">
+                    {{item}} <i class="fas fa-times ms-1" style="cursor: pointer;"></i>
+                  </span>
                 </div>
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">In-kind type</label>
-                  <div class="form-control" style="min-height: 38px;">
-                    <span class="badge bg-primary me-2"
-                      *ngFor="let item of generalDetailsForm.get('inKindItems')?.value">
-                      {{item}} <i class="fas fa-times ms-1" style="cursor: pointer;"></i>
-                    </span>
-                  </div>
-                  <small class="text-muted">Write material type then Quantity, e.g Rice 5kg, bed-sheet - 2</small>
-                </div>
-                <div class="col-md-2 mb-3">
-                  <label class="form-label">Estimated Amount</label>
-                  <div class="input-group">
-                    <span class="input-group-text">₹</span>
-                    <input type="number" class="form-control" [formControl]="generalDetailsForm.get('estimatedAmount')"
-                      placeholder="Amount in Rupees">
-                  </div>
+                <small class="text-muted">Write material type then Quantity, e.g Rice 5kg, bed-sheet - 2</small>
+              </div>
+              <div class="col-md-2 mb-3">
+                <label class="form-label">Estimated Amount</label>
+                <div class="input-group">
+                  <span class="input-group-text">₹</span>
+                  <input type="number" class="form-control" [formControl]="generalDetailsForm.get('estimatedAmount')" placeholder="Amount in Rupees">
                 </div>
               </div>
+            </div>
 
               <div class="row">
                 <div class="col-md-6 mb-3">
@@ -300,47 +292,41 @@
                 </div>
               </div>
 
-              <!-- Dynamic Donation Types -->
-              <div class="row" *ngFor="let donation of donationTypes; let i = index">
-                <div class="col-md-3 mb-3">
-                  <label class="form-label">Donation Type</label>
-                  <select class="form-select" [(ngModel)]="donation.type">
-                    <option *ngFor="let type of ['Cash', 'In-kind', 'Bank Transfer', 'Cheque']" [value]="type">{{type}}
-                    </option>
-                  </select>
-                </div>
-                <div class="col-md-3 mb-3">
-                  <label class="form-label">Amount</label>
-                  <input type="text" class="form-control" [(ngModel)]="donation.amount" placeholder="Enter amount">
-                </div>
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">Description</label>
-                  <input type="text" class="form-control" [(ngModel)]="donation.description"
-                    placeholder="Enter description">
-                </div>
-                <div class="col-md-2 mb-3 d-flex align-items-end">
-                  <button type="button" class="btn btn-outline-danger" (click)="removeDonationType(i)"
-                    *ngIf="donationTypes.length > 1">
-                    <i class="fas fa-trash"></i>
-                  </button>
-                </div>
+            <!-- Dynamic Donation Types -->
+            <div class="row" *ngFor="let donation of donationTypes; let i = index">
+              <div class="col-md-3 mb-3">
+                <label class="form-label">Donation Type</label>
+                <select class="form-select" [(ngModel)]="donation.type">
+                  <option *ngFor="let type of ['Cash', 'In-kind', 'Bank Transfer', 'Cheque']" [value]="type">{{type}}</option>
+                </select>
               </div>
-
-              <h5 class="mb-4 mt-4">Sold items</h5>
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Number of Akhand gyan</label>
-                  <input type="number" class="form-control" [formControl]="generalDetailsForm.get('akhandGyan')"
-                    placeholder="Enter number">
-                </div>
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Sell Amount</label>
-                  <input type="number" class="form-control" [formControl]="generalDetailsForm.get('sellAmount')"
-                    placeholder="Enter number">
-                </div>
+              <div class="col-md-3 mb-3">
+                <label class="form-label">Amount</label>
+                <input type="text" class="form-control" [(ngModel)]="donation.amount" placeholder="Enter amount">
               </div>
-              <small class="text-muted">Section specific to others-book fair</small>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Description</label>
+                <input type="text" class="form-control" [(ngModel)]="donation.description" placeholder="Enter description">
+              </div>
+              <div class="col-md-2 mb-3 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-danger" (click)="removeDonationType(i)" *ngIf="donationTypes.length > 1">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
             </div>
+
+            <h5 class="mb-4 mt-4">Sold items</h5>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Number of Akhand gyan</label>
+                <input type="number" class="form-control" [formControl]="generalDetailsForm.get('akhandGyan')" placeholder="Enter number">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Sell Amount</label>
+                <input type="number" class="form-control" [formControl]="generalDetailsForm.get('sellAmount')" placeholder="Enter number">
+              </div>
+            </div>
+            <small class="text-muted">Section specific to others-book fair</small>
           </div>
 
 
@@ -348,22 +334,19 @@
           <div *ngIf="currentStep === 2">
             <h5 class="mb-4">Event media</h5>
             <div class="row">
-              <div class="col-md-6 mb-3">
+              <div class="col-md-3 mb-3">
                 <label class="form-label">Media coverage type</label>
                 <select class="form-select" [formControl]="mediaPromotionForm.get('mediaCoverageType')">
                   <option value="">Select</option>
                   <option *ngFor="let type of mediaCoverageTypes" [value]="type">{{type}}</option>
                 </select>
               </div>
-              <div class="col-md-6 mb-3">
+              <div class="col-md-3 mb-3">
                 <label class="form-label">Organization/ Company name</label>
                 <input type="text" class="form-control" [formControl]="mediaPromotionForm.get('organizationName')"
                   placeholder="Enter">
               </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6 mb-3">
+              <div class="col-md-3 mb-3">
                 <label class="form-label">Media Email</label>
                 <select class="form-select" [formControl]="mediaPromotionForm.get('mediaEmail')">
                   <option value="">Select</option>
@@ -371,14 +354,14 @@
                   <option value="media&#64;example.com">media&#64;example.com</option>
                 </select>
               </div>
-              <div class="col-md-6 mb-3">
+              <div class="col-md-3 mb-3">
                 <label class="form-label">Media Website</label>
                 <input type="text" class="form-control" [formControl]="mediaPromotionForm.get('mediaWebsite')"
                   placeholder="Enter">
               </div>
             </div>
 
-            <h5 class="mb-4 mt-4">Provide details of media person</h5>
+            <h6 class="mb-4 mt-4">Provide details of media person</h6>
             <div class="row">
               <div class="col-md-2 mb-3">
                 <label class="form-label">Prefix</label>
@@ -402,26 +385,23 @@
             </div>
 
             <div class="row">
-              <div class="col-md-6 mb-3">
+              <div class="col-md-4 mb-3">
                 <label class="form-label">Designation</label>
                 <input type="text" class="form-control" formControlName="designation" placeholder="Enter designation">
               </div>
-              <div class="col-md-6 mb-3">
+              <div class="col-md-4 mb-3">
                 <label class="form-label">Media person's contact</label>
                 <input type="text" class="form-control" formControlName="contact" placeholder="Enter phone number">
               </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6 mb-3">
+              <div class="col-md-4 mb-3">
                 <label class="form-label">Media person's email</label>
                 <input type="email" class="form-control" formControlName="email" placeholder="Enter email">
               </div>
             </div>
 
-            <h5 class="mb-4 mt-4">Provide details of reference person</h5>
+            <h6 class="mb-4 mt-4">Provide details of reference person</h6>
             <div class="row">
-              <div class="col-md-6 mb-3">
+              <div class="col-md-4 mb-3">
                 <label class="form-label">Reference branch ID</label>
                 <select class="form-select" formControlName="referenceBranchId">
                   <option value="">Enter</option>
@@ -429,19 +409,60 @@
                   <option value="BR002">BR002</option>
                 </select>
               </div>
-              <div class="col-md-6 mb-3">
+              <div class="col-md-4 mb-3">
                 <label class="form-label">Reference member ID</label>
                 <input type="text" class="form-control" formControlName="referenceMemberId" placeholder="Enter">
               </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6 mb-3">
+              <div class="col-md-4 mb-3">
                 <label class="form-label">Reference person's name</label>
                 <input type="text" class="form-control" formControlName="referencePersonName" value="--------" readonly>
               </div>
             </div>
-
+            <div class="row mt-3">
+              <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                  <button type="button" class="btn btn-primary">
+                    Add Event Media
+                  </button>
+                </div>
+                <div class="row mb-4">
+                  <div class="col-12">
+                    <h6>List of Event Media (1)</h6>
+                    <div class="table-responsive">
+                      <table class="table table-bordered">
+                        <thead class="table-light">
+                          <tr>
+                            <th>Action</th>
+                            <th>Media Coverage Type</th>
+                            <th>Organization/Company Name</th>
+                            <th>Media Email</th>
+                            <th>Media Website</th>
+                            <th>Media Person (Phone No.)</th>
+                            <th>Media Person's Designation</th>
+                            <th>Media Person's Email</th>
+                            <th>Refernce Person (Phone No.)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td><button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                            </td>
+                            <td>TV</td>
+                            <td>Aaj Tak</td>
+                            <td>aaktak&#64;gmail.com</td>
+                            <td>Aajtak.com</td>
+                            <td>jane&#64;example.com</td>
+                            <td>Manager</td>
+                            <td>John&#64;gmail.com</td>
+                            <td>John Doe (000000000)</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
             <h5 class="mb-4 mt-4">Promotional material used</h5>
             <div class="row">
               <div class="col-md-4 mb-3">
