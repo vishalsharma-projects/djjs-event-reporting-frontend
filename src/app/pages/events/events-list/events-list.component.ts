@@ -852,6 +852,9 @@ export class EventsListComponent implements OnInit {
     this.events = [...this.allEvents];
     this.initializeFilters();
   }
+  goToAddEvent() {
+    this.router.navigate(['/events/add']);
+  }
 
   // Initialize filters
   initializeFilters(): void {
