@@ -28,13 +28,13 @@ export class AuthenticationService {
 
   /**
    * Login user with email and password
-   * @param credentials LoginRequest object containing email and password
+   * @param credentials LoginRequest object containing identifier and password
    */
   login(credentials: LoginRequest): Observable<LoginResponse> {
     // Dispatch login action
     this.store.dispatch(login({ credentials }));
 
-    const url = `${this.apiUrl}/admin/users/login`;
+    const url = `${this.apiUrl}/users/login`;  // Updated endpoint from /admin/users/login to /users/login
     
     return this.http.post<LoginResponse>(url, credentials).pipe(
       tap(response => {

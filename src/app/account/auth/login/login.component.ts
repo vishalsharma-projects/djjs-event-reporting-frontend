@@ -81,7 +81,7 @@ export class LoginComponent implements OnInit, OnDestroy {
 
     // Initialize form validation
     this.loginForm = this.formBuilder.group({
-      email: ['', [Validators.required, Validators.email]],
+      identifier: ['', [Validators.required]],  // Changed from email to identifier
       password: ['', [Validators.required]],
     });
   }
@@ -107,7 +107,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     }
 
     const credentials = {
-      email: this.f['email'].value,
+      identifier: this.f['identifier'].value,  // Changed from email to identifier
       password: this.f['password'].value
     };
 
