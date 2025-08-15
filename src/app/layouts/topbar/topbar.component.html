@@ -26,19 +26,7 @@
         <i class="fa fa-fw fa-bars"></i>
       </button>
 
-      <!-- App Search-->
-      <form class="app-search d-none d-lg-block">
-        <div class="position-relative">
-          <input type="text" class="form-control" placeholder="{{'HEADER.SEARCH' | translate}}">
-          <span class="bx bx-search-alt"></span>
-        </div>
-      </form>
-
       <div class="dropdown-mega d-none d-lg-block ms-2" dropdown>
-        <button type="button" class="btn header-item" dropdownToggle data-toggle="dropdown" aria-haspopup="false" aria-expanded="false">
-          {{ 'HEADER.MEGA_MENU' | translate}}
-          <i class="mdi mdi-chevron-down"></i>
-        </button>
         <div class="dropdown-menu dropdown-megamenu" *dropdownMenu>
           <div class="row">
             <div class="col-sm-8">
@@ -185,13 +173,6 @@
       </div>
 
       <div class="dropdown d-inline-block" dropdown>
-        <button type="button" class="btn header-item" id="page-header-user-dropdown" dropdownToggle>
-          @if(flagvalue === undefined){
-          <img src="{{valueset}}" alt="Header Language" height="16">
-          }@else{
-          <img src="{{flagvalue}}" alt="Header Language" height="16">
-          }
-        </button>
         <div class="dropdown-menu dropdown-menu-end" *dropdownMenu>
           <!-- item-->
           @for (item of listLang; track $index) {
