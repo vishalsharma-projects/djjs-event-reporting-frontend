@@ -15,7 +15,7 @@ jobs:
       CONTAINER_NAME: djjs-frontend
       IMAGE_NAME: djjs-frontend
       APP_PORT: 3000          # Next.js default inside container
-      HOST_PORT: 8080         # public port on EC2 (map as per Nginx/SG)
+      HOST_PORT: 8081         # public port on EC2 (map as per Nginx/SG)
       NODE_ENV: production
       NEXT_TELEMETRY_DISABLED: "1"
 
