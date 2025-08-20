@@ -1,0 +1,60 @@
+name: CI/CD - Build and Deploy DJJS Frontend
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-and-deploy:
+    # same as backend: self-hosted Linux runner (optionally add your custom label `frontend`)
+    runs-on: [self-hosted, linux]  # or [self-hosted, linux, frontend]
+
+    env:
+      CONTAINER_NAME: djjs-frontend
+      IMAGE_NAME: djjs-frontend
+      APP_PORT: 3000          # Next.js default inside container
+      HOST_PORT: 8080         # public port on EC2 (map as per Nginx/SG)
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set Docker Image Tag (Git SHA)
+        run: echo "IMAGE_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      # Node install + cache (fast npm ci)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'          # caches node_modules based on lockfile
+      - name: Install deps
+        run: npm ci
+      - name: Build frontend
+        run: npm run build
+
+      # Build a production image (expects a Dockerfile in repo root)
+      - name: Build Docker image
+        run: |
+          docker build -t ${IMAGE_NAME}:${{ env.IMAGE_TAG }} .
+
+      - name: Stop & remove old container if present
+        run: |
+          docker ps -q --filter "name=${CONTAINER_NAME}" | grep -q . && docker stop ${CONTAINER_NAME} || true
+          docker ps -a -q --filter "name=${CONTAINER_NAME}" | grep -q . && docker rm ${CONTAINER_NAME} || true
+
+      - name: Run new container
+        run: |
+          docker run -d --name ${CONTAINER_NAME} \
+            -p ${HOST_PORT}:${APP_PORT} \
+            --env NODE_ENV=${NODE_ENV} \
+            --env NEXT_TELEMETRY_DISABLED=${NEXT_TELEMETRY_DISABLED} \
+            --env-file .env.frontend \
+            ${IMAGE_NAME}:${{ env.IMAGE_TAG }}
+
+      - name: Prune old Docker images
+        run: docker image prune -af || true
