@@ -123,6 +123,7 @@ export class TableComponent implements OnInit {
     this.expandedRows = {};
     console.log("Initial expandedRows:", this.expandedRows);
   }
+  
 
   getTotalAreaCoverage(branches: BranchData): number {
     return branches.events?.reduce((sum, e) => sum + e.areaCoverage, 0) || 0;

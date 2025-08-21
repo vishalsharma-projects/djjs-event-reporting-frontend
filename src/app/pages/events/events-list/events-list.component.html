@@ -492,7 +492,7 @@
                   (click)="openMoreDetailsModal(event); $event.preventDefault()" data-tooltip="More Details">
                   <i class="pi pi-eye me-2"></i>
                 </button>
-                <button class="btn btn-link p-0 action-btn" (click)="editEvent(event.id)" data-tooltip="Edit Event">
+                <button class="btn btn-link p-0 action-btn" [routerLink]="['/events/add']" data-tooltip="Edit Event">
                   <i class="pi pi-pencil"></i>
                 </button>
                 <button class="btn btn-link p-0 action-btn" (click)="downloadEvent(event.id)" data-tooltip="Download">
