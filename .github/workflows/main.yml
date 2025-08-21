@@ -1,69 +1,91 @@
-name: CI/CD - Build and Deploy DJJS Frontend
+name: CI/CD - Build, Test, Dockerize & Deploy (EC2 self-hosted)
 
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 jobs:
-  build-and-deploy:
+  ci-cd:
     runs-on: [self-hosted, linux]
 
     env:
+      # ---- adjust to your project ----
+      NODE_VERSION: '18'
       IMAGE_NAME: djjs-frontend
-      IMAGE_TAG: ${{ github.sha }}
+      CONTAINER_NAME: djjs-frontend
+      APP_PORT: 8081          # container internal port (nginx/app)
+      HOST_PORT: 8081         # EC2 host port to expose
       REGISTRY: docker.io
-      DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      # If your runner had the libsecret error earlier, keep this:
-      - name: Install libsecret (for docker credential helper)
-        run: |
-          if command -v apt-get >/dev/null; then
-            sudo apt-get update
-            sudo apt-get install -y libsecret-1-0
-          fi
+      # Setup Node with built-in npm caching
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      # docs: setup-node cache option :contentReference[oaicite:0]{index=0}
 
-      # Use isolated docker config so no credsStore interferes
-      - name: Prepare Docker config
+      - name: Install deps
+        run: npm ci
+
+      - name: Run tests (if present)
+        run: npm test --if-present
+
+      - name: Build app
+        run: npm run build --if-present
+
+      # Use an isolated Docker config to avoid secretservice helper issues
+      - name: Prepare Docker config (no credsStore)
         run: |
           mkdir -p "$GITHUB_WORKSPACE/.docker"
           echo '{}' > "$GITHUB_WORKSPACE/.docker/config.json"
         env:
           DOCKER_CONFIG: ${{ github.workspace }}/.docker
 
-      - name: Log in to Docker Hub
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}  # use PAT, not password
+          password: ${{ secrets.DOCKERHUB_TOKEN }}  # Use a Docker Hub PAT
         env:
           DOCKER_CONFIG: ${{ github.workspace }}/.docker
+      # docker/login-action + PAT guidance :contentReference[oaicite:1]{index=1}
 
-      - name: Set up Buildx
+      - name: Setup Buildx (BuildKit)
         uses: docker/setup-buildx-action@v3
+      # buildx usage (official docs) :contentReference[oaicite:2]{index=2}
 
-      # Optional pre-check to catch lockfile issues early (outside Docker)
-      - name: Lockfile sync check
-        run: |
-          if [ ! -f package-lock.json ]; then
-            echo "package-lock.json missing. npm ci will fail."; exit 1
-          fi
-          # npm docs: npm ci fails if lockfile != package.json; this line surfaces it earlier
-          npm ci --dry-run || (echo "Lockfile out of sync. Run 'npm install' locally and commit the new package-lock.json." && exit 1)
-        shell: bash
-
-      - name: Build image
+      - name: Build & Push image
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile
           push: true
-          tags: ${{ env.DOCKERHUB_USER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }},${{ env.DOCKERHUB_USER }}/${{ env.IMAGE_NAME }}:latest
-          # Better build cache
-          cache-from: type=registry,ref=${{ env.DOCKERHUB_USER }}/${{ env.IMAGE_NAME }}:buildcache
-          cache-to: type=registry,ref=${{ env.DOCKERHUB_USER }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+          tags: ${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }}:latest,${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+      # build-push-action v6 (official) :contentReference[oaicite:3]{index=3}
+
+      # --- Deploy on the SAME EC2 (self-hosted runner) ---
+      - name: Pull & (re)start container on EC2
+        run: |
+          set -e
+          docker pull ${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }}:latest
+          # Stop and remove old container if running
+          if [ "$(docker ps -q -f name=${{ env.CONTAINER_NAME }})" ]; then
+            docker stop ${{ env.CONTAINER_NAME }} || true
+            docker rm   ${{ env.CONTAINER_NAME }} || true
+          elif [ "$(docker ps -aq -f name=${{ env.CONTAINER_NAME }})" ]; then
+            docker rm   ${{ env.CONTAINER_NAME }} || true
+          fi
+
+          # Start fresh container
+          docker run -d --name ${{ env.CONTAINER_NAME }} \
+            -p ${{ env.HOST_PORT }}:${{ env.APP_PORT }} \
+            --restart unless-stopped \
+            ${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }}:latest
+      # general Docker CI patterns (official guide) :contentReference[oaicite:4]{index=4}
