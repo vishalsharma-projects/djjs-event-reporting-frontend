@@ -270,7 +270,7 @@ import { Router } from '@angular/router';
 export class AddEventComponent implements OnInit {
 
   currentStep = 1;
-  totalSteps = 3;
+  totalSteps = 4;
 
   // Success and error messages
   successMessage: string = '';
@@ -282,7 +282,16 @@ export class AddEventComponent implements OnInit {
   involvedParticipantsForm: FormGroup;
 
   // Dynamic arrays for additional items
-  donationTypes: any[] = [{ type: 'Cash', amount: '', description: '' }];
+  donationTypes: any[] = [
+  { 
+    type: 'cash', 
+    amount: '', 
+    tags: [],
+    currentInput: '',
+    materialValue: '' 
+  }
+];
+
   materialTypes: any[] = [{ type: '', quantity: '', size: '', description: '' }];
   specialGuests: any[] = [];
   volunteers: any[] = [];
@@ -659,15 +668,15 @@ export class AddEventComponent implements OnInit {
   }
 
   // Add donation type functionality
-  addDonationType(): void {
-    this.donationTypes.push({ type: 'Cash', amount: '', description: '' });
-  }
+  // addDonationType(): void {
+  //   this.donationTypes.push({ type: 'Cash', amount: '', description: '' });
+  // }
 
-  removeDonationType(index: number): void {
-    if (this.donationTypes.length > 1) {
-      this.donationTypes.splice(index, 1);
-    }
-  }
+  // removeDonationType(index: number): void {
+  //   if (this.donationTypes.length > 1) {
+  //     this.donationTypes.splice(index, 1);
+  //   }
+  // }
 
   // Add material type functionality
   addMaterialType(): void {
@@ -965,4 +974,55 @@ export class AddEventComponent implements OnInit {
     this.successMessage = 'All forms cleared successfully!';
     setTimeout(() => this.successMessage = '', 3000);
   }
+  // Add these methods to your component class:
+
+// Add these methods to your component class:
+// Add these methods to your component class:
+
+onDonationTypeChange(index: number): void {
+  const donation = this.donationTypes[index];
+  
+  // Clear fields when switching types
+  if (donation.type === 'cash') {
+    donation.tags = [];
+    donation.currentInput = '';
+    donation.materialValue = '';
+  } else if (donation.type === 'in-kind') {
+    donation.amount = '';
+  }
+}
+
+onTagInputKeydown(event: KeyboardEvent, donationIndex: number): void {
+  const donation = this.donationTypes[donationIndex];
+  
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    
+    const inputValue = donation.currentInput.trim();
+    if (inputValue && !donation.tags.includes(inputValue)) {
+      donation.tags.push(inputValue);
+      donation.currentInput = '';
+    }
+  }
+}
+
+removeTag(donationIndex: number, tagIndex: number): void {
+  this.donationTypes[donationIndex].tags.splice(tagIndex, 1);
+}
+
+addDonationType(): void {
+  this.donationTypes.push({
+    type: 'cash',
+    amount: '',
+    tags: [],
+    currentInput: '',
+    materialValue: ''
+  });
+}
+
+removeDonationType(index: number): void {
+  if (this.donationTypes.length > 1) {
+    this.donationTypes.splice(index, 1);
+  }
+}
 }
