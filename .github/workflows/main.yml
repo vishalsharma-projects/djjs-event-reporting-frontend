@@ -12,51 +12,57 @@ jobs:
 
     env:
       CONTAINER_NAME: djjs-frontend
-      IMAGE_NAME: djjs-frontend
-      APP_PORT: 3000
-      HOST_PORT: 8081
-      # keep NODE_ENV for the running container, but DON'T use it during npm ci
-      NODE_ENV: production
-      NEXT_TELEMETRY_DISABLED: "1"
+      APP_PORT: 8081               # container ke andar NGINX listen karega
+      HOST_PORT: 8081              # host par wahi port expose karna
+      IMAGE_TAG: ${{ github.sha }} # tag = latest commit sha
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set Docker Image Tag (Git SHA)
-        run: echo "IMAGE_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-
-      - name: Setup Node.js
+      - name: Setup Node.js (with npm cache)
         uses: actions/setup-node@v4
         with:
-          node-version: '18'          # pick a version compatible with your Angular
-          cache: 'npm'
+          node-version: '18'
+          cache: 'npm'             # npm cache support. Speeds up installs. :contentReference[oaicite:0]{index=0}
 
-      # IMPORTANT: install devDependencies
+      # Angular deps install — aapke project me peer-deps conflict aa raha tha,
+      # isliye CI ko unblock karne ke liye temporary flag use kar rahe hain.
       - name: Install deps
-        run: npm ci --include=dev     # or just `npm ci`
-        env:
-          NODE_ENV: ""                # override the job-level NODE_ENV
+        run: npm ci --legacy-peer-deps
+        # (Long-term: @angular/fire ko Angular 18 ke compatible version par upgrade karein.)
 
       - name: Build frontend
         run: npm run build
 
-      - name: Build Docker image
-        run: docker build -t ${IMAGE_NAME}:${{ env.IMAGE_TAG }} .
+      # ---------- Docker Hub login ----------
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        # PAT (token) use karna recommended; password nahi. :contentReference[oaicite:1]{index=1}
 
+      # ---------- Build & Push image to Docker Hub ----------
+      - name: Build & Push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile           # agar Dockerfile root me hai to 'Dockerfile'
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/djjs-frontend:${{ env.IMAGE_TAG }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/djjs-frontend:latest
+        # Official Docker actions for build/push. :contentReference[oaicite:2]{index=2}
+
+      # ---------- Replace running container on same server ----------
       - name: Stop & remove old container if present
         run: |
           docker ps -q --filter "name=${CONTAINER_NAME}" | grep -q . && docker stop ${CONTAINER_NAME} || true
           docker ps -a -q --filter "name=${CONTAINER_NAME}" | grep -q . && docker rm ${CONTAINER_NAME} || true
 
-      - name: Run new container
+      - name: Run new container (8081 -> 8081)
         run: |
           docker run -d --name ${CONTAINER_NAME} \
             -p ${HOST_PORT}:${APP_PORT} \
-            --env NODE_ENV=${NODE_ENV} \
-            --env NEXT_TELEMETRY_DISABLED=${NEXT_TELEMETRY_DISABLED} \
-            --env-file .env.frontend \
-            ${IMAGE_NAME}:${{ env.IMAGE_TAG }}
-
-      - name: Prune old Docker images
-        run: docker image prune -af || true
+            ${{ secrets.DOCKERHUB_USERNAME }}/djjs-frontend:latest
