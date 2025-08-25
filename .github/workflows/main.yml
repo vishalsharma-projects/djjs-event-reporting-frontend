@@ -7,12 +7,13 @@ on:
 jobs:
   ci-cd:
     runs-on: [self-hosted, linux]
+
     env:
       NODE_VERSION: '18'
       IMAGE_NAME: djjs-frontend
       CONTAINER_NAME: djjs-frontend
-      APP_PORT: 8081
-      HOST_PORT: 8081
+      APP_PORT: 8081                 # container internal port (match your image/NGINX)
+      HOST_PORT: 8081                # host port to expose
       REGISTRY: docker.io
       DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
 
@@ -32,13 +33,23 @@ jobs:
       - name: Build app
         run: npm run build --if-present
 
-      # ✅ Official login action (reliable with Buildx)
+      # --- CRITICAL FIX: remove/avoid credential helpers on the runner ---
+      - name: Force plain Docker config (no credential helpers)
+        run: |
+          mkdir -p "$HOME/.docker"
+          [ -f "$HOME/.docker/config.json" ] && cp "$HOME/.docker/config.json" "$HOME/.docker/config.json.bak" || true
+          cat > "$HOME/.docker/config.json" <<'JSON'
+          { "auths": {} }
+          JSON
+      # -------------------------------------------------------------------
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}   # Docker Hub PAT (not account password)
+          password: ${{ secrets.DOCKERHUB_TOKEN }}   # Docker Hub PAT (recommended), not account password
+      # Ref: official login action & guidance to use PAT. :contentReference[oaicite:1]{index=1}
 
       - name: Setup Buildx (BuildKit)
         uses: docker/setup-buildx-action@v3
@@ -53,12 +64,15 @@ jobs:
             ${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           cache-from: type=registry,ref=${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }}:buildcache
           cache-to: type=registry,ref=${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+      # Ref: official build-push action docs. :contentReference[oaicite:2]{index=2}
 
       - name: Pull & (re)start container on EC2
         run: |
           set -e
+
           docker pull ${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }}:latest
 
+          # Stop & remove existing container if present
           if [ "$(docker ps -q -f name=${{ env.CONTAINER_NAME }})" ]; then
             docker stop ${{ env.CONTAINER_NAME }} || true
             docker rm   ${{ env.CONTAINER_NAME }} || true
@@ -66,6 +80,7 @@ jobs:
             docker rm   ${{ env.CONTAINER_NAME }} || true
           fi
 
+          # Run fresh container
           docker run -d --name ${{ env.CONTAINER_NAME }} \
             -p ${{ env.HOST_PORT }}:${{ env.APP_PORT }} \
             --restart unless-stopped \
