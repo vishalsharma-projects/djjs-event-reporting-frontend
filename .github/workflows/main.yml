@@ -11,53 +11,61 @@ jobs:
     env:
       IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/djjs-frontend
       CONTAINER_NAME: djjs-frontend
-      HOST_PORT: "8081"   # host par expose
-      APP_PORT: "8081"    # container ke andar NGINX listen karega (Dockerfile/nginx.conf ke hisaab se)
+      HOST_PORT: "8081"  # Nginx reverse proxy yahi hit karega (http://127.0.0.1:8081)
+      APP_PORT: "80"     # Container ke andar Nginx 80 par sun raha hai (EXPOSE 80)
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Node install + cache (agar Angular/Node build hai to rakho; pure Nginx copy Dockerfile se bhi chalega)
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-          cache: "npm"
-
-      - name: Install deps
-        run: |
-          npm ci --legacy-peer-deps
-
-      - name: Build (Angular)
-        run: |
-          npm run build -- --configuration=production
-        # NOTE: Agar aap Dockerfile me khud build karte ho (multi-stage), to upar ke 2 steps hata sakte ho.
-
+      # Docker Hub login (PAT ko repo secrets me store karke)
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build Docker image
-        run: |
-          docker build -t $IMAGE_NAME:${{ github.sha }} -t $IMAGE_NAME:latest .
+      # Build & push (multi-stage Dockerfile recommended)
+      - name: Build and Push Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.IMAGE_NAME }}:latest
+          cache-from: type=registry,ref=${{ env.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.IMAGE_NAME }}:buildcache,mode=max
 
-      - name: Push Docker image
-        run: |
-          docker push $IMAGE_NAME:${{ github.sha }}
-          docker push $IMAGE_NAME:latest
-
-      # Deploy on the same self-hosted runner server
+      # Stop/remove old container if running
       - name: Stop old container (if any)
         run: |
-          docker rm -f $CONTAINER_NAME || true
+          docker rm -f "${CONTAINER_NAME}" || true
 
+      # Pull & run new container on 8081:80 (matches your Nginx proxy_pass)
       - name: Run new container
         run: |
-          docker pull $IMAGE_NAME:${{ github.sha }}
-          docker run -d --name $CONTAINER_NAME \
+          docker pull "${IMAGE_NAME}:${{ github.sha }}"
+          docker run -d --name "${CONTAINER_NAME}" \
             -p ${HOST_PORT}:${APP_PORT} \
             --restart unless-stopped \
-            $IMAGE_NAME:${{ github.sha }}
+            "${IMAGE_NAME}:${{ github.sha }}"
+
+      # Quick health check via localhost:8081 (Nginx upstream)
+      - name: Warmup & Health Check
+        run: |
+          for i in {1..20}; do
+            if curl -fsS http://127.0.0.1:${HOST_PORT}/health >/dev/null 2>&1; then
+              echo "App healthy on :${HOST_PORT}"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "Health check failed on :${HOST_PORT}"
+          docker logs "${CONTAINER_NAME}" || true
+          exit 1
+
+      # (Optional) Clean dangling images to save space
+      - name: Docker cleanup (dangling only)
+        run: |
+          docker image prune -f || true
