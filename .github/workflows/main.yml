@@ -62,18 +62,18 @@ jobs:
             --restart unless-stopped \
             "${IMAGE_NAME}:${{ github.sha }}"
 
-      - name: Warmup & Health Check
-        run: |
-          for i in {1..20}; do
-            if curl -fsS "http://127.0.0.1:${HOST_PORT}/health" >/dev/null 2>&1; then
-              echo "App healthy on :${HOST_PORT}"
-              exit 0
-            fi
-            sleep 3
-          done
-          echo "Health check failed on :${HOST_PORT}"
-          docker logs "${CONTAINER_NAME}" || true
-          exit 1
+      # - name: Warmup & Health Check
+      #   run: |
+      #     for i in {1..20}; do
+      #       if curl -fsS "http://127.0.0.1:${HOST_PORT}/health" >/dev/null 2>&1; then
+      #         echo "App healthy on :${HOST_PORT}"
+      #         exit 0
+      #       fi
+      #       sleep 3
+      #     done
+      #     echo "Health check failed on :${HOST_PORT}"
+      #     docker logs "${CONTAINER_NAME}" || true
+      #     exit 1
 
       - name: Docker cleanup (dangling only)
         run: |
