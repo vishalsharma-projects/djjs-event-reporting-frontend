@@ -6,14 +6,14 @@ RUN yarn install
 COPY . .
 RUN yarn build --configuration production
 
-# Stage 2: Serve Angular with http-server
-FROM node:20-alpine
-WORKDIR /app
-RUN npm install -g http-server
-COPY --from=builder /app/dist/skote ./dist
-EXPOSE 4200
-CMD ["http-server", "dist", "-p", "4200", "-d", "false", "-c-1"]
+# Stage 2: Serve Angular with Nginx
+FROM nginx:alpine
+COPY --from=builder /app/dist/skote /usr/share/nginx/html
+# Custom nginx config to handle Angular routes
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
 
 
 
