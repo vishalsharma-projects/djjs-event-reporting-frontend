@@ -2,7 +2,7 @@
 
 A modern Angular-based event reporting system for managing ashram data.
 
-## Features
+## Features 
 
 ### Login Page
 - **Split Layout Design**: Beautiful split-screen layout with portrait image on the left and login form on the right
