@@ -529,6 +529,10 @@ export class AddEventComponent implements OnInit {
   availableKathaTypes: string[] = [];
 
   scales = ['Small (S)', 'Medium (M)', 'Large (L)'];
+  levels=['HeadOffice','Branch']; 
+  types=['Spiritual','Cultural','Educational','Social Service','Others'];
+  eventCategorys=['Katha','Satsang','Meditation','Discourse','Workshop','Seminar','Festival','Service Activity'];
+  eventSubCategory=['Ram Katha','Bhagwat Katha','Mahabharat Katha','Shiv Puran Katha','Devi Bhagwat Katha','Hanuman Chalisa Path'];
   languages = ['Hindi', 'English', 'Sanskrit', 'Gujarati', 'Marathi', 'Bengali', 'Tamil', 'Telugu', 'Kannada', 'Malayalam'];
   countries = ['India', 'USA', 'UK', 'Canada', 'Australia'];
   states = ['Karnataka', 'Maharashtra', 'Delhi', 'Uttar Pradesh', 'Gujarat', 'Tamil Nadu'];
@@ -685,7 +689,14 @@ saveEventMedia() {
     if (this.availableKathaTypes.length === 0) {
       this.availableKathaTypes = [];
     }
+
+    
   }
+// For storing multiple selected values
+selectedPrachar: string[] = ['Area 1', 'Area 2'];
+
+// For dropdown options
+pracharAreas: string[] = ['North', 'South', 'East', 'West'];
 
   // Check if katha type field should be visible
   shouldShowKathaType(): boolean {
@@ -990,7 +1001,7 @@ saveEventMedia() {
     this.generalDetailsForm.reset();
     this.mediaPromotionForm.reset();
     this.involvedParticipantsForm.reset();
-    this.donationTypes = [{ type: 'Cash', amount: '', description: '' }];
+    
     this.materialTypes = [{ type: '', quantity: '', size: '', description: '' }];
     this.specialGuests = [];
     this.volunteers = [];
@@ -1008,50 +1019,44 @@ saveEventMedia() {
 // Add these methods to your component class:
 // Add these methods to your component class:
 
-onDonationTypeChange(index: number): void {
-  const donation = this.donationTypes[index];
-  
-  // Clear fields when switching types
-  if (donation.type === 'cash') {
-    donation.tags = [];
-    donation.currentInput = '';
-    donation.materialValue = '';
-  } else if (donation.type === 'in-kind') {
-    donation.amount = '';
-  }
-}
 
-onTagInputKeydown(event: KeyboardEvent, donationIndex: number): void {
-  const donation = this.donationTypes[donationIndex];
-  
-  if (event.key === 'Enter' || event.key === ' ') {
-    event.preventDefault();
-    
-    const inputValue = donation.currentInput.trim();
-    if (inputValue && !donation.tags.includes(inputValue)) {
-      donation.tags.push(inputValue);
-      donation.currentInput = '';
-    }
-  }
-}
-
-removeTag(donationIndex: number, tagIndex: number): void {
-  this.donationTypes[donationIndex].tags.splice(tagIndex, 1);
-}
-
-addDonationType(): void {
+addDonationType() {
   this.donationTypes.push({
-    type: 'cash',
-    amount: '',
+    type: 'cash',          // default each new row to Cash
+    amount: null,
     tags: [],
     currentInput: '',
-    materialValue: ''
+    materialValue: null
   });
 }
 
-removeDonationType(index: number): void {
-  if (this.donationTypes.length > 1) {
-    this.donationTypes.splice(index, 1);
+removeDonationType(index: number) {
+  this.donationTypes.splice(index, 1);
+}
+
+// Handle tag input
+onTagInputKeydown(event: KeyboardEvent, donationIndex: number) {
+  if ((event.key === 'Enter' || event.key === ' ') && this.donationTypes[donationIndex].currentInput.trim()) {
+    this.donationTypes[donationIndex].tags.push(this.donationTypes[donationIndex].currentInput.trim());
+    this.donationTypes[donationIndex].currentInput = '';
+    event.preventDefault();
   }
 }
+
+removeTag(donationIndex: number, tagIndex: number) {
+  this.donationTypes[donationIndex].tags.splice(tagIndex, 1);
+}
+
+// Optional handler if you want to react when type changes
+onDonationTypeChange(i: number) {
+  // reset fields if type switches
+  if (this.donationTypes[i].type === 'cash') {
+    this.donationTypes[i].tags = [];
+    this.donationTypes[i].materialValue = null;
+  } else {
+    this.donationTypes[i].amount = null;
+  }
+}
+
+
 }
