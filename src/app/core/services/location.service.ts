@@ -62,6 +62,13 @@ export class LocationService {
   }
 
   /**
+   * Get all states
+   */
+  getAllStates(): Observable<State[]> {
+    return this.http.get<State[]>(`${this.apiBaseUrl}/api/states`);
+  }
+
+  /**
    * Get states by country ID
    */
   getStatesByCountry(countryId: number): Observable<State[]> {
@@ -69,10 +76,24 @@ export class LocationService {
   }
 
   /**
+   * Get all districts
+   */
+  getAllDistricts(): Observable<District[]> {
+    return this.http.get<District[]>(`${this.apiBaseUrl}/api/districts/all`);
+  }
+
+  /**
    * Get districts by state ID and country ID
    */
   getDistrictsByStateAndCountry(stateId: number, countryId: number): Observable<District[]> {
     return this.http.get<District[]>(`${this.apiBaseUrl}/api/districts?state_id=${stateId}&country_id=${countryId}`);
+  }
+
+  /**
+   * Get districts by country ID only
+   */
+  getDistrictsByCountry(countryId: number): Observable<District[]> {
+    return this.http.get<District[]>(`${this.apiBaseUrl}/api/districts?country_id=${countryId}`);
   }
 
   /**

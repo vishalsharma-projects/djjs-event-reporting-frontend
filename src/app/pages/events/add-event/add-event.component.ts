@@ -261,6 +261,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray } from '@angular/forms';
 import { Router } from '@angular/router';
+import { LocationService, Country, State, District } from 'src/app/core/services/location.service';
 
 @Component({
   selector: 'app-add-event',
@@ -283,12 +284,12 @@ export class AddEventComponent implements OnInit {
 
   // Dynamic arrays for additional items
   donationTypes: any[] = [
-  { 
-    type: 'cash', 
-    amount: '', 
+  {
+    type: 'cash',
+    amount: '',
     tags: [],
     currentInput: '',
-    materialValue: '' 
+    materialValue: ''
   }
 ];
 
@@ -395,12 +396,12 @@ export class AddEventComponent implements OnInit {
 
   // Dropdown options
   eventTypes = ['Spiritual', 'Cultural', 'Educational', 'Social Service', 'Others'];
-  
+
   // Event names based on event type
   eventNamesByType: { [key: string]: string[] } = {
     'Spiritual': [
       'Bhagwat Katha',
-      'Ram Katha', 
+      'Ram Katha',
       'Mahabharat Katha',
       'Shiv Puran Katha',
       'Devi Bhagwat Katha',
@@ -527,8 +528,9 @@ export class AddEventComponent implements OnInit {
 
   scales = ['Small (S)', 'Medium (M)', 'Large (L)'];
   languages = ['Hindi', 'English', 'Sanskrit', 'Gujarati', 'Marathi', 'Bengali', 'Tamil', 'Telugu', 'Kannada', 'Malayalam'];
-  countries = ['India', 'USA', 'UK', 'Canada', 'Australia'];
-  states = ['Karnataka', 'Maharashtra', 'Delhi', 'Uttar Pradesh', 'Gujarat', 'Tamil Nadu'];
+  countries: Country[] = [];
+  filteredStates: State[] = [];
+  filteredDistricts: District[] = [];
   cities = ['Bangalore', 'Mumbai', 'Delhi', 'Lucknow', 'Ahmedabad', 'Chennai'];
   addressTypes = ['Residential', 'Commercial', 'Temple', 'Community Center', 'Other'];
   donationTypeOptions = ['Cash', 'In-kind', 'Bank Transfer', 'Cheque'];
@@ -540,11 +542,15 @@ export class AddEventComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private router: Router
+    private router: Router,
+    private locationService: LocationService
   ) { }
 
   ngOnInit(): void {
     this.initializeForms();
+    this.loadCountries();
+    this.setupCountryChangeListener();
+    this.setupStateChangeListener();
     this.fillWithRandomMockData();
   }
 
@@ -631,6 +637,180 @@ export class AddEventComponent implements OnInit {
     });
   }
 
+  /**
+   * Load countries from API
+   */
+  loadCountries(): void {
+    this.locationService.getCountries().subscribe({
+      next: (countries) => {
+        this.countries = countries;
+      },
+      error: (error) => {
+        console.error('Error loading countries:', error);
+        this.errorMessage = 'Failed to load countries. Please refresh the page.';
+        setTimeout(() => this.errorMessage = '', 5000);
+      }
+    });
+  }
+
+  /**
+   * Load states by country ID from API
+   */
+  loadStatesByCountry(countryId: number): void {
+    this.locationService.getStatesByCountry(countryId).subscribe({
+      next: (states) => {
+        this.filteredStates = states;
+      },
+      error: (error) => {
+        console.error('Error loading states:', error);
+        this.errorMessage = 'Failed to load states. Please refresh the page.';
+        setTimeout(() => this.errorMessage = '', 5000);
+        this.filteredStates = [];
+      }
+    });
+  }
+
+  /**
+   * Setup listener for country selection changes
+   */
+  setupCountryChangeListener(): void {
+    this.generalDetailsForm.get('country')?.valueChanges.subscribe(selectedCountryName => {
+      this.onCountryChange(selectedCountryName);
+    });
+  }
+
+  /**
+   * Load districts by country ID from API
+   */
+  loadDistrictsByCountry(countryId: number): void {
+    this.locationService.getDistrictsByCountry(countryId).subscribe({
+      next: (districts) => {
+        this.filteredDistricts = districts;
+      },
+      error: (error) => {
+        console.error('Error loading districts:', error);
+        this.errorMessage = 'Failed to load districts. Please refresh the page.';
+        setTimeout(() => this.errorMessage = '', 5000);
+        this.filteredDistricts = [];
+      }
+    });
+  }
+
+  /**
+   * Load districts by state ID and country ID from API
+   */
+  loadDistrictsByStateAndCountry(stateId: number, countryId: number): void {
+    this.locationService.getDistrictsByStateAndCountry(stateId, countryId).subscribe({
+      next: (districts) => {
+        this.filteredDistricts = districts;
+      },
+      error: (error) => {
+        console.error('Error loading districts:', error);
+        this.errorMessage = 'Failed to load districts. Please refresh the page.';
+        setTimeout(() => this.errorMessage = '', 5000);
+        this.filteredDistricts = [];
+      }
+    });
+  }
+
+  /**
+   * Setup listener for state selection changes
+   */
+  setupStateChangeListener(): void {
+    this.generalDetailsForm.get('state')?.valueChanges.subscribe(selectedStateName => {
+      this.onStateChange(selectedStateName);
+    });
+  }
+
+  /**
+   * Handle country selection change - load states and districts by selected country
+   */
+  onCountryChange(selectedCountryName: string): void {
+    if (!selectedCountryName) {
+      // If no country selected, clear states and districts
+      this.filteredStates = [];
+      this.filteredDistricts = [];
+      // Reset state field
+      this.generalDetailsForm.patchValue({ state: '' });
+      // Reset district field
+      this.generalDetailsForm.patchValue({ district: '' });
+      return;
+    }
+
+    // Find the selected country object
+    const selectedCountry = this.countries.find(c => c.name === selectedCountryName);
+
+    if (selectedCountry) {
+      // Load states for the selected country from API
+      this.loadStatesByCountry(selectedCountry.id);
+      // Load districts for the selected country from API
+      this.loadDistrictsByCountry(selectedCountry.id);
+      // Reset state field when country changes
+      this.generalDetailsForm.patchValue({ state: '' });
+      // Reset district field when country changes
+      this.generalDetailsForm.patchValue({ district: '' });
+    } else {
+      // If country not found, clear states and districts
+      this.filteredStates = [];
+      this.filteredDistricts = [];
+    }
+  }
+
+  /**
+   * Handle state selection change - load districts by selected state and country
+   */
+  onStateChange(selectedStateName: string): void {
+    if (!selectedStateName) {
+      // If no state selected, load districts filtered by country (if country is selected)
+      const selectedCountryName = this.generalDetailsForm.get('country')?.value;
+      if (selectedCountryName) {
+        const selectedCountry = this.countries.find(c => c.name === selectedCountryName);
+        if (selectedCountry) {
+          this.loadDistrictsByCountry(selectedCountry.id);
+        } else {
+          this.filteredDistricts = [];
+        }
+      } else {
+        this.filteredDistricts = [];
+      }
+      // Reset district field
+      this.generalDetailsForm.patchValue({ district: '' });
+      return;
+    }
+
+    // Find the selected state object
+    const selectedState = this.filteredStates.find(s => s.name === selectedStateName);
+
+    if (selectedState) {
+      // Get the selected country to pass both state_id and country_id
+      const selectedCountryName = this.generalDetailsForm.get('country')?.value;
+      const selectedCountry = this.countries.find(c => c.name === selectedCountryName);
+
+      if (selectedCountry) {
+        // Load districts by state_id and country_id from API
+        this.loadDistrictsByStateAndCountry(selectedState.id, selectedCountry.id);
+      } else {
+        // If country not found, clear districts
+        this.filteredDistricts = [];
+      }
+      // Reset district field when state changes
+      this.generalDetailsForm.patchValue({ district: '' });
+    } else {
+      // If state not found, load districts filtered by country (if country is selected)
+      const selectedCountryName = this.generalDetailsForm.get('country')?.value;
+      if (selectedCountryName) {
+        const selectedCountry = this.countries.find(c => c.name === selectedCountryName);
+        if (selectedCountry) {
+          this.loadDistrictsByCountry(selectedCountry.id);
+        } else {
+          this.filteredDistricts = [];
+        }
+      } else {
+        this.filteredDistricts = [];
+      }
+    }
+  }
+
   onEventTypeChange(eventType: string): void {
     // Reset dependent fields
     this.generalDetailsForm.patchValue({
@@ -651,7 +831,7 @@ export class AddEventComponent implements OnInit {
 
     // Update available katha types
     this.availableKathaTypes = this.kathaTypesByEventName[eventName] || [];
-    
+
     // If no katha types available for this event name, hide the katha type field
     if (this.availableKathaTypes.length === 0) {
       this.availableKathaTypes = [];
@@ -662,7 +842,7 @@ export class AddEventComponent implements OnInit {
   shouldShowKathaType(): boolean {
     const eventType = this.generalDetailsForm.get('eventType')?.value;
     const eventName = this.generalDetailsForm.get('eventName')?.value;
-    
+
     // Show katha type only for spiritual events with specific event names
     return eventType === 'Spiritual' && this.availableKathaTypes.length > 0;
   }
@@ -809,11 +989,15 @@ export class AddEventComponent implements OnInit {
       dailyEndTime: this.sampleEventData.dailyEndTime,
       spiritualOrator: this.sampleEventData.spiritualOrator,
       country: this.sampleEventData.country,
-      state: this.sampleEventData.state,
       city: this.sampleEventData.city,
       address: this.sampleEventData.address,
       areaCovered: this.sampleEventData.areaCovered
     });
+
+    // Set state after country is set to ensure proper filtering
+    setTimeout(() => {
+      this.generalDetailsForm.patchValue({ state: this.sampleEventData.state });
+    }, 100);
 
     this.mediaPromotionForm.patchValue({
       organizationName: 'Sample Organization',
@@ -843,7 +1027,7 @@ export class AddEventComponent implements OnInit {
   fillWithRandomMockData(): void {
     const randomIndex = Math.floor(Math.random() * this.mockEvents.length);
     const randomEvent = this.mockEvents[randomIndex];
-    
+
     this.generalDetailsForm.patchValue({
       eventName: randomEvent.eventName,
       eventType: randomEvent.eventType,
@@ -856,11 +1040,15 @@ export class AddEventComponent implements OnInit {
       dailyEndTime: randomEvent.dailyEndTime,
       spiritualOrator: randomEvent.spiritualOrator,
       country: randomEvent.country,
-      state: randomEvent.state,
       city: randomEvent.city,
       address: randomEvent.address,
       areaCovered: randomEvent.areaCovered
     });
+
+    // Set state after country is set to ensure proper filtering
+    setTimeout(() => {
+      this.generalDetailsForm.patchValue({ state: randomEvent.state });
+    }, 100);
 
     this.mediaPromotionForm.patchValue({
       organizationName: randomEvent.coordinatorName,
@@ -889,7 +1077,7 @@ export class AddEventComponent implements OnInit {
 
   quickFillEventType(eventType: string): void {
     let eventData: any = {};
-    
+
     switch(eventType) {
       case 'spiritual':
         eventData = {
@@ -951,7 +1139,16 @@ export class AddEventComponent implements OnInit {
     }
 
     if (Object.keys(eventData).length > 0) {
+      const stateValue = eventData.state;
+      delete eventData.state; // Remove state temporarily
+
       this.generalDetailsForm.patchValue(eventData);
+
+      // Set state after country is set to ensure proper filtering
+      setTimeout(() => {
+        this.generalDetailsForm.patchValue({ state: stateValue });
+      }, 100);
+
       this.successMessage = `${eventType.charAt(0).toUpperCase() + eventType.slice(1)} event data loaded!`;
       setTimeout(() => this.successMessage = '', 3000);
     }
@@ -981,7 +1178,7 @@ export class AddEventComponent implements OnInit {
 
 onDonationTypeChange(index: number): void {
   const donation = this.donationTypes[index];
-  
+
   // Clear fields when switching types
   if (donation.type === 'cash') {
     donation.tags = [];
@@ -994,10 +1191,10 @@ onDonationTypeChange(index: number): void {
 
 onTagInputKeydown(event: KeyboardEvent, donationIndex: number): void {
   const donation = this.donationTypes[donationIndex];
-  
+
   if (event.key === 'Enter' || event.key === ' ') {
     event.preventDefault();
-    
+
     const inputValue = donation.currentInput.trim();
     if (inputValue && !donation.tags.includes(inputValue)) {
       donation.tags.push(inputValue);
