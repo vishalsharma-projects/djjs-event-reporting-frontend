@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import Swal from 'sweetalert2';
+import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
 import { fetchCartData } from 'src/app/store/Cart/cart.action';
 import { selectData } from 'src/app/store/Cart/cart-selector';
 import { Store } from '@ngrx/store';
@@ -30,7 +30,10 @@ export class CartComponent implements OnInit {
   totalprice: any;
 
   total: any;
-  constructor(public store: Store) { }
+  constructor(
+    public store: Store,
+    private confirmationDialog: ConfirmationDialogService
+  ) { }
 
   ngOnInit() {
 
@@ -56,33 +59,13 @@ export class CartComponent implements OnInit {
 
   // Delete Data
   delete(event: any) {
-    const swalWithBootstrapButtons = Swal.mixin({
-      customClass: {
-        confirmButton: 'btn btn-success',
-        cancelButton: 'btn btn-danger ms-2'
-      },
-      buttonsStyling: false
+    this.confirmationDialog.confirmDelete({
+      useBootstrapButtons: true
+    }).then(result => {
+      if (result.value) {
+        event.target.closest('tr')?.remove();
+      }
     });
-
-    swalWithBootstrapButtons
-      .fire({
-        title: 'Are you sure?',
-        text: 'You won\'t be able to revert this!',
-        icon: 'warning',
-        confirmButtonText: 'Yes, delete it!',
-        cancelButtonText: 'No, cancel!',
-        showCancelButton: true
-      })
-      .then(result => {
-        if (result.value) {
-          swalWithBootstrapButtons.fire(
-            'Deleted!',
-            'Your file has been deleted.',
-            'success'
-          );
-          event.target.closest('tr')?.remove();
-        }
-      });
   }
 
   // Increment Decrement Quantity

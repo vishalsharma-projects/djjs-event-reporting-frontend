@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core'
 import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms'
-import { LocationService, Country, State, District, City, Coordinator } from 'src/app/core/services/location.service'
+import { LocationService, Branch, BranchPayload, Country, State, District, City, Coordinator } from 'src/app/core/services/location.service'
 import { TokenStorageService } from 'src/app/core/services/token-storage.service'
 import { Router, ActivatedRoute } from '@angular/router'
 import { MessageService } from 'primeng/api'
@@ -58,7 +58,7 @@ export class EditBranchComponent implements OnInit {
 
     ngOnInit(): void {
         console.log('EditBranchComponent - ngOnInit called');
-        
+
         // Initialize form first
         this.branchForm = this.fb.group({
             coordinator: ['', Validators.required],
@@ -90,7 +90,7 @@ export class EditBranchComponent implements OnInit {
         // Get branch ID from route
         const idParam = this.route.snapshot.paramMap.get('id');
         console.log('Edit Branch - Route ID param:', idParam);
-        
+
         if (idParam) {
             this.branchId = parseInt(idParam, 10);
             if (isNaN(this.branchId)) {
@@ -114,7 +114,7 @@ export class EditBranchComponent implements OnInit {
         // Load countries and coordinators on init
         this.loadCountries();
         this.loadCoordinators();
-        
+
         // Load branch data after a short delay to ensure coordinators are loaded
         // This ensures findCoordinatorId can find the coordinator
         setTimeout(() => {
@@ -177,8 +177,8 @@ export class EditBranchComponent implements OnInit {
                 this.locationService.getCountries().subscribe({
                     next: (countries) => {
                         this.countryList = countries;
-                        // Find country by name
-                        const country = countries.find(c => c.name === branch.country);
+                        // Find country by name (branch.country is an object with name property)
+                        const country = countries.find(c => c.name === branch.country?.name || c.id === branch.country_id);
                         if (country) {
                             // Set basic form values first
                             const coordinatorId = this.findCoordinatorId(branch.coordinator_name);
@@ -222,10 +222,10 @@ export class EditBranchComponent implements OnInit {
             },
             error: (error) => {
                 console.error('Error loading branch:', error);
-                this.messageService.add({ 
-                    severity: 'error', 
-                    summary: 'Error', 
-                    detail: error.error?.message || 'Failed to load branch data. Please try again.' 
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: error.error?.message || 'Failed to load branch data. Please try again.'
                 });
                 this.loadingBranch = false;
                 // Don't navigate away immediately - let user see the error
@@ -239,17 +239,18 @@ export class EditBranchComponent implements OnInit {
     /**
      * Set location values (state, city, district) after they're loaded
      */
-    setLocationValues(branch: any, countryId: number) {
-        // Find state by name
-        const state = this.stateList.find(s => s.name === branch.state);
+    setLocationValues(branch: Branch, countryId: number) {
+        // Find state by name or ID (branch.state is an object with name property)
+        const state = this.stateList.find(s => s.name === branch.state?.name || s.id === branch.state_id);
         if (state) {
             this.branchForm.patchValue({ state: state.id });
-            
+
             // Load districts and cities for this state
             this.locationService.getDistrictsByStateAndCountry(state.id, countryId).subscribe({
                 next: (districts) => {
                     this.districtOptions = districts;
-                    const district = districts.find(d => d.name === branch.district);
+                    // branch.district is an object with name property
+                    const district = districts.find(d => d.name === branch.district?.name || d.id === branch.district_id);
                     if (district) {
                         this.branchForm.patchValue({ districts: district.id });
                     }
@@ -264,7 +265,8 @@ export class EditBranchComponent implements OnInit {
             this.locationService.getCitiesByState(state.id).subscribe({
                 next: (cities) => {
                     this.cityList = cities;
-                    const city = cities.find(c => c.name === branch.city);
+                    // branch.city is an object with name property
+                    const city = cities.find(c => c.name === branch.city?.name || c.id === branch.city_id);
                     if (city) {
                         this.branchForm.patchValue({ city: city.id });
                     }
@@ -352,27 +354,27 @@ export class EditBranchComponent implements OnInit {
     onSubmit() {
         if (this.branchForm.valid && !this.isSubmitting && this.branchId) {
             this.isSubmitting = true;
-            
+
             const formValue = this.branchForm.value;
-            
+
             // Get names from IDs (handle both string and number IDs)
             const countryId = formValue.country;
             const stateId = formValue.state;
             const cityId = formValue.city;
             const districtId = formValue.districts;
             const coordinatorId = formValue.coordinator;
-            
+
             const country = this.countryList.find(c => c.id == countryId || c.id === Number(countryId));
             const state = this.stateList.find(s => s.id == stateId || s.id === Number(stateId));
             const city = this.cityList.find(c => c.id == cityId || c.id === Number(cityId));
             const district = this.districtOptions.find(d => d.id == districtId || d.id === Number(districtId));
             const coordinator = this.coordinatorsList.find(c => c.id == coordinatorId || c.id === Number(coordinatorId));
-            
+
             // Get current user for updated_by
             const currentUser = this.tokenStorage.getUser();
             const updatedBy = currentUser?.email || currentUser?.name || 'system';
             const currentTimestamp = new Date().toISOString();
-            
+
             // Format date (convert to ISO string if needed)
             let establishedOn = formValue.establishedOn;
             if (establishedOn && typeof establishedOn === 'string') {
@@ -382,9 +384,9 @@ export class EditBranchComponent implements OnInit {
                 // If it's a Date object, convert to ISO string
                 establishedOn = new Date(establishedOn).toISOString();
             }
-            
+
             // Prepare API payload
-            const branchData = {
+            const branchData: BranchPayload = {
                 aashram_area: parseFloat(formValue.ashramArea) || 0,
                 address: formValue.address || '',
                 city: city?.name || '',
@@ -406,15 +408,15 @@ export class EditBranchComponent implements OnInit {
                 updated_by: updatedBy,
                 updated_on: currentTimestamp
             };
-            
+
             // Update branch via API
             this.locationService.updateBranch(this.branchId, branchData).subscribe({
                 next: (response) => {
                     console.log('Branch updated successfully:', response);
-                    this.messageService.add({ 
-                        severity: 'success', 
-                        summary: 'Success', 
-                        detail: 'Branch updated successfully!' 
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Success',
+                        detail: 'Branch updated successfully!'
                     });
                     this.isSubmitting = false;
                     // Navigate back to branch list
@@ -424,10 +426,10 @@ export class EditBranchComponent implements OnInit {
                 },
                 error: (error) => {
                     console.error('Error updating branch:', error);
-                    this.messageService.add({ 
-                        severity: 'error', 
-                        summary: 'Error', 
-                        detail: error.error?.message || 'Failed to update branch. Please try again.' 
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: error.error?.message || 'Failed to update branch. Please try again.'
                     });
                     this.isSubmitting = false;
                 }

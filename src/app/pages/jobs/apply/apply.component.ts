@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
 import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 
-import Swal from 'sweetalert2';
+import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
 // store
 import { Store } from '@ngrx/store';
 import { fetchJobApplyData } from 'src/app/store/Job/job.action';
@@ -32,7 +32,12 @@ export class ApplyComponent implements OnInit {
   applyjob: any
   total: Observable<number>;
 
-  constructor(private modalService: BsModalService, private formBuilder: UntypedFormBuilder, public store: Store) { }
+  constructor(
+    private modalService: BsModalService,
+    private formBuilder: UntypedFormBuilder,
+    public store: Store,
+    private confirmationDialog: ConfirmationDialogService
+  ) { }
 
   ngOnInit(): void {
     this.breadCrumbItems = [{ label: 'Jobs' }, { label: 'Job Apply', active: true }];
@@ -50,42 +55,14 @@ export class ApplyComponent implements OnInit {
 
   // Delete Data
   delete(event: any) {
-    const swalWithBootstrapButtons = Swal.mixin({
-      customClass: {
-        confirmButton: 'btn btn-success',
-        cancelButton: 'btn btn-danger ms-2'
-      },
-      buttonsStyling: false
+    this.confirmationDialog.confirmDelete({
+      useBootstrapButtons: true,
+      showCancelMessage: true
+    }).then(result => {
+      if (result.value) {
+        event.target.closest('tr')?.remove();
+      }
     });
-
-    swalWithBootstrapButtons
-      .fire({
-        title: 'Are you sure?',
-        text: 'You won\'t be able to revert this!',
-        icon: 'warning',
-        confirmButtonText: 'Yes, delete it!',
-        cancelButtonText: 'No, cancel!',
-        showCancelButton: true
-      })
-      .then(result => {
-        if (result.value) {
-          swalWithBootstrapButtons.fire(
-            'Deleted!',
-            'Your file has been deleted.',
-            'success'
-          );
-          event.target.closest('tr')?.remove();
-        } else if (
-          /* Read more about handling dismissals below */
-          result.dismiss === Swal.DismissReason.cancel
-        ) {
-          swalWithBootstrapButtons.fire(
-            'Cancelled',
-            'Your imaginary file is safe :)',
-            'error'
-          );
-        }
-      });
   }
 
   // pagination

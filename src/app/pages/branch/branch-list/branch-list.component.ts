@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
-import { LocationService } from 'src/app/core/services/location.service';
+import { LocationService, Branch } from 'src/app/core/services/location.service';
 import { TokenStorageService } from 'src/app/core/services/token-storage.service';
+import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
 
 interface BranchData {
   id: string;
@@ -41,13 +42,13 @@ export class BranchListComponent implements OnInit {
   dropdownOpen: { [key: string]: boolean } = {};
   pinnedColumns: string[] = [];
 
-  isCreatingMockBranch = false;
 
   constructor(
     private router: Router,
     private locationService: LocationService,
     private messageService: MessageService,
-    private tokenStorage: TokenStorageService
+    private tokenStorage: TokenStorageService,
+    private confirmationDialog: ConfirmationDialogService
   ) { }
 
   ngOnInit(): void {
@@ -57,19 +58,52 @@ export class BranchListComponent implements OnInit {
 
   loadBranches(sortField?: string, sortOrder?: number) {
     this.loading = true;
-    this.locationService.getAllBranches().subscribe({
-      next: (branches: any[]) => {
+
+    // Determine if we should use server-side search
+    const searchTerm = this.globalFilterValue?.trim();
+    const shouldUseSearch = searchTerm && searchTerm.length > 0;
+
+    // Use search API if we have a search term, otherwise get all branches
+    // Search by name (primary) and coordinator (secondary) - API will return matches for either
+    const branchesObservable = shouldUseSearch
+      ? this.locationService.searchBranches(searchTerm, searchTerm)
+      : this.locationService.getAllBranches();
+
+    branchesObservable.subscribe({
+      next: (branches: Branch[]) => {
         // Convert API branch data to BranchData format
         let convertedBranches: BranchData[] = branches.map(branch => ({
           id: branch.id?.toString() || '',
           branchName: branch.name || 'Unnamed Branch',
           coordinatorName: branch.coordinator_name || 'Not specified',
-          state: branch.state || '',
-          city: branch.city || '',
+          state: branch.state?.name || '',
+          city: branch.city?.name || '',
           establishedOn: branch.established_on ? new Date(branch.established_on) : new Date(branch.created_on || Date.now()),
           ashramArea: branch.aashram_area ? `${branch.aashram_area} sq km` : '0 sq km',
           members: [] // Members not included in API response
         }));
+
+        // Apply client-side filtering
+        // Note: When using search API, name/coordinator filtering is done server-side
+        // We only need client-side filtering for state/city (not supported by API search)
+        if (this.globalFilterValue) {
+          const filterValue = this.globalFilterValue.toLowerCase();
+          if (shouldUseSearch) {
+            // API already filtered by name/coordinator, only filter by state/city client-side
+            convertedBranches = convertedBranches.filter(branch =>
+              branch.state.toLowerCase().includes(filterValue) ||
+              branch.city.toLowerCase().includes(filterValue)
+            );
+          } else {
+            // Full client-side filtering when not using search API
+            convertedBranches = convertedBranches.filter(branch =>
+              branch.branchName.toLowerCase().includes(filterValue) ||
+              branch.coordinatorName.toLowerCase().includes(filterValue) ||
+              branch.state.toLowerCase().includes(filterValue) ||
+              branch.city.toLowerCase().includes(filterValue)
+            );
+          }
+        }
 
         // Apply sorting if provided
         if (sortField && sortOrder) {
@@ -82,17 +116,6 @@ export class BranchListComponent implements OnInit {
           });
         }
 
-        // Apply global filter
-        if (this.globalFilterValue) {
-          const filterValue = this.globalFilterValue.toLowerCase();
-          convertedBranches = convertedBranches.filter(branch =>
-            branch.branchName.toLowerCase().includes(filterValue) ||
-            branch.coordinatorName.toLowerCase().includes(filterValue) ||
-            branch.state.toLowerCase().includes(filterValue) ||
-            branch.city.toLowerCase().includes(filterValue)
-          );
-        }
-
         // Apply pagination
         const start = this.first;
         const end = start + this.rows;
@@ -102,10 +125,10 @@ export class BranchListComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading branches:', error);
-        this.messageService.add({ 
-          severity: 'error', 
-          summary: 'Error', 
-          detail: 'Failed to load branches. Please try again.' 
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to load branches. Please try again.'
         });
         this.loading = false;
         this.branches = [];
@@ -136,7 +159,7 @@ export class BranchListComponent implements OnInit {
   onRowExpand(event: any) {
     const branchId = event.data.id;
     this.expandedRows[branchId] = true;
-    
+
     // Fetch members if not already loaded
     if (!this.membersLoaded[branchId]) {
       this.loadBranchMembers(branchId);
@@ -204,84 +227,45 @@ export class BranchListComponent implements OnInit {
 
   // Delete branch
   deleteBranch(branchId: string) {
-    // TODO: Implement delete API call when available
-    // For now, just reload the list
-    this.messageService.add({ severity: 'info', summary: 'Info', detail: 'Delete functionality will be implemented with API' });
-    this.loadBranches();
-  }
-
-  // Create branch with mock data
-  createBranchWithMockData() {
-    if (this.isCreatingMockBranch) {
+    const branchIdNum = parseInt(branchId, 10);
+    if (isNaN(branchIdNum)) {
+      this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Invalid branch ID' });
       return;
     }
 
-    this.isCreatingMockBranch = true;
-
-    // Get current user for created_by and updated_by
-    const currentUser = this.tokenStorage.getUser();
-    const createdBy = currentUser?.email || currentUser?.name || 'system';
-    const currentTimestamp = new Date().toISOString();
-
-    // Generate unique identifiers
-    const timestamp = Date.now();
-    const randomSuffix = Math.floor(Math.random() * 10000); // Random 4-digit number
-    const uniqueEmail = `test.branch.${timestamp}.${randomSuffix}@example.com`;
-    
-    // Generate unique contact number (10-digit Indian mobile number format)
-    const randomContact = Math.floor(Math.random() * 9000000000) + 1000000000; // 10-digit number starting from 1000000000
-    const uniqueContactNumber = `+91-${randomContact}`;
-
-    // Generate mock data
-    const mockBranchData = {
-      aashram_area: Math.floor(Math.random() * 5000) + 1000, // Random between 1000-6000
-      address: '123 Main Street, Sample Area',
-      city: 'Mumbai',
-      contact_number: uniqueContactNumber,
-      coordinator_name: 'Swami Test',
-      country: 'India',
-      created_by: createdBy,
-      created_on: currentTimestamp,
-      daily_end_time: '20:00',
-      daily_start_time: '06:00',
-      district: 'Mumbai',
-      email: uniqueEmail,
-      established_on: currentTimestamp,
-      id: 0, // Will be set by backend
-      name: `Test Branch ${timestamp}`,
-      open_days: 'Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday',
-      pincode: '400001',
-      police_station: 'Test Police Station',
-      post_office: 'Test Post Office',
-      state: 'Maharashtra',
-      updated_by: createdBy,
-      updated_on: currentTimestamp
-    };
-
-    // Create branch via API
-    this.locationService.createBranch(mockBranchData).subscribe({
-      next: (response) => {
-        console.log('Mock branch created successfully:', response);
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Success',
-          detail: 'Branch created successfully with mock data!'
+    // Confirm deletion
+    this.confirmationDialog.confirmDelete({
+      title: 'Delete Branch',
+      text: 'Are you sure you want to delete this branch? This action cannot be undone.',
+      successTitle: 'Branch Deleted',
+      successText: 'Branch deleted successfully',
+      showSuccessMessage: false // We'll use PrimeNG message service instead
+    }).then((result) => {
+      if (result.value) {
+        this.loading = true;
+        this.locationService.deleteBranch(branchIdNum).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Success',
+              detail: 'Branch deleted successfully'
+            });
+            this.loadBranches(); // Reload the list
+          },
+          error: (error) => {
+            console.error('Error deleting branch:', error);
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: 'Failed to delete branch. Please try again.'
+            });
+            this.loading = false;
+          }
         });
-        this.isCreatingMockBranch = false;
-        // Reload branches list
-        this.loadBranches();
-      },
-      error: (error) => {
-        console.error('Error creating mock branch:', error);
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: error.error?.message || 'Failed to create branch. Please try again.'
-        });
-        this.isCreatingMockBranch = false;
       }
     });
   }
+
 
   // --- Per-column filter, dropdown, and pinning logic ---
 

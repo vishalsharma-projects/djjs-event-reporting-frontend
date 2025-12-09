@@ -46,6 +46,130 @@ export interface Coordinator {
   [key: string]: any;
 }
 
+/**
+ * Branch response interface (from GET /api/branches)
+ * Location fields are nested objects with id and name
+ */
+export interface Branch {
+  id: number;
+  name: string;
+  email: string;
+  coordinator_name: string;
+  contact_number: string;
+  established_on: string;
+  aashram_area: number;
+  country_id: number | null;
+  country: {
+    id: number;
+    name: string;
+  };
+  state_id: number | null;
+  state: {
+    id: number;
+    name: string;
+    country_id: number;
+  };
+  district_id: number | null;
+  district: {
+    id: number;
+    name: string;
+    state_id: number;
+    country_id: number;
+  };
+  city_id: number | null;
+  city: {
+    id: number;
+    name: string;
+    state_id: number;
+  };
+  address?: string;
+  pincode?: string;
+  post_office?: string;
+  police_station?: string;
+  open_days?: string;
+  daily_start_time?: string;
+  daily_end_time?: string;
+  created_on: string;
+  created_by?: string;
+  updated_on?: string;
+  updated_by?: string;
+}
+
+/**
+ * Branch creation/update payload interface (for POST/PUT /api/branches)
+ * Location fields are strings (names), not objects
+ */
+export interface BranchPayload {
+  aashram_area: number;
+  address?: string;
+  city: string; // Location name as string
+  contact_number: string;
+  coordinator_name: string;
+  country: string; // Location name as string
+  created_by?: string;
+  created_on?: string;
+  daily_end_time?: string;
+  daily_start_time?: string;
+  district: string; // Location name as string
+  email: string;
+  established_on: string;
+  id?: number; // Optional for create, required for update
+  name: string;
+  open_days?: string;
+  pincode?: string;
+  police_station?: string;
+  post_office?: string;
+  state: string; // Location name as string
+  updated_by?: string;
+  updated_on?: string;
+}
+
+export interface BranchInfra {
+  id: number;
+  branch_id: number;
+  branch: {
+    id: number;
+    name: string;
+    email: string;
+    coordinator_name: string;
+    contact_number: string;
+    established_on: string;
+    aashram_area: number;
+    country_id: number | null;
+    country: {
+      id: number;
+      name: string;
+    };
+    state_id: number | null;
+    state: {
+      id: number;
+      name: string;
+      country_id: number;
+    };
+    district_id: number | null;
+    district: {
+      id: number;
+      name: string;
+      state_id: number;
+      country_id: number;
+    };
+    city_id: number | null;
+    city: {
+      id: number;
+      name: string;
+      state_id: number;
+    };
+    created_on: string;
+    created_by: string;
+  };
+  type: string;
+  count: number;
+  created_on: string;
+  updated_on: string;
+  created_by: string;
+  updated_by: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -113,15 +237,22 @@ export class LocationService {
   /**
    * Create a new branch
    */
-  createBranch(branchData: any): Observable<any> {
-    return this.http.post<any>(`${this.apiBaseUrl}/api/branches`, branchData);
+  createBranch(branchData: BranchPayload): Observable<Branch> {
+    return this.http.post<Branch>(`${this.apiBaseUrl}/api/branches`, branchData);
   }
 
   /**
    * Get all branches
    */
-  getAllBranches(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiBaseUrl}/api/branches`);
+  getAllBranches(): Observable<Branch[]> {
+    return this.http.get<Branch[]>(`${this.apiBaseUrl}/api/branches`);
+  }
+
+  /**
+   * Get all branch members
+   */
+  getAllBranchMembers(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiBaseUrl}/api/branch-member`);
   }
 
   /**
@@ -132,17 +263,80 @@ export class LocationService {
   }
 
   /**
+   * Create a new branch member
+   */
+  createBranchMember(memberData: any): Observable<any> {
+    return this.http.post<any>(`${this.apiBaseUrl}/api/branch-member`, memberData);
+  }
+
+  /**
+   * Update a branch member by ID
+   */
+  updateBranchMember(memberId: number, memberData: any): Observable<any> {
+    return this.http.put<any>(`${this.apiBaseUrl}/api/branch-member/${memberId}`, memberData);
+  }
+
+  /**
+   * Delete a branch member by ID
+   */
+  deleteBranchMember(memberId: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiBaseUrl}/api/branch-member/${memberId}`);
+  }
+
+  /**
    * Get branch by ID
    */
-  getBranchById(branchId: number): Observable<any> {
-    return this.http.get<any>(`${this.apiBaseUrl}/api/branches/${branchId}`);
+  getBranchById(branchId: number): Observable<Branch> {
+    return this.http.get<Branch>(`${this.apiBaseUrl}/api/branches/${branchId}`);
   }
 
   /**
    * Update an existing branch
    */
-  updateBranch(branchId: number, branchData: any): Observable<any> {
-    return this.http.put<any>(`${this.apiBaseUrl}/api/branches/${branchId}`, branchData);
+  updateBranch(branchId: number, branchData: BranchPayload): Observable<Branch> {
+    return this.http.put<Branch>(`${this.apiBaseUrl}/api/branches/${branchId}`, branchData);
+  }
+
+  /**
+   * Delete a branch by ID
+   */
+  deleteBranch(branchId: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiBaseUrl}/api/branches/${branchId}`);
+  }
+
+  /**
+   * Search branches by name or coordinator (or get all if no params provided)
+   */
+  searchBranches(name?: string, coordinator?: string): Observable<Branch[]> {
+    let url = `${this.apiBaseUrl}/api/branches/search`;
+    const params: string[] = [];
+
+    if (name) {
+      params.push(`name=${encodeURIComponent(name)}`);
+    }
+    if (coordinator) {
+      params.push(`coordinator=${encodeURIComponent(coordinator)}`);
+    }
+
+    if (params.length > 0) {
+      url += `?${params.join('&')}`;
+    }
+
+    return this.http.get<Branch[]>(url);
+  }
+
+  /**
+   * Get all branch infrastructure data
+   */
+  getBranchInfra(): Observable<BranchInfra[]> {
+    return this.http.get<BranchInfra[]>(`${this.apiBaseUrl}/api/branch-infra`);
+  }
+
+  /**
+   * Get branch infrastructure by branch ID
+   */
+  getBranchInfraByBranchId(branchId: number): Observable<BranchInfra[]> {
+    return this.http.get<BranchInfra[]>(`${this.apiBaseUrl}/api/branch-infra?branch_id=${branchId}`);
   }
 }
 

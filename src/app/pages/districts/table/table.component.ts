@@ -2,6 +2,7 @@ import { Component, OnInit, ViewChild } from "@angular/core";
 import { Router } from "@angular/router";
 import { MessageService } from "primeng/api";
 import { AddDistrictComponent } from "../add-branch/add-branch.component";
+import { LocationService, Branch } from "src/app/core/services/location.service";
 
 interface EventData {
   id: string;
@@ -102,58 +103,49 @@ export class TableComponent implements OnInit {
     },
   ];
 
-  // Sample data with new branch structure
-  branches: BranchData[] = [
-    {
-      id: "1",
-      branchName: "Bangalore Central Branch",
-      branchManagerName: "Rajesh Kumar",
-      assistantBranchManagerName: "Priya Sharma",
-      events: [
-        { id: "1", state: "Basavanagudi", district: "xyz" },
-        { id: "2", state: "Jayanagar", district: "xyz" },
-        { id: "3", state: "Malleshwaram", district: "xyz" },
-        { id: "4", state: "Whitefield", district: "xyz" },
-        { id: "5", state: "Koramangala", district: "xyz" },
-        { id: "6", state: "Indiranagar", district: "xyz" },
-      ],
-    },
-    {
-      id: "2",
-      branchName: "Mumbai Western Branch",
-      branchManagerName: "Amit Patel",
-      assistantBranchManagerName: "Neha Singh",
-      events: [
-        { id: "7", state: "Andheri West", district: "xyz" },
-        { id: "8", state: "Bandra", district: "xyz" },
-        { id: "9", state: "Dadar", district: "xyz" },
-        { id: "10", state: "Goregaon", district: "xyz" },
-        { id: "11", state: "Juhu", district: "xyz" },
-        { id: "12", state: "Malad", district: "xyz" },
-      ],
-    },
-    {
-      id: "3",
-      branchName: "Delhi North Branch",
-      branchManagerName: "Suresh Verma",
-      assistantBranchManagerName: "Kavita Gupta",
-      events: [
-        { id: "13", state: "Connaught Place", district: "xyz" },
-        { id: "14", state: "Karol Bagh", district: "xyz" },
-        { id: "15", state: "Chandni Chowk", district: "xyz" },
-        { id: "16", state: "Rohini", district: "xyz" },
-        { id: "17", state: "Pitampura", district: "xyz" },
-        { id: "18", state: "Shalimar Bagh", district: "xyz" },
-      ],
-    },
-  ];
+  branches: BranchData[] = [];
+  loading: boolean = false;
 
-  constructor(private router: Router, private messageService: MessageService) {}
+  constructor(
+    private router: Router,
+    private messageService: MessageService,
+    private locationService: LocationService
+  ) {}
 
   ngOnInit(): void {
     // Don't expand any branch by default
     this.expandedRows = {};
     console.log("Initial expandedRows:", this.expandedRows);
+    // Load branches from API
+    this.loadBranches();
+  }
+
+  loadBranches(): void {
+    this.loading = true;
+    this.locationService.getAllBranches().subscribe({
+      next: (branches: Branch[]) => {
+        // Convert API branch data to BranchData format
+        // Note: Districts/events data structure may need to be adjusted based on actual API response
+        this.branches = branches.map(branch => ({
+          id: branch.id?.toString() || '',
+          branchName: branch.name || 'Unnamed Branch',
+          branchManagerName: branch.coordinator_name || 'Not specified',
+          assistantBranchManagerName: '', // Not available in API response
+          events: [] // Districts data would need to be loaded separately if available
+        }));
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading branches:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to load branches. Please try again.'
+        });
+        this.loading = false;
+        this.branches = [];
+      }
+    });
   }
 
   // PrimeNG Table Methods

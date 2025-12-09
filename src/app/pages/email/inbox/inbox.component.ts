@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
 import * as ClassicEditor from '@ckeditor/ckeditor5-build-classic';
-import Swal from 'sweetalert2';
+import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
 import { Store } from '@ngrx/store';
 import { fetchmailData } from 'src/app/store/Email/email.action';
 import { selectData } from 'src/app/store/Email/email.selector';
@@ -36,7 +36,11 @@ export class InboxComponent implements OnInit {
   startIndex: number = 1;
   endIndex: number = 15;
 
-  constructor(private modalService: BsModalService, public store: Store) {
+  constructor(
+    private modalService: BsModalService,
+    public store: Store,
+    private confirmationDialog: ConfirmationDialogService
+  ) {
   }
 
   ngOnInit() {
@@ -88,18 +92,12 @@ export class InboxComponent implements OnInit {
   }
 
   confirm() {
-    Swal.fire({
-      title: 'Are you sure?',
-      text: 'You won\'t be able to revert this!',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#34c38f',
-      cancelButtonColor: '#f46a6a',
-      confirmButtonText: 'Yes, delete it!'
+    this.confirmationDialog.confirmDelete({
+      successTitle: 'Deleted!',
+      successText: 'Mail has been deleted.'
     }).then(result => {
       if (result.value) {
         this.deleteMail();
-        Swal.fire('Deleted!', 'Mail has been deleted.', 'success');
       }
     });
   }
@@ -117,7 +115,7 @@ export class InboxComponent implements OnInit {
   }
 
   /**
-   * Category Filtering  
+   * Category Filtering
    */
   categoryFilter(e: any, name: any) {
     var removeClass = document.querySelectorAll('.mail-list a');

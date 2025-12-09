@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
 import { UntypedFormBuilder, UntypedFormGroup, FormArray, Validators } from '@angular/forms';
 
-import Swal from 'sweetalert2';
+import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
 
 import { Store } from '@ngrx/store';
 import { addCustomerlist, fetchCustomerData, updateCustomerlist } from 'src/app/store/customer/customer.action';
@@ -38,7 +38,13 @@ export class CustomersComponent {
   customersData: any;
   total: Observable<number>;
 
-  constructor(private modalService: BsModalService, private formBuilder: UntypedFormBuilder, private datePipe: DatePipe, public store: Store) {
+  constructor(
+    private modalService: BsModalService,
+    private formBuilder: UntypedFormBuilder,
+    private datePipe: DatePipe,
+    public store: Store,
+    private confirmationDialog: ConfirmationDialogService
+  ) {
   }
 
   ngOnInit() {
@@ -129,42 +135,14 @@ export class CustomersComponent {
 
   // Delete Data
   delete(id: any) {
-    const swalWithBootstrapButtons = Swal.mixin({
-      customClass: {
-        confirmButton: 'btn btn-success',
-        cancelButton: 'btn btn-danger ms-2'
-      },
-      buttonsStyling: false
+    this.confirmationDialog.confirmDelete({
+      useBootstrapButtons: true,
+      showCancelMessage: true
+    }).then(result => {
+      if (result.value) {
+        document.getElementById('c_' + id)?.remove();
+      }
     });
-
-    swalWithBootstrapButtons
-      .fire({
-        title: 'Are you sure?',
-        text: 'You won\'t be able to revert this!',
-        icon: 'warning',
-        confirmButtonText: 'Yes, delete it!',
-        cancelButtonText: 'No, cancel!',
-        showCancelButton: true
-      })
-      .then(result => {
-        if (result.value) {
-          swalWithBootstrapButtons.fire(
-            'Deleted!',
-            'Your file has been deleted.',
-            'success'
-          );
-          document.getElementById('c_' + id)?.remove();
-        } else if (
-          /* Read more about handling dismissals below */
-          result.dismiss === Swal.DismissReason.cancel
-        ) {
-          swalWithBootstrapButtons.fire(
-            'Cancelled',
-            'Your imaginary file is safe :)',
-            'error'
-          );
-        }
-      });
   }
   page: any = 1;
   // pagechanged
@@ -184,4 +162,4 @@ export class CustomersComponent {
       this.customersData = this.returnedArray
     }
   }
-} 
+}

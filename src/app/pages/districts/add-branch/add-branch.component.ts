@@ -4,6 +4,7 @@ import {
   Validators,
   UntypedFormGroup,
 } from "@angular/forms";
+import { LocationService, Country, State, District } from "src/app/core/services/location.service";
 
 @Component({
   selector: "app-add-district",
@@ -16,108 +17,43 @@ export class AddDistrictComponent implements OnInit {
   isEditMode: boolean = false;
   editingEventId: string | null = null;
 
-  // State and District data
-  states = [
-    { value: "maharashtra", label: "Maharashtra" },
-    { value: "karnataka", label: "Karnataka" },
-    { value: "tamil-nadu", label: "Tamil Nadu" },
-    { value: "telangana", label: "Telangana" },
-    { value: "andhra-pradesh", label: "Andhra Pradesh" },
-    { value: "kerala", label: "Kerala" },
-    { value: "gujarat", label: "Gujarat" },
-    { value: "rajasthan", label: "Rajasthan" },
-    { value: "madhya-pradesh", label: "Madhya Pradesh" },
-    { value: "uttar-pradesh", label: "Uttar Pradesh" },
-  ];
+  // Location data from API
+  countries: Country[] = [];
+  states: State[] = [];
+  districts: District[] = [];
 
-  districts: { [key: string]: Array<{ value: string; label: string }> } = {
-    maharashtra: [
-      { value: "mumbai", label: "Mumbai" },
-      { value: "pune", label: "Pune" },
-      { value: "nagpur", label: "Nagpur" },
-      { value: "thane", label: "Thane" },
-      { value: "nashik", label: "Nashik" },
-    ],
-    karnataka: [
-      { value: "bangalore", label: "Bangalore" },
-      { value: "mysore", label: "Mysore" },
-      { value: "mangalore", label: "Mangalore" },
-      { value: "hubli", label: "Hubli" },
-      { value: "belgaum", label: "Belgaum" },
-    ],
-    "tamil-nadu": [
-      { value: "chennai", label: "Chennai" },
-      { value: "coimbatore", label: "Coimbatore" },
-      { value: "madurai", label: "Madurai" },
-      { value: "salem", label: "Salem" },
-      { value: "tiruchirappalli", label: "Tiruchirappalli" },
-    ],
-    telangana: [
-      { value: "hyderabad", label: "Hyderabad" },
-      { value: "warangal", label: "Warangal" },
-      { value: "karimnagar", label: "Karimnagar" },
-      { value: "nizamabad", label: "Nizamabad" },
-      { value: "adilabad", label: "Adilabad" },
-    ],
-    "andhra-pradesh": [
-      { value: "vijayawada", label: "Vijayawada" },
-      { value: "visakhapatnam", label: "Visakhapatnam" },
-      { value: "guntur", label: "Guntur" },
-      { value: "nellore", label: "Nellore" },
-      { value: "kurnool", label: "Kurnool" },
-    ],
-    kerala: [
-      { value: "thiruvananthapuram", label: "Thiruvananthapuram" },
-      { value: "kochi", label: "Kochi" },
-      { value: "kozhikode", label: "Kozhikode" },
-      { value: "thrissur", label: "Thrissur" },
-      { value: "kollam", label: "Kollam" },
-    ],
-    gujarat: [
-      { value: "ahmedabad", label: "Ahmedabad" },
-      { value: "surat", label: "Surat" },
-      { value: "vadodara", label: "Vadodara" },
-      { value: "rajkot", label: "Rajkot" },
-      { value: "bhavnagar", label: "Bhavnagar" },
-    ],
-    rajasthan: [
-      { value: "jaipur", label: "Jaipur" },
-      { value: "jodhpur", label: "Jodhpur" },
-      { value: "kota", label: "Kota" },
-      { value: "bikaner", label: "Bikaner" },
-      { value: "ajmer", label: "Ajmer" },
-    ],
-    "madhya-pradesh": [
-      { value: "bhopal", label: "Bhopal" },
-      { value: "indore", label: "Indore" },
-      { value: "jabalpur", label: "Jabalpur" },
-      { value: "gwalior", label: "Gwalior" },
-      { value: "ujjain", label: "Ujjain" },
-    ],
-    "uttar-pradesh": [
-      { value: "lucknow", label: "Lucknow" },
-      { value: "kanpur", label: "Kanpur" },
-      { value: "varanasi", label: "Varanasi" },
-      { value: "agra", label: "Agra" },
-      { value: "allahabad", label: "Allahabad" },
-    ],
-  };
+  // Loading states
+  loadingCountries = false;
+  loadingStates = false;
+  loadingDistricts = false;
 
-  availableDistricts: Array<{ value: string; label: string }> = [];
-
-  constructor(public formBuilder: UntypedFormBuilder) {}
+  constructor(
+    public formBuilder: UntypedFormBuilder,
+    private locationService: LocationService
+  ) {}
 
   ngOnInit() {
     this.addDistrictForm = this.formBuilder.group({
+      country: ["", [Validators.required]],
       state: ["", [Validators.required]],
       district: ["", [Validators.required]],
     });
 
-    // Listen to state changes to update available districts
+    // Load countries on init
+    this.loadCountries();
+
+    // Listen to country changes to load states
+    this.addDistrictForm
+      .get("country")
+      ?.valueChanges.subscribe((selectedCountryId) => {
+        this.onCountryChange(selectedCountryId);
+      });
+
+    // Listen to state changes to load districts
     this.addDistrictForm
       .get("state")
-      ?.valueChanges.subscribe((selectedState) => {
-        this.onStateChange(selectedState);
+      ?.valueChanges.subscribe((selectedStateId) => {
+        this.onStateChange(selectedStateId);
       });
 
     // Add keyboard event listener for Escape key
@@ -128,19 +64,91 @@ export class AddDistrictComponent implements OnInit {
     });
   }
 
+  /**
+   * Load countries from API
+   */
+  loadCountries(): void {
+    this.loadingCountries = true;
+    this.locationService.getCountries().subscribe({
+      next: (countries) => {
+        this.countries = countries;
+        this.loadingCountries = false;
+      },
+      error: (error) => {
+        console.error('Error loading countries:', error);
+        this.loadingCountries = false;
+      }
+    });
+  }
+
+  /**
+   * Handle country selection change - load states by country
+   */
+  onCountryChange(selectedCountryId: string): void {
+    if (!selectedCountryId) {
+      this.states = [];
+      this.districts = [];
+      this.addDistrictForm.patchValue({ state: '', district: '' });
+      return;
+    }
+
+    const countryId = parseInt(selectedCountryId, 10);
+    if (isNaN(countryId)) {
+      return;
+    }
+
+    this.loadingStates = true;
+    this.locationService.getStatesByCountry(countryId).subscribe({
+      next: (states) => {
+        this.states = states;
+        this.loadingStates = false;
+        // Reset state and district when country changes
+        this.addDistrictForm.patchValue({ state: '', district: '' });
+        this.districts = [];
+      },
+      error: (error) => {
+        console.error('Error loading states:', error);
+        this.loadingStates = false;
+        this.states = [];
+      }
+    });
+  }
+
   get form() {
     return this.addDistrictForm.controls;
   }
 
-  onStateChange(selectedState: string): void {
-    if (selectedState) {
-      this.availableDistricts = this.districts[selectedState] || [];
-      // Reset district selection when state changes
+  /**
+   * Handle state selection change - load districts by state and country
+   */
+  onStateChange(selectedStateId: string): void {
+    if (!selectedStateId) {
+      this.districts = [];
       this.addDistrictForm.patchValue({ district: "" });
-    } else {
-      this.availableDistricts = [];
-      this.addDistrictForm.patchValue({ district: "" });
+      return;
     }
+
+    const stateId = parseInt(selectedStateId, 10);
+    const countryId = parseInt(this.addDistrictForm.get('country')?.value || '0', 10);
+
+    if (isNaN(stateId) || isNaN(countryId)) {
+      return;
+    }
+
+    this.loadingDistricts = true;
+    this.locationService.getDistrictsByStateAndCountry(stateId, countryId).subscribe({
+      next: (districts) => {
+        this.districts = districts;
+        this.loadingDistricts = false;
+        // Reset district when state changes
+        this.addDistrictForm.patchValue({ district: "" });
+      },
+      error: (error) => {
+        console.error('Error loading districts:', error);
+        this.loadingDistricts = false;
+        this.districts = [];
+      }
+    });
   }
 
   validSubmit() {
@@ -167,7 +175,8 @@ export class AddDistrictComponent implements OnInit {
   resetForm() {
     this.submit = false;
     this.addDistrictForm.reset();
-    this.availableDistricts = [];
+    this.states = [];
+    this.districts = [];
     this.isEditMode = false;
     this.editingEventId = null;
   }
@@ -176,19 +185,43 @@ export class AddDistrictComponent implements OnInit {
     this.isEditMode = true;
     this.editingEventId = eventData.id;
 
-    // Set the state first to enable district selection
-    this.addDistrictForm.patchValue({
-      state: this.findStateByLabel(eventData.state),
-      district: eventData.district,
-    });
+    // If country is provided, load states first
+    if (eventData.country_id) {
+      this.addDistrictForm.patchValue({ country: eventData.country_id });
 
-    // Trigger state change to populate districts
-    this.onStateChange(this.findStateByLabel(eventData.state));
-  }
+      // Wait for states to load, then set state
+      setTimeout(() => {
+        if (eventData.state_id) {
+          this.addDistrictForm.patchValue({ state: eventData.state_id });
 
-  findStateByLabel(stateLabel: string): string {
-    const state = this.states.find((s) => s.label === stateLabel);
-    return state ? state.value : "";
+          // Wait for districts to load, then set district
+          setTimeout(() => {
+            if (eventData.district_id) {
+              this.addDistrictForm.patchValue({ district: eventData.district_id });
+            }
+          }, 300);
+        }
+      }, 300);
+    } else {
+      // Fallback: try to find by name if IDs not available
+      // This is less reliable but handles legacy data
+      const country = this.countries.find(c => c.name === eventData.country);
+      if (country) {
+        this.addDistrictForm.patchValue({ country: country.id });
+        setTimeout(() => {
+          const state = this.states.find(s => s.name === eventData.state);
+          if (state) {
+            this.addDistrictForm.patchValue({ state: state.id });
+            setTimeout(() => {
+              const district = this.districts.find(d => d.name === eventData.district);
+              if (district) {
+                this.addDistrictForm.patchValue({ district: district.id });
+              }
+            }, 300);
+          }
+        }, 300);
+      }
+    }
   }
 
   closeModal() {

@@ -10,6 +10,7 @@ import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { category, calendarEvents, createEventId } from './data';
 
 import Swal from 'sweetalert2';
+import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
 
 @Component({
   selector: 'app-calendar',
@@ -108,7 +109,8 @@ export class CalendarComponent implements OnInit {
 
   constructor(
     private modalService: BsModalService,
-    private formBuilder: UntypedFormBuilder
+    private formBuilder: UntypedFormBuilder,
+    private confirmationDialog: ConfirmationDialogService
   ) { }
 
   get form() {
@@ -119,18 +121,12 @@ export class CalendarComponent implements OnInit {
    * Delete-confirm
    */
   confirm() {
-    Swal.fire({
-      title: 'Are you sure?',
-      text: 'You won\'t be able to revert this!',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#34c38f',
-      cancelButtonColor: '#f46a6a',
-      confirmButtonText: 'Yes, delete it!',
+    this.confirmationDialog.confirmDelete({
+      successTitle: 'Deleted!',
+      successText: 'Event has been deleted.'
     }).then((result) => {
       if (result.value) {
         this.deleteEventData();
-        Swal.fire('Deleted!', 'Event has been deleted.', 'success');
       }
     });
   }

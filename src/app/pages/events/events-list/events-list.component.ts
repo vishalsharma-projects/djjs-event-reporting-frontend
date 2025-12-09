@@ -1,6 +1,8 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
+import { EventApiService, EventDetails } from 'src/app/core/services/event-api.service';
+import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
 
 interface EventData {
   id: string;
@@ -75,6 +77,7 @@ interface EventData {
     quantity: number;
     size: string;
   }>;
+  status?: string;
 }
 
 @Component({
@@ -86,33 +89,40 @@ export class EventsListComponent implements OnInit {
 
   // PrimeNG Table Configuration
   events: EventData[] = [];
-  
+
   // Pagination
   first = 0;
   rows = 5;
   rowsPerPageOptions = [5, 10, 20];
-  
+
   // Sorting
   sortField: string = '';
   sortOrder: number = 1;
-  
+
   // Filtering - using custom filter system
   filters: { [key: string]: any } = {};
-  
+
   // Column pinning
   pinnedColumns: string[] = [];
-  
+
   // Additional filtering methods
   activeFilter: string | null = null;
-  
+
+  // Status filter
+  statusFilter: 'all' | 'complete' | 'incomplete' = 'all';
+  loadingEvents: boolean = false;
+
+  // Drafts management
+  draftsCount: number = 0;
+
   // Dropdown management
   openDropdown: string | null = null;
-  
+
   // Modal management
   selectedEvent: EventData | null = null;
   selectedMediaType: string | null = null; // Track which media type was clicked
   isMoreDetailsModalOpen: boolean = false; // Track if More Details modal was open
-  
+
   // Sample data with simple events structure
   allEvents: EventData[] = [
     {
@@ -845,13 +855,107 @@ export class EventsListComponent implements OnInit {
 
   constructor(
     private router: Router,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private eventApiService: EventApiService,
+    private confirmationDialog: ConfirmationDialogService
   ) { }
 
   ngOnInit(): void {
-    this.events = [...this.allEvents];
+    this.loadEvents();
     this.initializeFilters();
   }
+
+  /**
+   * Load events from API
+   */
+  loadEvents(): void {
+    this.loadingEvents = true;
+    const status = this.statusFilter === 'all' ? undefined : this.statusFilter;
+
+    this.eventApiService.getEvents(status).subscribe({
+      next: (apiEvents) => {
+        // Map API events to component EventData format
+        this.events = apiEvents.map(event => this.mapApiEventToEventData(event));
+
+        // Count drafts (incomplete events)
+        this.draftsCount = this.events.filter(e => e.status === 'incomplete').length;
+
+        this.loadingEvents = false;
+      },
+      error: (error) => {
+        console.error('Error loading events:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to load events. Using sample data.',
+          life: 3000
+        });
+        // Fallback to sample data - ensure all have status
+        this.events = this.allEvents.map(e => ({
+          ...e,
+          status: e.status || 'incomplete'
+        }));
+        this.draftsCount = this.events.filter(e => e.status === 'incomplete').length;
+        this.loadingEvents = false;
+      }
+    });
+  }
+
+  /**
+   * Update status filter and reload events
+   */
+  onStatusFilterChange(): void {
+    this.loadEvents();
+  }
+
+  /**
+   * Continue editing a draft
+   */
+  continueDraft(eventId: string): void {
+    this.router.navigate(['/events/add', eventId]);
+  }
+
+  /**
+   * Map API EventDetails to component EventData format
+   */
+  mapApiEventToEventData(event: EventDetails): EventData {
+    const startDate = event.start_date ? new Date(event.start_date).toLocaleDateString() : '';
+    const endDate = event.end_date ? new Date(event.end_date).toLocaleDateString() : '';
+    const duration = startDate && endDate ? `${startDate} - ${endDate}` : '';
+
+    return {
+      id: String(event.id),
+      eventType: event.event_type?.name || '',
+      scale: event.scale || '',
+      name: event.event_category?.name || '',
+      duration: duration,
+      timing: event.daily_start_time && event.daily_end_time
+        ? `${event.daily_start_time} - ${event.daily_end_time}`
+        : '',
+      state: event.state || '',
+      city: event.city || '',
+      spiritualOrator: event.spiritual_orator || '',
+      language: '', // Not in API
+      branch: '', // Not in API
+      beneficiaries: {
+        total: (event.beneficiary_men || 0) + (event.beneficiary_women || 0) + (event.beneficiary_child || 0),
+        men: event.beneficiary_men || 0,
+        women: event.beneficiary_women || 0,
+        children: event.beneficiary_child || 0
+      },
+      initiation: {
+        total: (event.initiation_men || 0) + (event.initiation_women || 0) + (event.initiation_child || 0),
+        men: event.initiation_men || 0,
+        women: event.initiation_women || 0,
+        children: event.initiation_child || 0
+      },
+      specialGuests: event.special_guests_count || 0,
+      volunteers: event.volunteers_count || 0,
+      theme: event.theme || '',
+      status: event.status || 'incomplete'
+    };
+  }
+
   goToAddEvent() {
     this.router.navigate(['/events/add']);
   }
@@ -912,20 +1016,25 @@ export class EventsListComponent implements OnInit {
   }
 
   // Close dropdown when clicking outside
-  @HostListener('document:click')
-  onDocumentClick(event: Event): void {
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event | null): void {
+    // Check if event exists and has target
+    if (!event || !event.target) {
+      return;
+    }
+
     const target = event.target as HTMLElement;
-    
+
     // Close dropdowns if clicking outside
     if (!target.closest('.dropdown-container')) {
       this.closeDropdown();
     }
-    
+
     // Close filters if clicking outside
     if (!target.closest('.filter-overlay')) {
       this.activeFilter = null;
     }
-    
+
     // Close modals if clicking outside
     if (!target.closest('.modal') && !target.closest('.modal-backdrop')) {
       this.closeAllModals();
@@ -1050,7 +1159,7 @@ export class EventsListComponent implements OnInit {
      this.router.navigate(['/view']);
   }
 
-   openGallery(event: EventData): void {   
+   openGallery(event: EventData): void {
      this.router.navigate(['/gallery']);
   }
 
@@ -1093,7 +1202,7 @@ export class EventsListComponent implements OnInit {
   closeMediaContentModal(): void {
     this.closeModal('mediaContentModal');
     this.selectedMediaType = null;
-    
+
     // If More Details modal was open, restore it
     if (this.isMoreDetailsModalOpen && this.selectedEvent) {
       setTimeout(() => {
@@ -1125,8 +1234,89 @@ export class EventsListComponent implements OnInit {
   }
 
   downloadEvent(eventId: string): void {
-    console.log('Download event:', eventId);
-    // Implement download functionality
+    if (!eventId) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Warning',
+        detail: 'Event ID is required for download',
+        life: 3000
+      });
+      return;
+    }
+
+    // Call backend API to download event data
+    this.eventApiService.downloadEvent(Number(eventId)).subscribe({
+      next: (blob: Blob) => {
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `event_${eventId}_${new Date().getTime()}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Event downloaded successfully',
+          life: 3000
+        });
+      },
+      error: (error) => {
+        console.error('Error downloading event:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: error?.error?.error || 'Failed to download event',
+          life: 5000
+        });
+      }
+    });
+  }
+
+  deleteEvent(eventId: string): void {
+    if (!eventId) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Warning',
+        detail: 'Event ID is required for deletion',
+        life: 3000
+      });
+      return;
+    }
+
+    // Show confirmation dialog
+    this.confirmationDialog.confirmDelete({
+      title: 'Delete Event',
+      text: 'Are you sure you want to delete this event? This action cannot be undone.',
+      showSuccessMessage: false // We'll use PrimeNG message service instead
+    }).then((result) => {
+      if (result.value) {
+        this.eventApiService.deleteEvent(Number(eventId)).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Success',
+              detail: 'Event deleted successfully',
+              life: 3000
+            });
+            // Reload events list
+            this.loadEvents();
+          },
+          error: (error) => {
+            console.error('Error deleting event:', error);
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: error?.error?.error || 'Failed to delete event',
+              life: 5000
+            });
+          }
+        });
+      }
+    });
   }
 
   getTooltipText(type: 'beneficiaries' | 'initiation', event: EventData): string {

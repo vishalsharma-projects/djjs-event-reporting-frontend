@@ -16,6 +16,10 @@ const routes: Routes = [
     component: AddEventComponent
   },
   {
+    path: 'add/:id',
+    component: AddEventComponent
+  },
+  {
     path: 'view',
     component: ViewEventComponent
   },

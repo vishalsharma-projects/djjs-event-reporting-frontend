@@ -1,3 +1,6 @@
+<!-- PrimeNG Toast Component -->
+<p-toast></p-toast>
+
 <div class="gallery-layout">
 
   <!-- Left: Vertical Categories -->
@@ -23,6 +26,14 @@
       <h3>{{ monthYear }}</h3>
       <div class="gallery">
         <div *ngFor="let item of filteredItemsByMonth[monthYear]" class="thumbnail" (click)="openPopup(item)">
+          <div class="thumbnail-overlay">
+            <button class="btn btn-sm btn-light me-1" (click)="downloadItem(item, $event)" title="Download">
+              <i class="pi pi-download"></i>
+            </button>
+            <button class="btn btn-sm btn-danger" (click)="deleteItem(item, $event)" title="Delete">
+              <i class="pi pi-trash"></i>
+            </button>
+          </div>
           <ng-container [ngSwitch]="item.type">
 
             <img *ngSwitchCase="'image'" [src]="item.url" [alt]="item.name">
@@ -50,7 +61,18 @@
 <!-- Popup Modal -->
 <div class="popup" *ngIf="selectedItem" (click)="closePopup()">
   <div class="popup-content" (click)="$event.stopPropagation()">
-    <span class="close-btn" (click)="closePopup()">×</span>
+    <div class="popup-header">
+      <h5>{{ selectedItem.name }}</h5>
+      <div class="popup-actions">
+        <button class="btn btn-sm btn-light me-2" (click)="downloadItem(selectedItem, $event)" title="Download">
+          <i class="pi pi-download me-1"></i> Download
+        </button>
+        <button class="btn btn-sm btn-danger" (click)="deleteItem(selectedItem, $event)" title="Delete">
+          <i class="pi pi-trash me-1"></i> Delete
+        </button>
+        <span class="close-btn" (click)="closePopup()">×</span>
+      </div>
+    </div>
 
     <ng-container [ngSwitch]="selectedItem.type">
 

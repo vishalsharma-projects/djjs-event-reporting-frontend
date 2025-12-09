@@ -27,6 +27,33 @@
           (ngSubmit)="validSubmit()"
           [formGroup]="addDistrictForm"
         >
+          <!-- Select Country -->
+          <div class="mb-3">
+            <label for="country" class="form-label">Select Country</label>
+            <div class="input-group">
+              <select
+                class="form-select"
+                id="country"
+                formControlName="country"
+                [disabled]="loadingCountries"
+                [ngClass]="{ 'is-invalid': submit && form.country.errors }"
+              >
+                <option value="">Select</option>
+                <option *ngFor="let country of countries" [value]="country.id">
+                  {{ country.name }}
+                </option>
+              </select>
+              <span class="input-group-text">
+                <i class="fas fa-chevron-down"></i>
+              </span>
+            </div>
+            <div *ngIf="submit && form.country.errors" class="invalid-feedback">
+              <span *ngIf="form.country.errors.required"
+                >Please select a country.</span
+              >
+            </div>
+          </div>
+
           <!-- Select State -->
           <div class="mb-3">
             <label for="state" class="form-label">Select State</label>
@@ -35,11 +62,12 @@
                 class="form-select"
                 id="state"
                 formControlName="state"
+                [disabled]="!addDistrictForm.get('country')?.value || loadingStates"
                 [ngClass]="{ 'is-invalid': submit && form.state.errors }"
               >
                 <option value="">Select</option>
-                <option *ngFor="let state of states" [value]="state.value">
-                  {{ state.label }}
+                <option *ngFor="let state of states" [value]="state.id">
+                  {{ state.name }}
                 </option>
               </select>
               <span class="input-group-text">
@@ -49,6 +77,14 @@
             <div *ngIf="submit && form.state.errors" class="invalid-feedback">
               <span *ngIf="form.state.errors.required"
                 >Please select a state.</span
+              >
+            </div>
+            <div
+              *ngIf="!addDistrictForm.get('country')?.value"
+              class="form-text text-muted"
+            >
+              <small
+                >Please select a country first to enable state selection</small
               >
             </div>
           </div>
@@ -61,15 +97,15 @@
                 class="form-select"
                 id="district"
                 formControlName="district"
-                [disabled]="!addDistrictForm.get('state')?.value"
+                [disabled]="!addDistrictForm.get('state')?.value || loadingDistricts"
                 [ngClass]="{ 'is-invalid': submit && form.district.errors }"
               >
                 <option value="">Select</option>
                 <option
-                  *ngFor="let district of availableDistricts"
-                  [value]="district.value"
+                  *ngFor="let district of districts"
+                  [value]="district.id"
                 >
-                  {{ district.label }}
+                  {{ district.name }}
                 </option>
               </select>
               <span class="input-group-text">

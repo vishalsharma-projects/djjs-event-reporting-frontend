@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 
 import Swal from 'sweetalert2';
+import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
 
 @Component({
   selector: 'app-sweetalert',
@@ -15,7 +16,7 @@ export class SweetalertComponent implements OnInit {
 
   // bread crum items
   breadCrumbItems: Array<{}>;
-  constructor() { }
+  constructor(private confirmationDialog: ConfirmationDialogService) { }
 
   ngOnInit() {
     this.breadCrumbItems = [{ label: 'UI Elements' }, { label: 'SweetAlert 2', active: true }];
@@ -43,57 +44,18 @@ export class SweetalertComponent implements OnInit {
   }
 
   confirm() {
-    Swal.fire({
-      title: 'Are you sure?',
-      text: 'You won\'t be able to revert this!',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#34c38f',
-      cancelButtonColor: '#f46a6a',
-      confirmButtonText: 'Yes, delete it!'
-    }).then(result => {
-      if (result.value) {
-        Swal.fire('Deleted!', 'Your file has been deleted.', 'success');
-      }
+    this.confirmationDialog.confirmDelete().then(result => {
+      // Result handled by service
     });
   }
 
   cancel() {
-    const swalWithBootstrapButtons = Swal.mixin({
-      customClass: {
-        confirmButton: 'btn btn-success',
-        cancelButton: 'btn btn-danger ms-2'
-      },
-      buttonsStyling: false
+    this.confirmationDialog.confirmDelete({
+      useBootstrapButtons: true,
+      showCancelMessage: true
+    }).then(result => {
+      // Result handled by service
     });
-
-    swalWithBootstrapButtons
-      .fire({
-        title: 'Are you sure?',
-        text: 'You won\'t be able to revert this!',
-        icon: 'warning',
-        confirmButtonText: 'Yes, delete it!',
-        cancelButtonText: 'No, cancel!',
-        showCancelButton: true
-      })
-      .then(result => {
-        if (result.value) {
-          swalWithBootstrapButtons.fire(
-            'Deleted!',
-            'Your file has been deleted.',
-            'success'
-          );
-        } else if (
-          /* Read more about handling dismissals below */
-          result.dismiss === Swal.DismissReason.cancel
-        ) {
-          swalWithBootstrapButtons.fire(
-            'Cancelled',
-            'Your imaginary file is safe :)',
-            'error'
-          );
-        }
-      });
   }
   imageHeader() {
     Swal.fire({

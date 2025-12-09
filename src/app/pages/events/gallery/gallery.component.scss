@@ -55,7 +55,7 @@
   margin-bottom: 15px;
 }
 
-.tabs button {  
+.tabs button {
   border-radius: 6px;
   font-weight: 500;
   border: none;
@@ -71,6 +71,31 @@
 .tabs button:hover {
   background-color: #fb8c00;
   color: white;
+}
+
+/* Thumbnail with overlay */
+.thumbnail {
+  position: relative;
+  overflow: hidden;
+}
+
+.thumbnail-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 10;
+}
+
+.thumbnail:hover .thumbnail-overlay {
+  opacity: 1;
 }
 
 /* Gallery grid */
@@ -115,6 +140,27 @@
   text-decoration: underline;
 }
 
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 1rem;
+}
+
+.popup-header h5 {
+  margin: 0;
+  flex: 1;
+}
+
+.popup-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 
 .popup {
   position: fixed;

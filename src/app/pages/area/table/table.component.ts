@@ -1,6 +1,7 @@
 import { Component, OnInit } from "@angular/core";
 import { Router } from "@angular/router";
 import { MessageService } from "primeng/api";
+import { LocationService, Branch } from "src/app/core/services/location.service";
 
 interface EventData {
   id: string;
@@ -70,60 +71,50 @@ export class TableComponent implements OnInit {
     },
   ];
 
-  // Sample data with new branch structure
-  branches: BranchData[] = [
-    {
-      id: "1",
-      branchName: "Bangalore Central Branch",
-      branchManagerName: "Rajesh Kumar",
-      assistantBranchManagerName: "Priya Sharma",
-      events: [
-        { id: "1", areaName: "Basavanagudi", areaCoverage: 15 },
-        { id: "2", areaName: "Jayanagar", areaCoverage: 20 },
-        { id: "3", areaName: "Malleshwaram", areaCoverage: 25 },
-        { id: "4", areaName: "Whitefield", areaCoverage: 30 },
-        { id: "5", areaName: "Koramangala", areaCoverage: 28 },
-        { id: "6", areaName: "Indiranagar", areaCoverage: 22 },
-      ],
-    },
-    {
-      id: "2",
-      branchName: "Mumbai Western Branch",
-      branchManagerName: "Amit Patel",
-      assistantBranchManagerName: "Neha Singh",
-      events: [
-        { id: "7", areaName: "Andheri West", areaCoverage: 18 },
-        { id: "8", areaName: "Bandra", areaCoverage: 28 },
-        { id: "9", areaName: "Dadar", areaCoverage: 25 },
-        { id: "10", areaName: "Goregaon", areaCoverage: 21 },
-        { id: "11", areaName: "Juhu", areaCoverage: 27 },
-        { id: "12", areaName: "Malad", areaCoverage: 23 },
-      ],
-    },
-    {
-      id: "3",
-      branchName: "Delhi North Branch",
-      branchManagerName: "Suresh Verma",
-      assistantBranchManagerName: "Kavita Gupta",
-      events: [
-        { id: "13", areaName: "Connaught Place", areaCoverage: 22 },
-        { id: "14", areaName: "Karol Bagh", areaCoverage: 26 },
-        { id: "15", areaName: "Chandni Chowk", areaCoverage: 30 },
-        { id: "16", areaName: "Rohini", areaCoverage: 24 },
-        { id: "17", areaName: "Pitampura", areaCoverage: 20 },
-        { id: "18", areaName: "Shalimar Bagh", areaCoverage: 19 },
-      ],
-    },
-  ];
+  branches: BranchData[] = [];
+  loading: boolean = false;
 
-  constructor(private router: Router, private messageService: MessageService) {}
+  constructor(
+    private router: Router,
+    private messageService: MessageService,
+    private locationService: LocationService
+  ) {}
 
   ngOnInit(): void {
     // Don't expand any branch by default
     this.expandedRows = {};
     console.log("Initial expandedRows:", this.expandedRows);
+    // Load branches from API
+    this.loadBranches();
   }
-  
+
+  loadBranches(): void {
+    this.loading = true;
+    this.locationService.getAllBranches().subscribe({
+      next: (branches: Branch[]) => {
+        // Convert API branch data to BranchData format
+        // Note: Areas/events data structure may need to be adjusted based on actual API response
+        this.branches = branches.map(branch => ({
+          id: branch.id?.toString() || '',
+          branchName: branch.name || 'Unnamed Branch',
+          branchManagerName: branch.coordinator_name || 'Not specified',
+          assistantBranchManagerName: '', // Not available in API response
+          events: [] // Areas data would need to be loaded separately if available
+        }));
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading branches:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to load branches. Please try again.'
+        });
+        this.loading = false;
+        this.branches = [];
+      }
+    });
+  }
 
   getTotalAreaCoverage(branches: BranchData): number {
     return branches.events?.reduce((sum, e) => sum + e.areaCoverage, 0) || 0;
