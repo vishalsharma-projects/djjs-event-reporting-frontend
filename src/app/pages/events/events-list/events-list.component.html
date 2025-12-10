@@ -504,28 +504,32 @@
             <td [class.pinned-column]="isColumnPinned('spiritualOrator')">{{ event.spiritualOrator || '-' }}</td>
             <td [class.pinned-column]="isColumnPinned('language')">{{ event.language }}</td>
             <td [class.pinned-column]="isColumnPinned('beneficiaries')">
-              <span class="cursor-pointer" (click)="openBeneficiariesModal(event)">
+              <span class="cursor-pointer text-primary" (click)="openBeneficiariesModal(event); $event.stopPropagation()">
                 {{ event.beneficiaries.total }}
               </span>
               <i class="pi pi-info-circle text-primary ms-1" pTooltip="Click to view Beneficiaries details"
                 tooltipPosition="top"></i>
             </td>
             <td [class.pinned-column]="isColumnPinned('initiation')">
-              <span class="cursor-pointer" (click)="openInitiationModal(event)">
+              <span class="cursor-pointer text-primary" (click)="openInitiationModal(event); $event.stopPropagation()">
                 {{ event.initiation.total }}
               </span>
               <i class="pi pi-info-circle text-primary ms-1" pTooltip="Click to view Initiation details"
                 tooltipPosition="top"></i>
             </td>
             <td [class.pinned-column]="isColumnPinned('specialGuests')">
-              <span class="cursor-pointer" (click)="openSpecialGuestsModal(event)">
+              <span class="cursor-pointer text-primary" (click)="openSpecialGuestsModal(event); $event.stopPropagation()">
                 {{ event.specialGuests }}
               </span>
+              <i class="pi pi-info-circle text-primary ms-1" pTooltip="Click to view Special Guests"
+                tooltipPosition="top"></i>
             </td>
             <td [class.pinned-column]="isColumnPinned('volunteers')">
-              <span class="cursor-pointer" (click)="openVolunteersModal(event)">
+              <span class="cursor-pointer text-primary" (click)="openVolunteersModal(event); $event.stopPropagation()">
                 {{ event.volunteers }}
               </span>
+              <i class="pi pi-info-circle text-primary ms-1" pTooltip="Click to view Volunteers"
+                tooltipPosition="top"></i>
             </td>
             <td [class.pinned-column]="isColumnPinned('actions')">
               <div class="d-flex gap-1">
@@ -569,9 +573,9 @@
 
 <!-- Beneficiaries Modal -->
 <div class="modal fade" id="beneficiariesModal" tabindex="-1" aria-labelledby="beneficiariesModalLabel"
-  aria-hidden="true">
+  aria-hidden="true" (click)="closeModal('beneficiariesModal')">
   <div class="modal-dialog modal-lg">
-    <div class="modal-content">
+    <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h5 class="modal-title" id="beneficiariesModalLabel">
           Beneficiaries ({{ selectedEvent?.beneficiaries?.total }})
@@ -615,12 +619,12 @@
 </div>
 
 <!-- Initiation Modal -->
-<div class="modal fade" id="initiationModal" tabindex="-1" aria-labelledby="initiationModalLabel" aria-hidden="true">
+<div class="modal fade" id="initiationModal" tabindex="-1" aria-labelledby="initiationModalLabel" aria-hidden="true" (click)="closeModal('initiationModal')">
   <div class="modal-dialog modal-lg">
-    <div class="modal-content">
+    <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h5 class="modal-title" id="initiationModalLabel">
-          Initiation ({{ selectedEvent?.initiation?.total }})
+          Initiation ({{ selectedEvent?.initiation?.total || 0 }})
         </h5>
         <button type="button" class="btn-close" (click)="closeModal('initiationModal')" aria-label="Close"></button>
       </div>
@@ -662,50 +666,44 @@
 
 <!-- Special Guests Modal -->
 <div class="modal fade" id="specialGuestsModal" tabindex="-1" aria-labelledby="specialGuestsModalLabel"
-  aria-hidden="true">
+  aria-hidden="true" (click)="closeModal('specialGuestsModal')">
   <div class="modal-dialog modal-xl">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="specialGuestsModalLabel">
-          Special Guests ({{ selectedEvent?.specialGuests }})
-        </h5>
-        <button type="button" class="btn-close" (click)="closeModal('specialGuestsModal')" aria-label="Close"></button>
-      </div>
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h5 class="modal-title" id="specialGuestsModalLabel">
+            Special guest ({{ selectedEvent?.specialGuests || 0 }})
+          </h5>
+          <button type="button" class="btn-close" (click)="closeModal('specialGuestsModal')" aria-label="Close"></button>
+        </div>
       <div class="modal-body">
-        <div class="table-responsive">
+        <div *ngIf="!selectedEvent?.specialGuestsList || selectedEvent.specialGuestsList.length === 0" class="text-center p-4">
+          <i class="pi pi-users text-muted" style="font-size: 3rem;"></i>
+          <p class="text-muted mt-3">No special guests found for this event.</p>
+        </div>
+        <div *ngIf="selectedEvent?.specialGuestsList && selectedEvent.specialGuestsList.length > 0" class="table-responsive">
           <table class="table table-striped">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Phone</th>
+                <th>Name (Phone no.)</th>
                 <th>Gender</th>
                 <th>Designation</th>
                 <th>Organization</th>
                 <th>Email</th>
-                <th>City</th>
-                <th>State</th>
-                <th>Personal No</th>
-                <th>Contact Person</th>
-                <th>Contact Phone</th>
-                <th>Reference Person</th>
-                <th>Reference Phone</th>
+                <th>City, State</th>
+                <th>Contact Person (Phone no.)</th>
+                <th>Reference Person (Phone no.)</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let guest of selectedEvent?.specialGuestsList">
-                <td>{{ guest.name }}</td>
-                <td>{{ guest.phone }}</td>
+              <tr *ngFor="let guest of selectedEvent.specialGuestsList">
+                <td>{{ guest.name }} ({{ guest.phone }})</td>
                 <td>{{ guest.gender }}</td>
                 <td>{{ guest.designation }}</td>
                 <td>{{ guest.organization }}</td>
                 <td>{{ guest.email }}</td>
-                <td>{{ guest.city }}</td>
-                <td>{{ guest.state }}</td>
-                <td>{{ guest.personalNo }}</td>
-                <td>{{ guest.contactPerson }}</td>
-                <td>{{ guest.contactPhone }}</td>
-                <td>{{ guest.referencePerson }}</td>
-                <td>{{ guest.referencePhone }}</td>
+                <td>{{ guest.city }}, {{ guest.state }}</td>
+                <td>{{ guest.contactPerson }} ({{ guest.contactPhone }})</td>
+                <td>{{ guest.referencePerson }} ({{ guest.referencePhone }})</td>
               </tr>
             </tbody>
           </table>
@@ -719,30 +717,40 @@
 </div>
 
 <!-- Volunteers Modal -->
-<div class="modal fade" id="volunteersModal" tabindex="-1" aria-labelledby="volunteersModalLabel" aria-hidden="true">
+<div class="modal fade" id="volunteersModal" tabindex="-1" aria-labelledby="volunteersModalLabel" aria-hidden="true" (click)="closeModal('volunteersModal')">
   <div class="modal-dialog modal-lg">
-    <div class="modal-content">
+    <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h5 class="modal-title" id="volunteersModalLabel">
-          Volunteers ({{ selectedEvent?.volunteers }})
+          Volunteer ({{ selectedEvent?.volunteers || 0 }})
         </h5>
         <button type="button" class="btn-close" (click)="closeModal('volunteersModal')" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <div class="table-responsive">
+        <div *ngIf="!selectedEvent?.volunteersList || selectedEvent.volunteersList.length === 0" class="text-center p-4">
+          <i class="pi pi-users text-muted" style="font-size: 3rem;"></i>
+          <p class="text-muted mt-3">No volunteers found for this event.</p>
+        </div>
+        <div *ngIf="selectedEvent?.volunteersList && selectedEvent.volunteersList.length > 0" class="table-responsive">
           <table class="table table-striped">
             <thead>
               <tr>
+                <th>Branch</th>
                 <th>Name</th>
-                <th>Days</th>
-                <th>Seva</th>
+                <th>Gender</th>
+                <th>Contact no.</th>
+                <th>Seva Inlvolved</th>
+                <th>No. of Days</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let volunteer of selectedEvent?.volunteersList">
+              <tr *ngFor="let volunteer of selectedEvent.volunteersList">
+                <td>{{ volunteer.branch || 'Branch name' }}</td>
                 <td>{{ volunteer.name }}</td>
-                <td>{{ volunteer.days }}</td>
+                <td>{{ volunteer.gender || 'N/A' }}</td>
+                <td>{{ volunteer.contact || '000000000' }}</td>
                 <td>{{ volunteer.seva }}</td>
+                <td>{{ volunteer.days }}</td>
               </tr>
             </tbody>
           </table>

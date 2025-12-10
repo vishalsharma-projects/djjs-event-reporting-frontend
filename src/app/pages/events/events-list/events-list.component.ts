@@ -48,7 +48,10 @@ interface EventData {
     referencePhone: string;
   }>;
   volunteersList?: Array<{
+    branch?: string;
     name: string;
+    gender?: string;
+    contact?: string;
     days: number;
     seva: string;
   }>;
@@ -1087,57 +1090,127 @@ export class EventsListComponent implements OnInit {
   // Modal methods
   openSpecialGuestsModal(event: EventData): void {
     this.selectedEvent = event;
-    const modal = document.getElementById('specialGuestsModal');
-    if (modal) {
-      modal.classList.add('show');
-      modal.style.display = 'block';
-      modal.setAttribute('aria-hidden', 'false');
-      document.body.classList.add('modal-open');
-      const backdrop = document.createElement('div');
-      backdrop.className = 'modal-backdrop fade show';
-      document.body.appendChild(backdrop);
+
+    // Fetch full event data with special guests if not already loaded
+    if (!event.specialGuestsList || event.specialGuestsList.length === 0) {
+      this.eventApiService.getEventById(Number(event.id)).subscribe({
+        next: (response) => {
+          if (response.specialGuests && response.specialGuests.length > 0) {
+            // Map backend format to frontend format
+            this.selectedEvent!.specialGuestsList = response.specialGuests.map((sg: any) => ({
+              name: `${sg.first_name || ''} ${sg.middle_name || ''} ${sg.last_name || ''}`.trim() || 'N/A',
+              phone: sg.personal_number || sg.contact || 'N/A',
+              gender: sg.gender || 'N/A',
+              designation: sg.designation || 'N/A',
+              organization: sg.organization || 'N/A',
+              email: sg.email || 'N/A',
+              city: sg.city || 'N/A',
+              state: sg.state || 'N/A',
+              personalNo: sg.personal_number || 'N/A',
+              contactPerson: sg.contact_person || 'N/A',
+              contactPhone: sg.contact_person_number || 'N/A',
+              referencePerson: sg.reference_person_name || 'N/A',
+              referencePhone: 'N/A' // Not in backend model
+            }));
+          } else {
+            this.selectedEvent!.specialGuestsList = [];
+          }
+          this.openModal('specialGuestsModal');
+        },
+        error: (error) => {
+          console.error('Error loading special guests:', error);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to load special guests data.',
+            life: 3000
+          });
+          this.selectedEvent!.specialGuestsList = [];
+          this.openModal('specialGuestsModal');
+        }
+      });
+    } else {
+      this.openModal('specialGuestsModal');
     }
   }
 
   openVolunteersModal(event: EventData): void {
     this.selectedEvent = event;
-    const modal = document.getElementById('volunteersModal');
-    if (modal) {
-      modal.classList.add('show');
-      modal.style.display = 'block';
-      modal.setAttribute('aria-hidden', 'false');
-      document.body.classList.add('modal-open');
-      const backdrop = document.createElement('div');
-      backdrop.className = 'modal-backdrop fade show';
-      document.body.appendChild(backdrop);
+
+    // Fetch full event data with volunteers if not already loaded
+    if (!event.volunteersList || event.volunteersList.length === 0) {
+      this.eventApiService.getEventById(Number(event.id)).subscribe({
+        next: (response) => {
+          if (response.volunteers && response.volunteers.length > 0) {
+            // Map backend format to frontend format
+            this.selectedEvent!.volunteersList = response.volunteers.map((vol: any) => ({
+              branch: vol.branch?.name || 'Branch name',
+              name: vol.volunteer_name || vol.name || 'N/A',
+              gender: vol.gender || 'N/A', // Not in backend model, will show N/A
+              contact: vol.contact || '000000000', // Not in backend model, will show default
+              days: vol.number_of_days || vol.days || 0,
+              seva: vol.seva_involved || vol.seva || vol.mention_seva || 'Seva involved'
+            }));
+          } else {
+            this.selectedEvent!.volunteersList = [];
+          }
+          this.openModal('volunteersModal');
+        },
+        error: (error) => {
+          console.error('Error loading volunteers:', error);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to load volunteers data.',
+            life: 3000
+          });
+          this.selectedEvent!.volunteersList = [];
+          this.openModal('volunteersModal');
+        }
+      });
+    } else {
+      this.openModal('volunteersModal');
     }
   }
 
   openBeneficiariesModal(event: EventData): void {
     this.selectedEvent = event;
-    const modal = document.getElementById('beneficiariesModal');
-    if (modal) {
-      modal.classList.add('show');
-      modal.style.display = 'block';
-      modal.setAttribute('aria-hidden', 'false');
-      document.body.classList.add('modal-open');
-      const backdrop = document.createElement('div');
-      backdrop.className = 'modal-backdrop fade show';
-      document.body.appendChild(backdrop);
-    }
+    this.openModal('beneficiariesModal');
   }
 
   openInitiationModal(event: EventData): void {
     this.selectedEvent = event;
-    const modal = document.getElementById('initiationModal');
+    this.openModal('initiationModal');
+  }
+
+  /**
+   * Helper method to open Bootstrap modal (right-side slide-in)
+   */
+  private openModal(modalId: string): void {
+    const modal = document.getElementById(modalId);
     if (modal) {
+      // Add backdrop first
+      const existingBackdrop = document.querySelector('.modal-backdrop');
+      if (existingBackdrop) {
+        existingBackdrop.remove();
+      }
+      const backdrop = document.createElement('div');
+      backdrop.className = 'modal-backdrop fade show';
+      document.body.appendChild(backdrop);
+
+      // Then show modal
       modal.classList.add('show');
       modal.style.display = 'block';
       modal.setAttribute('aria-hidden', 'false');
       document.body.classList.add('modal-open');
-      const backdrop = document.createElement('div');
-      backdrop.className = 'modal-backdrop fade show';
-      document.body.appendChild(backdrop);
+
+      // Trigger animation by forcing reflow
+      setTimeout(() => {
+        const modalDialog = modal.querySelector('.modal-dialog');
+        if (modalDialog) {
+          modalDialog.classList.add('show');
+        }
+      }, 10);
     }
   }
 
@@ -1186,15 +1259,23 @@ export class EventsListComponent implements OnInit {
   closeModal(modalId: string): void {
     const modal = document.getElementById(modalId);
     if (modal) {
-      modal.classList.remove('show');
-      modal.style.display = 'none';
-      modal.setAttribute('aria-hidden', 'true');
-      // Remove backdrop
-      document.body.classList.remove('modal-open');
-      const backdrop = document.querySelector('.modal-backdrop');
-      if (backdrop) {
-        backdrop.remove();
+      // Remove show class from modal-dialog first to trigger slide-out animation
+      const modalDialog = modal.querySelector('.modal-dialog');
+      if (modalDialog) {
+        modalDialog.classList.remove('show');
       }
+
+      // Wait for animation to complete before hiding modal
+      setTimeout(() => {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('modal-open');
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+          backdrop.remove();
+        }
+      }, 300); // Match transition duration
     }
   }
 
@@ -1294,28 +1375,28 @@ export class EventsListComponent implements OnInit {
       showSuccessMessage: false // We'll use PrimeNG message service instead
     }).then((result) => {
       if (result.value) {
-        this.eventApiService.deleteEvent(Number(eventId)).subscribe({
-          next: () => {
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Success',
-              detail: 'Event deleted successfully',
-              life: 3000
-            });
-            // Reload events list
-            this.loadEvents();
-          },
-          error: (error) => {
-            console.error('Error deleting event:', error);
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Error',
-              detail: error?.error?.error || 'Failed to delete event',
-              life: 5000
-            });
-          }
-        });
-      }
+      this.eventApiService.deleteEvent(Number(eventId)).subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Event deleted successfully',
+            life: 3000
+          });
+          // Reload events list
+          this.loadEvents();
+        },
+        error: (error) => {
+          console.error('Error deleting event:', error);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: error?.error?.error || 'Failed to delete event',
+            life: 5000
+          });
+        }
+      });
+    }
     });
   }
 

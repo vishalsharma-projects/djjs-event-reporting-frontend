@@ -504,13 +504,12 @@
     }
   }
 
-  // Custom modal styling
+  // Custom modal styling - Right side slide-in panel
   .modal {
     &.show {
-      display: flex !important; // Use flexbox for centering
-      align-items: center !important; // Center vertically
-      justify-content: center !important; // Center horizontally
+      display: block !important;
       background-color: rgba(0, 0, 0, 0.5) !important;
+      padding: 0 !important;
     }
   }
 
@@ -532,12 +531,88 @@
     overflow: hidden !important;
   }
 
-  // Ensure modal content is centered
-  .modal-dialog {
-    margin: 0 auto !important;
-    display: flex !important;
-    align-items: center !important;
-    min-height: 100vh !important;
+  // Right side slide-in panel for modals
+  #specialGuestsModal,
+  #volunteersModal,
+  #beneficiariesModal,
+  #initiationModal {
+    padding: 0 !important;
+
+    .modal-dialog {
+      position: fixed !important;
+      top: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      left: auto !important;
+      width: 50vw !important;
+      max-width: 900px !important;
+      min-width: 600px !important;
+      height: 100vh !important;
+      margin: 0 !important;
+      transform: translateX(100%) !important;
+      transition: transform 0.3s ease-in-out !important;
+      display: flex !important;
+      flex-direction: column !important;
+      z-index: 1055 !important;
+    }
+
+    &.show .modal-dialog,
+    .modal-dialog.show {
+      transform: translateX(0) !important;
+    }
+
+    .modal-content {
+      height: 100vh !important;
+      border-radius: 0 !important;
+      border-left: 1px solid #dee2e6 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      margin: 0 !important;
+      box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .modal-header {
+      flex-shrink: 0 !important;
+      border-bottom: 1px solid #dee2e6 !important;
+      padding: 1rem 1.5rem !important;
+    }
+
+    .modal-body {
+      flex: 1 !important;
+      overflow-y: auto !important;
+      padding: 1.5rem !important;
+    }
+
+    .modal-footer {
+      flex-shrink: 0 !important;
+      border-top: 1px solid #dee2e6 !important;
+      padding: 1rem 1.5rem !important;
+    }
+  }
+
+  // Responsive adjustments for right-side panels
+  @media (max-width: 1200px) {
+    #specialGuestsModal,
+    #volunteersModal,
+    #beneficiariesModal,
+    #initiationModal {
+      .modal-dialog {
+        width: 60vw !important;
+        min-width: 500px !important;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    #specialGuestsModal,
+    #volunteersModal,
+    #beneficiariesModal,
+    #initiationModal {
+      .modal-dialog {
+        width: 90vw !important;
+        min-width: 90vw !important;
+      }
+    }
   }
 
   // Pinned columns styling - only change text color of column heading
@@ -673,11 +748,107 @@
   }
 }
 
-.input-group-text {
-  background-color: #f8f9fa;
-  border-color: #dee2e6;
-  color: #6c757d;
-}
+  .input-group-text {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+    color: #6c757d;
+  }
+
+  // Modal table styling to match design
+  .modal {
+    .modal-content {
+      border-radius: 8px;
+      border: none;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-header {
+      border-bottom: 1px solid #dee2e6;
+      padding: 1rem 1.5rem;
+
+      .modal-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #495057;
+        margin: 0;
+      }
+
+      .btn-close {
+        padding: 0.5rem;
+        margin: -0.5rem -0.5rem -0.5rem auto;
+      }
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+
+      .table {
+        margin-bottom: 0;
+
+        thead {
+          background-color: #f8f9fa;
+
+          th {
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+            padding: 0.75rem;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+        }
+
+        tbody {
+          tr {
+            border-bottom: 1px solid #e9ecef;
+
+            &:hover {
+              background-color: #f8f9fa;
+            }
+
+            td {
+              padding: 0.75rem;
+              vertical-align: middle;
+              color: #495057;
+              font-size: 0.875rem;
+            }
+          }
+        }
+      }
+    }
+
+    .modal-footer {
+      border-top: 1px solid #dee2e6;
+      padding: 1rem 1.5rem;
+
+      .btn-secondary {
+        background-color: #6c757d;
+        border-color: #6c757d;
+        color: white;
+        padding: 0.5rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 500;
+
+        &:hover {
+          background-color: #5a6268;
+          border-color: #545b62;
+        }
+      }
+    }
+  }
+
+  // Empty state styling
+  .text-center {
+    .pi-users {
+      opacity: 0.3;
+    }
+
+    .text-muted {
+      font-size: 1rem;
+      margin-top: 1rem;
+    }
+  }
 
 .card {
   border: none;
