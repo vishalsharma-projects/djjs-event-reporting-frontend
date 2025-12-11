@@ -32,6 +32,9 @@ export class GalleryComponent implements OnInit {
   isPopupOpen = false;
   eventId: number | null = null;
   loading = false;
+  uploading = false;
+  uploadProgress = 0;
+  currentUploadFile = '';
 
   // Data with dates - will be loaded from backend
   items: GalleryItem[] = [];
@@ -44,14 +47,22 @@ export class GalleryComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Get event ID from route if provided
+    // Get event ID from route params or query params
     this.route.params.subscribe(params => {
       if (params['eventId']) {
         this.eventId = Number(params['eventId']);
         this.loadGalleryItems();
       } else {
-        // Load all gallery items
-        this.loadGalleryItems();
+        // Check query params
+        this.route.queryParams.subscribe(queryParams => {
+          if (queryParams['eventId']) {
+            this.eventId = Number(queryParams['eventId']);
+            this.loadGalleryItems();
+          } else {
+            // Load all gallery items if no event ID
+            this.loadGalleryItems();
+          }
+        });
       }
     });
   }
@@ -69,26 +80,53 @@ export class GalleryComponent implements OnInit {
 
         // Map backend EventMedia to GalleryItem format
         this.items = mediaList.map((media: any) => {
-          // Determine file type based on media coverage type or default to 'file'
+          // Use file_type from backend if available, otherwise infer from media coverage type
           let fileType: 'image' | 'video' | 'audio' | 'file' = 'file';
-          const mediaType = media.media_coverage_type?.media_type?.toLowerCase() || '';
 
-          if (mediaType.includes('photo') || mediaType.includes('image')) {
-            fileType = 'image';
-          } else if (mediaType.includes('video')) {
-            fileType = 'video';
-          } else if (mediaType.includes('audio')) {
-            fileType = 'audio';
+          if (media.file_type) {
+            // Use file_type directly from backend (image, video, audio, file)
+            const ft = media.file_type.toLowerCase();
+            if (ft === 'image') fileType = 'image';
+            else if (ft === 'video') fileType = 'video';
+            else if (ft === 'audio') fileType = 'audio';
+            else fileType = 'file';
+          } else {
+            // Fallback: infer from media coverage type
+            const mediaType = media.media_coverage_type?.media_type?.toLowerCase() || '';
+            if (mediaType.includes('photo') || mediaType.includes('image')) {
+              fileType = 'image';
+            } else if (mediaType.includes('video')) {
+              fileType = 'video';
+            } else if (mediaType.includes('audio')) {
+              fileType = 'audio';
+            }
           }
 
-          // Map category based on media coverage type
+          // Map category - prefer file_type based category, fallback to media coverage type
           let category = 'Event Photos';
-          if (mediaType.includes('video')) {
-            category = 'Video Coverage';
-          } else if (mediaType.includes('testimonial')) {
-            category = 'Testimonials';
-          } else if (mediaType.includes('press') || mediaType.includes('release')) {
-            category = 'Press Release';
+
+          // If file_url exists, try to determine category from file_type or URL
+          if (media.file_url) {
+            const ft = (media.file_type || '').toLowerCase();
+            if (ft === 'video' || media.file_url.includes('/videos/')) {
+              category = 'Video Coverage';
+            } else if (ft === 'audio' || media.file_url.includes('/audio/')) {
+              category = 'Testimonials';
+            } else if (media.file_url.includes('/files/') || media.file_url.includes('press')) {
+              category = 'Press Release';
+            } else {
+              category = 'Event Photos';
+            }
+          } else {
+            // Fallback to media coverage type
+            const mediaType = media.media_coverage_type?.media_type?.toLowerCase() || '';
+            if (mediaType.includes('video')) {
+              category = 'Video Coverage';
+            } else if (mediaType.includes('testimonial')) {
+              category = 'Testimonials';
+            } else if (mediaType.includes('press') || mediaType.includes('release')) {
+              category = 'Press Release';
+            }
           }
 
           // Create name from company or person details
@@ -147,29 +185,58 @@ export class GalleryComponent implements OnInit {
    */
   downloadItem(item: GalleryItem, event: Event): void {
     event.stopPropagation();
-    if (!item.url) {
+    if (!item.id) {
       this.messageService.add({
         severity: 'warn',
         summary: 'Warning',
-        detail: 'Download URL not available',
+        detail: 'Item ID not available',
         life: 3000
       });
       return;
     }
 
-    // Create download link
-    const link = document.createElement('a');
-    link.href = item.url;
-    link.download = item.name || `download_${item.id}`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Get presigned download URL from backend
+    this.eventApiService.getDownloadUrl(item.id).subscribe({
+      next: (response: any) => {
+        const downloadUrl = response.download_url || response.data?.download_url || item.url;
+        const fileName = response.file_name || response.data?.file_name || item.name || `download_${item.id}`;
 
-    this.messageService.add({
-      severity: 'success',
-      summary: 'Success',
-      detail: 'File downloaded successfully',
-      life: 3000
+        // Create download link
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = fileName;
+        link.target = '_blank'; // Open in new tab for presigned URLs
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'File downloaded successfully',
+          life: 3000
+        });
+      },
+      error: (error) => {
+        console.error('Error getting download URL:', error);
+        // Fallback to direct URL if presigned URL fails
+        if (item.url) {
+          const link = document.createElement('a');
+          link.href = item.url;
+          link.download = item.name || `download_${item.id}`;
+          link.target = '_blank';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        } else {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to get download URL',
+            life: 3000
+          });
+        }
+      }
     });
   }
 
@@ -205,7 +272,8 @@ export class GalleryComponent implements OnInit {
       }
 
       this.loading = true;
-      this.eventApiService.deleteEventMedia(item.id).subscribe({
+      // Delete from S3 and database
+      this.eventApiService.deleteFile(item.id, true).subscribe({
         next: () => {
           // Remove from local array
           this.items = this.items.filter(i => i.id !== item.id);
@@ -279,5 +347,95 @@ export class GalleryComponent implements OnInit {
   closePopup() {
     this.isPopupOpen = false;
     this.selectedItem = null;
+  }
+
+  /**
+   * Handle file selection for manual upload
+   */
+  onFileSelected(event: any): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0 || !this.eventId) {
+      return;
+    }
+
+    const files = Array.from(input.files);
+    this.uploadFiles(files);
+
+    // Reset input
+    input.value = '';
+  }
+
+  /**
+   * Upload files to S3
+   */
+  uploadFiles(files: File[]): void {
+    if (!this.eventId) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Warning',
+        detail: 'Please select an event first',
+        life: 3000
+      });
+      return;
+    }
+
+    this.uploading = true;
+    this.uploadProgress = 0;
+    let uploadedCount = 0;
+    const totalFiles = files.length;
+
+    files.forEach((file, index) => {
+      this.currentUploadFile = file.name;
+
+      // Determine category based on file type
+      let category = 'Event Photos';
+      if (file.type.startsWith('video/')) {
+        category = 'Video Coverage';
+      } else if (file.type.startsWith('audio/')) {
+        category = 'Testimonials';
+      } else if (file.type === 'application/pdf' || file.name.toLowerCase().includes('press')) {
+        category = 'Press Release';
+      }
+
+      this.eventApiService.uploadFile(file, this.eventId!, undefined, category).subscribe({
+        next: (response) => {
+          uploadedCount++;
+          this.uploadProgress = Math.round((uploadedCount / totalFiles) * 100);
+
+          if (uploadedCount === totalFiles) {
+            this.uploading = false;
+            this.uploadProgress = 0;
+            this.currentUploadFile = '';
+
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Upload Complete',
+              detail: `Successfully uploaded ${uploadedCount} file(s)`,
+              life: 3000
+            });
+
+            // Reload gallery items
+            this.loadGalleryItems();
+          }
+        },
+        error: (error) => {
+          console.error('Upload error:', error);
+          uploadedCount++;
+
+          if (uploadedCount === totalFiles) {
+            this.uploading = false;
+            this.uploadProgress = 0;
+            this.currentUploadFile = '';
+          }
+
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Upload Failed',
+            detail: `Failed to upload ${file.name}: ${error?.error?.error || 'Unknown error'}`,
+            life: 5000
+          });
+        }
+      });
+    });
   }
 }

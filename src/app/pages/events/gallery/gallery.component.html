@@ -14,6 +14,32 @@
   <!-- Right: Types + Gallery -->
   <div class="gallery-right">
 
+    <!-- Upload Section -->
+    <div class="upload-section mb-3" *ngIf="eventId">
+      <input type="file" #fileInput (change)="onFileSelected($event)" multiple
+             accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+             style="display: none;">
+      <button class="btn btn-primary" (click)="fileInput.click()" [disabled]="uploading">
+        <i class="pi pi-upload me-2"></i>
+        {{ uploading ? 'Uploading...' : 'Upload Files' }}
+      </button>
+      <span class="ms-2 text-muted" *ngIf="!eventId">(Select an event to upload files)</span>
+      <div class="upload-progress mt-2" *ngIf="uploading">
+        <div class="progress">
+          <div class="progress-bar" [style.width.%]="uploadProgress"></div>
+        </div>
+        <small class="text-muted">{{ uploadProgress }}% - {{ currentUploadFile }}</small>
+      </div>
+    </div>
+
+    <!-- Event Info -->
+    <div class="alert alert-info mb-3" *ngIf="eventId">
+      <i class="pi pi-info-circle"></i> Showing gallery for Event ID: {{ eventId }}
+      <button class="btn btn-sm btn-outline-secondary ms-2" (click)="eventId = null; loadGalleryItems()">
+        Show All Events
+      </button>
+    </div>
+
     <!-- Horizontal Type Tabs -->
     <div class="tabs">
       <button *ngFor="let type of types" (click)="selectType(type)" [class.active]="type === selectedType">

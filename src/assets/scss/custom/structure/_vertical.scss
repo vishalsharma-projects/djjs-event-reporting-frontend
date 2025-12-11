@@ -78,10 +78,27 @@
 .main-content {
     margin-left: $sidebar-width;
     overflow: hidden;
+    height: 100vh;
+    position: relative;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+
+    // Allow modals to escape overflow
+    body.modal-open & {
+        overflow: visible !important;
+    }
 
     .content {
         padding: 0 15px 10px 15px;
         margin-top: $header-height;
+    }
+
+    // On small screens, remove margin to eliminate gap
+    @media (max-width: 992px) {
+        margin-left: 0 !important;
+        width: 100% !important;
     }
 }
 
@@ -240,7 +257,7 @@
         will-change: transform;
         backface-visibility: hidden;
         -webkit-backface-visibility: hidden;
-        visibility: hidden;
+        visibility: visible;
         width: 280px !important;
         overflow-y: auto;
         overflow-x: hidden;
@@ -446,19 +463,16 @@
     .main-content {
         margin-left: 0 !important;
         transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        width: 100% !important;
     }
 
+    // Show sidebar when toggled
     body.sidebar-enable {
-        overflow: hidden;
-        position: fixed;
-        width: 100%;
-
         .vertical-menu {
             transform: translateX(0) !important;
-            visibility: visible;
         }
 
-        // Add overlay backdrop with smooth animation
+        // Add overlay backdrop
         &::before {
             content: '';
             position: fixed;
@@ -468,7 +482,6 @@
             height: 100%;
             background: rgba(0, 0, 0, 0.5);
             z-index: 1039;
-            animation: fadeInOverlay 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             opacity: 1;
             transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             backdrop-filter: blur(2px);
@@ -476,7 +489,7 @@
         }
     }
 
-    // Backdrop fade out when sidebar closes
+    // Hide backdrop when sidebar is closed
     body:not(.sidebar-enable)::before {
         content: '';
         position: fixed;
@@ -548,7 +561,7 @@
         // CRITICAL: Exact same transition timing as sidebar
         transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1) 0s !important, padding 0.35s cubic-bezier(0.4, 0, 0.2, 1) 0s !important;
         display: flex !important;
-        align-items: flex-start !important;
+        align-items: center !important;
         justify-content: center !important;
         padding: 0 !important;
         text-align: center !important;
@@ -567,7 +580,7 @@
 
     .logo {
         display: flex !important;
-        align-items: flex-start !important;
+        align-items: center !important;
         justify-content: center !important;
         width: 100%;
         height: 100%;
@@ -575,9 +588,10 @@
         margin: 0 auto;
         line-height: normal;
         box-sizing: border-box;
-        padding-top: 0;
-        margin-top: 0;
+        padding: 0;
+        margin: 0;
         pointer-events: none !important;
+        overflow: hidden;
 
         .logo-lg {
             display: none !important;
@@ -589,32 +603,30 @@
 
         .logo-sm {
             display: flex !important;
-            align-items: flex-start !important;
+            align-items: center !important;
             justify-content: center !important;
             opacity: 1 !important;
             visibility: visible !important;
             transition: opacity 0.3s ease, visibility 0.3s ease;
             margin: 0 auto;
             width: 100%;
-            height: auto;
+            height: 100%;
             text-align: center;
             position: relative;
             z-index: 1;
             padding: 0;
             box-sizing: border-box;
-            overflow: visible;
+            overflow: hidden;
             pointer-events: none !important;
-            padding-top: 60px;
 
             img {
                 margin: 0 auto !important;
-                margin-top: 0 !important;
-                margin-bottom: 0 !important;
                 display: block !important;
-                max-width: 60px !important;
-                max-height: 60px !important;
+                max-width: 50px !important;
+                max-height: 50px !important;
                 width: auto !important;
                 height: auto !important;
+                object-fit: contain !important;
                 min-width: 45px !important;
                 min-height: 45px !important;
                 object-fit: contain !important;
@@ -630,12 +642,11 @@
             }
         }
 
-        .logo-light {
-            display: none !important;
-        }
-
-        .logo-dark {
+        // Single logo - always visible
+        .logo {
             display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
         }
 
         img {
@@ -1173,12 +1184,11 @@ body[data-sidebar="colored"] {
         align-items: center;
         justify-content: center;
 
-        .logo-dark {
-            display: none;
-        }
-
-        .logo-light {
-            display: block;
+        // Single logo - always visible
+        .logo {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
         }
     }
 

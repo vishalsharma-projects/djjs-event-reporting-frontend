@@ -32,6 +32,9 @@
     /*rtl: 0 0 0 calc(#{$grid-gutter-width} / 2) */
     ;
     transition: height 0.3s ease, padding 0.3s ease;
+    position: relative;
+    overflow: visible;
+    z-index: auto;
 
     .dropdown .show {
         &.header-item {
@@ -58,13 +61,36 @@
     // CRITICAL: Synchronized with sidebar - exact same timing, force GPU layer
     transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1) 0s, padding 0.35s cubic-bezier(0.4, 0, 0.2, 1) 0s;
     position: relative;
-    overflow: visible;
+    overflow: hidden;
     will-change: width, padding;
     // Force GPU acceleration to prevent layout timing differences
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
     height: $header-height;
+    max-height: $header-height;
     box-sizing: border-box;
+    z-index: auto;
+    flex-shrink: 0;
+
+    // Ensure logo is always visible but contained
+    .logo {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+
+        img {
+            max-width: 100% !important;
+            max-height: 100% !important;
+        }
+    }
 }
 
 .logo {
@@ -80,7 +106,9 @@
     img {
         transition: opacity 0.3s ease, transform 0.3s ease;
         max-width: 100%;
+        max-height: 100%;
         height: auto;
+        width: auto;
         display: block;
         margin: 0 auto;
         object-fit: contain;
@@ -93,17 +121,19 @@
         opacity: 0;
         visibility: hidden;
         transition: opacity 0.3s ease, visibility 0.3s ease;
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
+        position: relative;
         width: 100%;
+        height: 100%;
         text-align: center;
+        overflow: hidden;
 
         img {
             margin: 0 auto;
             display: block;
             max-width: 100%;
+            max-height: 100%;
             height: auto;
+            width: auto;
             object-fit: contain;
             visibility: visible;
             opacity: 1;
@@ -118,6 +148,9 @@
         visibility: visible;
         transition: opacity 0.3s ease, visibility 0.3s ease;
         width: 100%;
+        height: 100%;
+        overflow: hidden;
+        position: relative;
 
         img {
             margin: 0 auto;
@@ -125,7 +158,9 @@
             visibility: visible;
             opacity: 1;
             max-width: 100%;
+            max-height: 100%;
             height: auto;
+            width: auto;
             object-fit: contain;
         }
     }
@@ -150,13 +185,19 @@ body:not(.vertical-collpsed) {
                 align-items: center;
                 justify-content: center;
                 width: 100%;
+                height: 100%;
                 opacity: 1;
                 visibility: visible;
                 transition: opacity 0.3s ease 0s, visibility 0.3s ease 0s;
+                overflow: hidden;
 
                 img {
                     margin: 0 auto;
                     display: block;
+                    max-width: 100%;
+                    max-height: 100%;
+                    width: auto;
+                    height: auto;
                     object-fit: contain;
                 }
             }
@@ -168,31 +209,18 @@ body:not(.vertical-collpsed) {
                 transition: opacity 0.3s ease 0s, visibility 0.3s ease 0s;
                 pointer-events: none;
             }
-
-            .logo-light {
-                display: none !important;
-            }
-
-            .logo-dark {
-                display: flex !important;
-            }
         }
     }
 }
 
-.logo-light {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-}
-
-.logo-dark {
+// Single logo - always visible
+.logo {
     display: flex !important;
     align-items: center;
     justify-content: center;
     width: 100%;
-    visibility: visible;
-    opacity: 1;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 /* Search */
@@ -237,6 +265,7 @@ body:not(.vertical-collpsed) {
 @media (max-width: 992px) {
     .navbar-brand-box {
         width: auto;
+        min-width: 60px;
         padding: 0 1rem;
         transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), padding 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
@@ -247,10 +276,12 @@ body:not(.vertical-collpsed) {
 
         @media (max-width: 576px) {
             padding: 0 0.75rem;
+            min-width: 55px;
         }
 
         @media (max-width: 480px) {
             padding: 0 0.5rem;
+            min-width: 50px;
         }
     }
 
@@ -283,10 +314,12 @@ body:not(.vertical-collpsed) {
             visibility: visible !important;
             width: 100%;
             height: 100%;
+            position: relative;
+            left: auto;
+            transform: none;
 
             img {
-                margin-top: 0 !important;
-                margin-bottom: 0 !important;
+                margin: 0 auto !important;
                 max-width: 50px !important;
                 max-height: 50px !important;
                 min-width: 40px !important;
@@ -314,19 +347,26 @@ body:not(.vertical-collpsed) {
             }
         }
 
-        .logo-light {
-            display: none !important;
-        }
-
-        .logo-dark {
-            display: flex;
+        // Single logo - always visible
+        .logo {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
             width: 100%;
+            visibility: visible !important;
+            opacity: 1 !important;
         }
     }
 }
 
 .page-content {
-    padding: calc(#{$header-height} + #{$grid-gutter-width}) calc(#{$grid-gutter-width} * 0.75) $footer-height calc(#{$grid-gutter-width} * 0.75);
+    padding: calc(#{$header-height} + #{$grid-gutter-width}) calc(#{$grid-gutter-width} * 0.75) calc(#{$grid-gutter-width} * 0.75) calc(#{$grid-gutter-width} * 0.75);
+    margin-bottom: 0;
+    padding-bottom: calc(#{$grid-gutter-width} * 0.75);
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
 }
 
 .header-item {
@@ -496,12 +536,11 @@ body[data-topbar="dark"] {
         }
     }
 
-    .logo-dark {
-        display: none;
-    }
-
-    .logo-light {
-        display: block;
+    // Single logo - always visible
+    .logo {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
     }
 
     .app-search {
@@ -523,12 +562,11 @@ body[data-sidebar="dark"] {
         background: $sidebar-dark-bg;
     }
 
-    .logo-dark {
-        display: none;
-    }
-
-    .logo-light {
-        display: block;
+    // Single logo - always visible
+    .logo {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
     }
 }
 
@@ -583,7 +621,7 @@ body[data-layout="horizontal"] {
 
     .page-content {
         margin-top: $header-height;
-        padding: calc(55px + #{$grid-gutter-width}) calc(#{$grid-gutter-width} * 0.5) $footer-height calc(#{$grid-gutter-width} * 0.5);
+        padding: calc(55px + #{$grid-gutter-width}) calc(#{$grid-gutter-width} * 0.5) calc(#{$grid-gutter-width} * 0.5) calc(#{$grid-gutter-width} * 0.5);
     }
 }
 

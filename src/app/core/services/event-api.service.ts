@@ -210,6 +210,44 @@ export class EventApiService {
   deleteEventMedia(mediaId: number): Observable<any> {
     return this.http.delete(`${this.apiBaseUrl}/api/event-media/${mediaId}`);
   }
+
+  /**
+   * Get presigned download URL for a file
+   * @param mediaId Media ID
+   */
+  getDownloadUrl(mediaId: number): Observable<any> {
+    return this.http.get(`${this.apiBaseUrl}/api/files/${mediaId}/download`);
+  }
+
+  /**
+   * Upload file to S3
+   * @param file File to upload
+   * @param eventId Event ID
+   * @param mediaId Optional media ID (for updating existing media)
+   * @param category File category (Event Photos, Video Coverage, Testimonials, Press Release)
+   */
+  uploadFile(file: File, eventId: number, mediaId?: number, category?: string): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('event_id', eventId.toString());
+    if (mediaId) {
+      formData.append('media_id', mediaId.toString());
+    }
+    if (category) {
+      formData.append('category', category);
+    }
+    return this.http.post(`${this.apiBaseUrl}/api/files/upload`, formData);
+  }
+
+  /**
+   * Delete file from S3
+   * @param mediaId Media ID
+   * @param deleteRecord Whether to delete the media record (default: true)
+   */
+  deleteFile(mediaId: number, deleteRecord: boolean = true): Observable<any> {
+    const params = new HttpParams().set('delete_record', deleteRecord.toString());
+    return this.http.delete(`${this.apiBaseUrl}/api/files/${mediaId}`, { params });
+  }
 }
 
 

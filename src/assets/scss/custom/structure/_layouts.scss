@@ -1,6 +1,6 @@
-// 
+//
 // _layouts.scss
-// 
+//
 
 body[data-layout-size="boxed"] {
 
@@ -12,6 +12,8 @@ body[data-layout-size="boxed"] {
         margin: 0 auto;
         box-shadow: $box-shadow;
         min-height: 1760px;
+        padding-bottom: 0;
+        margin-bottom: 0;
     }
 
     #page-topbar {

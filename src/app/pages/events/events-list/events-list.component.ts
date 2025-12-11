@@ -1,4 +1,4 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, HostListener, AfterViewChecked, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { EventApiService, EventDetails } from 'src/app/core/services/event-api.service';
@@ -88,7 +88,7 @@ interface EventData {
   templateUrl: './events-list.component.html',
   styleUrls: ['./events-list.component.scss']
 })
-export class EventsListComponent implements OnInit {
+export class EventsListComponent implements OnInit, AfterViewChecked {
 
   // PrimeNG Table Configuration
   events: EventData[] = [];
@@ -860,7 +860,8 @@ export class EventsListComponent implements OnInit {
     private router: Router,
     private messageService: MessageService,
     private eventApiService: EventApiService,
-    private confirmationDialog: ConfirmationDialogService
+    private confirmationDialog: ConfirmationDialogService,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
@@ -1115,7 +1116,7 @@ export class EventsListComponent implements OnInit {
           } else {
             this.selectedEvent!.specialGuestsList = [];
           }
-          this.openModal('specialGuestsModal');
+          this.openSpecialGuestsDrawer();
         },
         error: (error) => {
           console.error('Error loading special guests:', error);
@@ -1126,13 +1127,19 @@ export class EventsListComponent implements OnInit {
             life: 3000
           });
           this.selectedEvent!.specialGuestsList = [];
-          this.openModal('specialGuestsModal');
+          this.openSpecialGuestsDrawer();
         }
       });
     } else {
-      this.openModal('specialGuestsModal');
+      this.openSpecialGuestsDrawer();
     }
   }
+
+  // Drawer States
+  isVolunteerDrawerOpen: boolean = false;
+  isBeneficiariesDrawerOpen: boolean = false;
+  isInitiationDrawerOpen: boolean = false;
+  isSpecialGuestsDrawerOpen: boolean = false;
 
   openVolunteersModal(event: EventData): void {
     this.selectedEvent = event;
@@ -1151,10 +1158,13 @@ export class EventsListComponent implements OnInit {
               days: vol.number_of_days || vol.days || 0,
               seva: vol.seva_involved || vol.seva || vol.mention_seva || 'Seva involved'
             }));
+            // Update volunteer count
+            this.selectedEvent!.volunteers = this.selectedEvent!.volunteersList.length;
           } else {
             this.selectedEvent!.volunteersList = [];
+            this.selectedEvent!.volunteers = 0;
           }
-          this.openModal('volunteersModal');
+          this.openVolunteerDrawer();
         },
         error: (error) => {
           console.error('Error loading volunteers:', error);
@@ -1165,22 +1175,324 @@ export class EventsListComponent implements OnInit {
             life: 3000
           });
           this.selectedEvent!.volunteersList = [];
-          this.openModal('volunteersModal');
+          this.selectedEvent!.volunteers = 0;
+          this.openVolunteerDrawer();
         }
       });
     } else {
-      this.openModal('volunteersModal');
+      // Update volunteer count from list if available
+      if (this.selectedEvent.volunteersList && this.selectedEvent.volunteersList.length > 0) {
+        this.selectedEvent.volunteers = this.selectedEvent.volunteersList.length;
+      }
+      this.openVolunteerDrawer();
     }
+  }
+
+  // Get volunteer count for display
+  getVolunteerCount(): number {
+    if (this.selectedEvent?.volunteersList && this.selectedEvent.volunteersList.length > 0) {
+      return this.selectedEvent.volunteersList.length;
+    }
+    return this.selectedEvent?.volunteers || 0;
+  }
+
+  // Open Volunteer Drawer
+  openVolunteerDrawer(): void {
+    // Close any other open drawers first
+    this.closeAllDrawers();
+
+    this.isVolunteerDrawerOpen = true;
+    this.lockBodyScroll();
+
+    // Force change detection to render the drawer
+    this.cdr.detectChanges();
+
+    // Move drawer and backdrop to body level after Angular renders them
+    setTimeout(() => {
+      const drawers = document.querySelectorAll('.volunteer-drawer');
+      const backdrops = document.querySelectorAll('.volunteer-drawer-backdrop');
+      const drawer = Array.from(drawers).find(d => d.querySelector('#volunteerDrawerTitle'));
+      const backdrop = backdrops[0];
+
+      if (drawer) {
+        // Move to body if not already there
+        if (drawer.parentElement && drawer.parentElement !== document.body) {
+          document.body.appendChild(drawer);
+        }
+        // Ensure show class is applied for animation
+        drawer.classList.add('show');
+        // Set accessibility attributes
+        drawer.setAttribute('role', 'dialog');
+        drawer.setAttribute('aria-modal', 'true');
+        drawer.setAttribute('aria-labelledby', 'volunteerDrawerTitle');
+      }
+
+      if (backdrop) {
+        // Move to body if not already there
+        if (backdrop.parentElement && backdrop.parentElement !== document.body) {
+          document.body.appendChild(backdrop);
+        }
+        // Ensure show class is applied for animation
+        backdrop.classList.add('show');
+      }
+    }, 10);
+  }
+
+  ngAfterViewChecked(): void {
+    // Ensure drawer and backdrop are at body level when visible
+    if (this.isVolunteerDrawerOpen) {
+      const drawer = document.querySelector('.volunteer-drawer');
+      const backdrop = document.querySelector('.volunteer-drawer-backdrop');
+
+      if (drawer && drawer.parentElement && drawer.parentElement !== document.body) {
+        document.body.appendChild(drawer);
+      }
+      if (backdrop && backdrop.parentElement && backdrop.parentElement !== document.body) {
+        document.body.appendChild(backdrop);
+      }
+    }
+  }
+
+  // Close Volunteer Drawer
+  closeVolunteerDrawer(): void {
+    // Remove show class first to trigger slide-out animation
+    const drawers = document.querySelectorAll('.volunteer-drawer');
+    const backdrops = document.querySelectorAll('.volunteer-drawer-backdrop');
+    const drawer = Array.from(drawers).find(d => d.querySelector('#volunteerDrawerTitle'));
+    const backdrop = backdrops[0];
+
+    if (drawer) {
+      drawer.classList.remove('show');
+    }
+    if (backdrop) {
+      backdrop.classList.remove('show');
+    }
+
+    // Wait for animation to complete before hiding
+    setTimeout(() => {
+      this.isVolunteerDrawerOpen = false;
+      if (!this.isBeneficiariesDrawerOpen && !this.isInitiationDrawerOpen && !this.isSpecialGuestsDrawerOpen) {
+        this.unlockBodyScroll();
+      }
+
+      // Remove accessibility attributes when closing
+      if (drawer) {
+        drawer.setAttribute('aria-hidden', 'true');
+        // Remove focus from drawer when closing
+        const focusedElement = drawer.querySelector(':focus');
+        if (focusedElement) {
+          (focusedElement as HTMLElement).blur();
+        }
+      }
+    }, 300);
+  }
+
+  // Lock body scroll when drawer is open
+  private lockBodyScroll(): void {
+    document.body.style.overflow = 'hidden';
+  }
+
+  // Unlock body scroll when drawer is closed
+  private unlockBodyScroll(): void {
+    document.body.style.overflow = '';
   }
 
   openBeneficiariesModal(event: EventData): void {
     this.selectedEvent = event;
-    this.openModal('beneficiariesModal');
+    this.openBeneficiariesDrawer();
   }
 
   openInitiationModal(event: EventData): void {
     this.selectedEvent = event;
-    this.openModal('initiationModal');
+    this.openInitiationDrawer();
+  }
+
+  // Open Beneficiaries Drawer
+  openBeneficiariesDrawer(): void {
+    // Close any other open drawers first
+    this.closeAllDrawers();
+
+    this.isBeneficiariesDrawerOpen = true;
+    this.lockBodyScroll();
+    this.cdr.detectChanges();
+
+    setTimeout(() => {
+      const drawers = document.querySelectorAll('.volunteer-drawer');
+      const backdrops = document.querySelectorAll('.volunteer-drawer-backdrop');
+      const drawer = Array.from(drawers).find(d => d.querySelector('#beneficiariesDrawerTitle'));
+      const backdrop = backdrops[0];
+
+      if (drawer && drawer.parentElement && drawer.parentElement !== document.body) {
+        document.body.appendChild(drawer);
+      }
+      if (backdrop && backdrop.parentElement && backdrop.parentElement !== document.body) {
+        document.body.appendChild(backdrop);
+      }
+
+      if (drawer) {
+        drawer.classList.add('show');
+        drawer.setAttribute('role', 'dialog');
+        drawer.setAttribute('aria-modal', 'true');
+        drawer.setAttribute('aria-labelledby', 'beneficiariesDrawerTitle');
+      }
+      if (backdrop) {
+        backdrop.classList.add('show');
+      }
+    }, 10);
+  }
+
+  // Close Beneficiaries Drawer
+  closeBeneficiariesDrawer(): void {
+    const drawers = document.querySelectorAll('.volunteer-drawer');
+    const backdrops = document.querySelectorAll('.volunteer-drawer-backdrop');
+    const drawer = Array.from(drawers).find(d => d.querySelector('#beneficiariesDrawerTitle'));
+    const backdrop = backdrops[0];
+
+    if (drawer) drawer.classList.remove('show');
+    if (backdrop) backdrop.classList.remove('show');
+
+    setTimeout(() => {
+      this.isBeneficiariesDrawerOpen = false;
+      if (!this.isVolunteerDrawerOpen && !this.isInitiationDrawerOpen && !this.isSpecialGuestsDrawerOpen) {
+        this.unlockBodyScroll();
+      }
+
+      if (drawer) {
+        drawer.setAttribute('aria-hidden', 'true');
+        const focusedElement = drawer.querySelector(':focus');
+        if (focusedElement) {
+          (focusedElement as HTMLElement).blur();
+        }
+      }
+    }, 300);
+  }
+
+  // Open Initiation Drawer
+  openInitiationDrawer(): void {
+    // Close any other open drawers first
+    this.closeAllDrawers();
+
+    this.isInitiationDrawerOpen = true;
+    this.lockBodyScroll();
+    this.cdr.detectChanges();
+
+    setTimeout(() => {
+      const drawers = document.querySelectorAll('.volunteer-drawer');
+      const backdrops = document.querySelectorAll('.volunteer-drawer-backdrop');
+      const drawer = Array.from(drawers).find(d => d.querySelector('#initiationDrawerTitle'));
+      const backdrop = backdrops[0];
+
+      if (drawer && drawer.parentElement && drawer.parentElement !== document.body) {
+        document.body.appendChild(drawer);
+      }
+      if (backdrop && backdrop.parentElement && backdrop.parentElement !== document.body) {
+        document.body.appendChild(backdrop);
+      }
+
+      if (drawer) {
+        drawer.classList.add('show');
+        drawer.setAttribute('role', 'dialog');
+        drawer.setAttribute('aria-modal', 'true');
+        drawer.setAttribute('aria-labelledby', 'initiationDrawerTitle');
+      }
+      if (backdrop) {
+        backdrop.classList.add('show');
+      }
+    }, 10);
+  }
+
+  // Close Initiation Drawer
+  closeInitiationDrawer(): void {
+    const drawers = document.querySelectorAll('.volunteer-drawer');
+    const backdrops = document.querySelectorAll('.volunteer-drawer-backdrop');
+    const drawer = Array.from(drawers).find(d => d.querySelector('#initiationDrawerTitle'));
+    const backdrop = backdrops[0];
+
+    if (drawer) drawer.classList.remove('show');
+    if (backdrop) backdrop.classList.remove('show');
+
+    setTimeout(() => {
+      this.isInitiationDrawerOpen = false;
+      if (!this.isVolunteerDrawerOpen && !this.isBeneficiariesDrawerOpen && !this.isSpecialGuestsDrawerOpen) {
+        this.unlockBodyScroll();
+      }
+
+      if (drawer) {
+        drawer.setAttribute('aria-hidden', 'true');
+        const focusedElement = drawer.querySelector(':focus');
+        if (focusedElement) {
+          (focusedElement as HTMLElement).blur();
+        }
+      }
+    }, 300);
+  }
+
+  // Open Special Guests Drawer
+  openSpecialGuestsDrawer(): void {
+    // Close any other open drawers first
+    this.closeAllDrawers();
+
+    this.isSpecialGuestsDrawerOpen = true;
+    this.lockBodyScroll();
+    this.cdr.detectChanges();
+
+    setTimeout(() => {
+      const drawers = document.querySelectorAll('.volunteer-drawer');
+      const backdrops = document.querySelectorAll('.volunteer-drawer-backdrop');
+      const drawer = Array.from(drawers).find(d => d.querySelector('#specialGuestsDrawerTitle'));
+      const backdrop = backdrops[0];
+
+      if (drawer && drawer.parentElement && drawer.parentElement !== document.body) {
+        document.body.appendChild(drawer);
+      }
+      if (backdrop && backdrop.parentElement && backdrop.parentElement !== document.body) {
+        document.body.appendChild(backdrop);
+      }
+
+      if (drawer) {
+        drawer.classList.add('show');
+        drawer.setAttribute('role', 'dialog');
+        drawer.setAttribute('aria-modal', 'true');
+        drawer.setAttribute('aria-labelledby', 'specialGuestsDrawerTitle');
+      }
+      if (backdrop) {
+        backdrop.classList.add('show');
+      }
+    }, 10);
+  }
+
+  // Close Special Guests Drawer
+  closeSpecialGuestsDrawer(): void {
+    const drawers = document.querySelectorAll('.volunteer-drawer');
+    const backdrops = document.querySelectorAll('.volunteer-drawer-backdrop');
+    const drawer = Array.from(drawers).find(d => d.querySelector('#specialGuestsDrawerTitle'));
+    const backdrop = backdrops[0];
+
+    if (drawer) drawer.classList.remove('show');
+    if (backdrop) backdrop.classList.remove('show');
+
+    setTimeout(() => {
+      this.isSpecialGuestsDrawerOpen = false;
+      if (!this.isVolunteerDrawerOpen && !this.isBeneficiariesDrawerOpen && !this.isInitiationDrawerOpen) {
+        this.unlockBodyScroll();
+      }
+
+      if (drawer) {
+        drawer.setAttribute('aria-hidden', 'true');
+        const focusedElement = drawer.querySelector(':focus');
+        if (focusedElement) {
+          (focusedElement as HTMLElement).blur();
+        }
+      }
+    }, 300);
+  }
+
+  // Close all drawers (helper method)
+  private closeAllDrawers(): void {
+    if (this.isVolunteerDrawerOpen) this.closeVolunteerDrawer();
+    if (this.isBeneficiariesDrawerOpen) this.closeBeneficiariesDrawer();
+    if (this.isInitiationDrawerOpen) this.closeInitiationDrawer();
+    if (this.isSpecialGuestsDrawerOpen) this.closeSpecialGuestsDrawer();
   }
 
   /**
@@ -1189,6 +1501,12 @@ export class EventsListComponent implements OnInit {
   private openModal(modalId: string): void {
     const modal = document.getElementById(modalId);
     if (modal) {
+      // CRITICAL: Move modal to body level to avoid layout container issues
+      // This ensures the modal is not affected by parent overflow/positioning
+      if (modal.parentElement !== document.body) {
+        document.body.appendChild(modal);
+      }
+
       // Add backdrop first
       const existingBackdrop = document.querySelector('.modal-backdrop');
       if (existingBackdrop) {
@@ -1196,11 +1514,24 @@ export class EventsListComponent implements OnInit {
       }
       const backdrop = document.createElement('div');
       backdrop.className = 'modal-backdrop fade show';
+      backdrop.style.zIndex = '1040';
+      // Add click handler to backdrop
+      backdrop.addEventListener('click', () => {
+        this.closeModal(modalId);
+      });
       document.body.appendChild(backdrop);
 
       // Then show modal
       modal.classList.add('show');
       modal.style.display = 'block';
+      modal.style.position = 'fixed';
+      modal.style.top = '0';
+      modal.style.left = '0';
+      modal.style.width = '100%';
+      modal.style.height = '100%';
+      modal.style.zIndex = '1050';
+      // Set aria-hidden to false when modal is open and focused
+      modal.removeAttribute('aria-hidden');
       modal.setAttribute('aria-hidden', 'false');
       document.body.classList.add('modal-open');
 
@@ -1269,13 +1600,34 @@ export class EventsListComponent implements OnInit {
       setTimeout(() => {
         modal.classList.remove('show');
         modal.style.display = 'none';
+        modal.style.position = '';
+        modal.style.top = '';
+        modal.style.left = '';
+        modal.style.width = '';
+        modal.style.height = '';
+        modal.style.zIndex = '';
+        // Set aria-hidden to true when modal is closed
         modal.setAttribute('aria-hidden', 'true');
+        // Remove focus from modal when closing
+        const focusedElement = modal.querySelector(':focus');
+        if (focusedElement) {
+          (focusedElement as HTMLElement).blur();
+        }
         document.body.classList.remove('modal-open');
         const backdrop = document.querySelector('.modal-backdrop');
         if (backdrop) {
           backdrop.remove();
         }
       }, 300); // Match transition duration
+    }
+  }
+
+  // Handle backdrop click
+  onBackdropClick(event: MouseEvent, modalId: string): void {
+    // Only close if clicking directly on the backdrop (modal element, not modal-content)
+    const target = event.target as HTMLElement;
+    if (target && target.classList.contains('modal')) {
+      this.closeModal(modalId);
     }
   }
 
@@ -1294,10 +1646,10 @@ export class EventsListComponent implements OnInit {
 
   // Close all modals
   closeAllModals(): void {
-    this.closeModal('beneficiariesModal');
-    this.closeModal('initiationModal');
-    this.closeModal('specialGuestsModal');
-    this.closeModal('volunteersModal');
+    this.closeBeneficiariesDrawer();
+    this.closeInitiationDrawer();
+    this.closeSpecialGuestsDrawer();
+    this.closeVolunteerDrawer(); // Close drawer instead of modal
     this.closeModal('moreDetailsModal');
     this.closeModal('mediaContentModal');
     this.selectedMediaType = null;

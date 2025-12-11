@@ -1698,21 +1698,95 @@ export class AddEventComponent implements OnInit, OnDestroy {
     });
   }
 
-  // File upload functionality
-  onFileSelected(event: any, fileType: string): void {
-    const files = event.target.files;
-    if (files && files.length > 0) {
-      if (fileType === 'eventPhotos' || fileType === 'pressRelease' || fileType === 'testimonials') {
-        this.uploadedFiles[fileType] = Array.from(files);
-      } else {
-        this.uploadedFiles[fileType] = files[0];
-      }
+  // File upload functionality - stores files to upload after event creation
+  onFileInputChange(event: any, fileType: string): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) {
+      return;
     }
+
+    const files = Array.from(input.files);
+
+    // Store files to upload after event creation
+    if (fileType === 'eventPhotos' || fileType === 'pressRelease' || fileType === 'testimonials') {
+      this.uploadedFiles[fileType] = files;
+    } else {
+      this.uploadedFiles[fileType] = files[0];
+    }
+
+    // Show message
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Files Selected',
+      detail: `${files.length} file(s) selected. They will be uploaded when you save the event.`,
+      life: 3000
+    });
+
+    // Reset input
+    input.value = '';
+  }
+
+  // Legacy method for compatibility
+  onFileSelected(event: any, fileType: string): void {
+    this.onFileInputChange(event, fileType);
   }
 
   // Video coverage input
   onVideoCoverageChange(event: any): void {
     this.uploadedFiles.videoCoverage = event.target.value;
+  }
+
+  /**
+   * Upload files to S3 after event creation
+   * This is called after event is successfully created
+   */
+  uploadFilesAfterEventCreation(eventId: number): void {
+    // Upload event photos
+    if (this.uploadedFiles.eventPhotos && Array.isArray(this.uploadedFiles.eventPhotos) && this.uploadedFiles.eventPhotos.length > 0) {
+      this.uploadFilesToS3(this.uploadedFiles.eventPhotos, 'eventPhotos', eventId, 'Event Photos');
+    }
+
+    // Upload video coverage
+    if (this.uploadedFiles.videoCoverage && this.uploadedFiles.videoCoverage instanceof File) {
+      this.uploadFilesToS3([this.uploadedFiles.videoCoverage], 'videoCoverage', eventId, 'Video Coverage');
+    }
+
+    // Upload press release
+    if (this.uploadedFiles.pressRelease && Array.isArray(this.uploadedFiles.pressRelease) && this.uploadedFiles.pressRelease.length > 0) {
+      this.uploadFilesToS3(this.uploadedFiles.pressRelease, 'pressRelease', eventId, 'Press Release');
+    }
+
+    // Upload testimonials
+    if (this.uploadedFiles.testimonials && Array.isArray(this.uploadedFiles.testimonials) && this.uploadedFiles.testimonials.length > 0) {
+      this.uploadFilesToS3(this.uploadedFiles.testimonials, 'testimonials', eventId, 'Testimonials');
+    }
+  }
+
+  /**
+   * Upload files to S3
+   */
+  uploadFilesToS3(files: File[], fileType: string, eventId: number, category: string): void {
+    files.forEach((file) => {
+      this.eventApiService.uploadFile(file, eventId, undefined, category).subscribe({
+        next: (response) => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Upload Success',
+            detail: `${file.name} uploaded successfully`,
+            life: 3000
+          });
+        },
+        error: (error) => {
+          console.error('Upload error:', error);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Upload Failed',
+            detail: `Failed to upload ${file.name}: ${error?.error?.error || 'Unknown error'}`,
+            life: 5000
+          });
+        }
+      });
+    });
   }
 
   nextStep(): void {
@@ -2205,7 +2279,16 @@ export class AddEventComponent implements OnInit, OnDestroy {
       } else {
         // Create new event as draft
         this.eventApiService.createEvent(payload, 'incomplete').subscribe({
-          next: (event) => {
+          next: (eventResponse: any) => {
+            // Get event ID from response
+            const newEventId = eventResponse?.id || eventResponse?.data?.id || eventResponse?.event?.id;
+
+            if (newEventId) {
+              this.eventId = newEventId;
+              // Upload files to S3 after event creation (even for drafts)
+              this.uploadFilesAfterEventCreation(newEventId);
+            }
+
             this.messageService.add({
               severity: 'success',
               summary: 'Draft Saved',
@@ -2259,6 +2342,9 @@ export class AddEventComponent implements OnInit, OnDestroy {
         }
 
         if (this.isEditing && this.eventId) {
+          // Upload files if any new files were selected
+          this.uploadFilesAfterEventCreation(this.eventId);
+
           // Update existing event and mark as complete
           this.eventApiService.updateEvent(this.eventId, payload, 'complete').subscribe({
             next: () => {
@@ -2288,7 +2374,16 @@ export class AddEventComponent implements OnInit, OnDestroy {
           // Create new event as complete
           console.log('Submitting event with payload:', JSON.stringify(payload, null, 2));
           this.eventApiService.createEvent(payload, 'complete').subscribe({
-            next: () => {
+            next: (eventResponse: any) => {
+              // Get event ID from response
+              const newEventId = eventResponse?.id || eventResponse?.data?.id || eventResponse?.event?.id;
+
+              if (newEventId) {
+                this.eventId = newEventId;
+                // Upload files to S3 after event creation
+                this.uploadFilesAfterEventCreation(newEventId);
+              }
+
               this.messageService.add({
                 severity: 'success',
                 summary: 'Success',
