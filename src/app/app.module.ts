@@ -13,6 +13,7 @@ import { AccordionModule } from 'ngx-bootstrap/accordion';
 import { ToastrModule } from 'ngx-toastr';
 import { ScrollToModule } from '@nicky-lenaers/ngx-scroll-to';
 import { SharedModule } from './cyptolanding/shared/shared.module';
+import { MessageService } from 'primeng/api';
 
 // Store
 import { StoreModule } from '@ngrx/store';
@@ -115,5 +116,6 @@ export function createTranslateLoader(http: HttpClient): any {
         { provide: HTTP_INTERCEPTORS, useClass: ErrorInterceptor, multi: true },
         { provide: HTTP_INTERCEPTORS, useClass: FakeBackendInterceptor, multi: true },
         HttpClientModule,
+        MessageService, // PrimeNG MessageService for ToastService
     ] })
 export class AppModule { }

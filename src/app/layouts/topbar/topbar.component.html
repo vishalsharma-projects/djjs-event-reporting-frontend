@@ -17,6 +17,23 @@
         <i class="fa fa-fw fa-bars"></i>
       </button>
 
+      <!-- Breadcrumbs -->
+      <div class="d-none d-md-flex align-items-center ms-3">
+        <ol class="breadcrumb mb-0">
+          @for(item of breadcrumbItems; track $index) {
+            <ng-container>
+              @if(item.active) {
+                <li class="breadcrumb-item active">{{ item.label }}</li>
+              } @else {
+                <li class="breadcrumb-item">
+                  <a [routerLink]="item.link" class="text-muted">{{ item.label }}</a>
+                </li>
+              }
+            </ng-container>
+          }
+        </ol>
+      </div>
+
       <div class="dropdown-mega d-none d-lg-block ms-2" dropdown>
         <div class="dropdown-menu dropdown-megamenu" *dropdownMenu>
           <div class="row">

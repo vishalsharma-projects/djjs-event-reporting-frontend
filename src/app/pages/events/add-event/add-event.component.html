@@ -1,5 +1,14 @@
 <!-- PrimeNG Toast Component -->
-<p-toast></p-toast>
+<p-toast
+  position="top-right"
+  [baseZIndex]="11000"
+  [showTransformOptions]="'translateX(100%)'"
+  [hideTransformOptions]="'translateX(100%)'"
+  [showTransitionOptions]="'300ms ease-out'"
+  [hideTransitionOptions]="'300ms ease-in'"
+  (onClose)="onToastClose($event)"
+  (onClick)="onToastClick($event)">
+</p-toast>
 
 <section class="event-stepper">
   <!-- Page Title -->
@@ -12,7 +21,19 @@
           </button>
           <h4 class="mb-0">{{ isEditing ? 'EDIT EVENT' : 'ADD EVENT' }}</h4>
         </div>
-        <div>
+        <div class="d-flex align-items-center gap-2">
+          <!-- Validation Toggle -->
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="validationToggle"
+              [checked]="validationSettings.getSettings().enabled"
+              (change)="validationSettings.toggleValidation()">
+            <label class="form-check-label" for="validationToggle"
+              [class.text-success]="validationSettings.getSettings().enabled"
+              [class.text-muted]="!validationSettings.getSettings().enabled">
+              <i class="fas" [ngClass]="validationSettings.getSettings().enabled ? 'fa-check-circle' : 'fa-times-circle'"></i>
+              Validation {{ validationSettings.getSettings().enabled ? 'ON' : 'OFF' }}
+            </label>
+          </div>
           <button class="btn btn-outline-danger btn-sm" (click)="clearDraftAndStartFresh()" *ngIf="draftId">
             <i class="fas fa-trash-alt me-1"></i> Clear Draft
           </button>
@@ -54,20 +75,28 @@
       <h5 class="mb-3">Event details</h5>
       <div class="row">
         <div class="col-md-4 mb-3">
-          <label class="form-label">Type</label>
-          <select class="form-select" formControlName="eventType" [disabled]="loadingEventTypes">
+          <label class="form-label">Type <span class="text-danger">*</span></label>
+          <select class="form-select" formControlName="eventType" [disabled]="loadingEventTypes"
+            [ngClass]="{'is-invalid': isFieldInvalid('eventType')}">
             <option value="">{{ loadingEventTypes ? 'Loading...' : 'Select' }}</option>
             <option *ngFor="let type of eventTypes" [value]="type.name">{{ type.name }}</option>
           </select>
+          <div class="invalid-feedback" *ngIf="isFieldInvalid('eventType')">
+            Event Type is required.
+          </div>
         </div>
         <div class="col-md-4 mb-3">
-          <label class="form-label">Event category</label>
+          <label class="form-label">Event category <span class="text-danger">*</span></label>
           <select class="form-select" formControlName="eventCategory"
-            [disabled]="loadingEventCategories || filteredEventCategories.length === 0">
+            [disabled]="loadingEventCategories || filteredEventCategories.length === 0"
+            [ngClass]="{'is-invalid': isFieldInvalid('eventCategory')}">
             <option value="">{{ loadingEventCategories ? 'Loading...' : (filteredEventCategories.length === 0 ? 'Select
               Event Type first' : 'Select') }}</option>
             <option *ngFor="let cat of filteredEventCategories" [value]="cat.name">{{ cat.name }}</option>
           </select>
+          <div class="invalid-feedback" *ngIf="isFieldInvalid('eventCategory')">
+            Event Category is required.
+          </div>
         </div>
         <div class="col-md-4 mb-3">
           <label class="form-label">Event sub category</label>
@@ -104,19 +133,24 @@
 
       <div class="row">
         <div class="col-md-4 mb-3">
-          <label class="form-label">Duration</label>
+          <label class="form-label">Duration <span class="text-danger">*</span></label>
           <div class="row g-2">
             <div class="col-6">
               <input type="text" class="form-control" placeholder="Start Date" [bsValue]="startDate" bsDatepicker
-                (bsValueChange)="onStartDateChange($event)" autocomplete="off">
+                (bsValueChange)="onStartDateChange($event)" autocomplete="off"
+                [ngClass]="{'is-invalid': isFieldInvalid('duration')}">
             </div>
             <div class="col-6">
               <input type="text" class="form-control" placeholder="End Date" [bsValue]="endDate" bsDatepicker
-                (bsValueChange)="onEndDateChange($event)" autocomplete="off">
+                (bsValueChange)="onEndDateChange($event)" autocomplete="off"
+                [ngClass]="{'is-invalid': isFieldInvalid('duration')}">
             </div>
           </div>
           <input type="hidden" formControlName="duration">
           <small class="text-muted" *ngIf="getDurationDisplay()">{{ getDurationDisplay() }}</small>
+          <div class="invalid-feedback d-block" *ngIf="isFieldInvalid('duration')">
+            Duration is required. Please select start and end dates.
+          </div>
         </div>
         <div class="col-md-4 mb-3"> <label class="form-label">Daily Start Time</label> <select class="form-select"
             formControlName="dailyStartTime">
@@ -157,11 +191,15 @@
       <h5 class=" mb-3">Venue</h5>
       <div class="row">
         <div class="col-md-4 mb-3">
-          <label class="form-label">Country</label>
-          <select class="form-select" formControlName="country">
+          <label class="form-label">Country <span class="text-danger">*</span></label>
+          <select class="form-select" formControlName="country"
+            [ngClass]="{'is-invalid': isFieldInvalid('country')}">
             <option value="">Select</option>
             <option *ngFor="let c of countries" [value]="c.name">{{ c.name }}</option>
           </select>
+          <div class="invalid-feedback" *ngIf="isFieldInvalid('country')">
+            Country is required.
+          </div>
         </div>
         <div class="col-md-4 mb-3">
           <label class="form-label">Pincode</label>
@@ -193,23 +231,35 @@
 
       <div class="row">
         <div class="col-md-4 mb-3">
-          <label class="form-label">State</label>
-          <select class="form-select" formControlName="state">
+          <label class="form-label">State <span class="text-danger">*</span></label>
+          <select class="form-select" formControlName="state"
+            [ngClass]="{'is-invalid': isFieldInvalid('state')}">
             <option value="">Select</option>
             <option *ngFor="let s of filteredStates" [value]="s.name">{{ s.name }}</option>
           </select>
+          <div class="invalid-feedback" *ngIf="isFieldInvalid('state')">
+            State is required.
+          </div>
         </div>
         <div class="col-md-4 mb-3">
-          <label class="form-label">City</label>
-          <select class="form-select" formControlName="city" [disabled]="loadingCities || filteredCities.length === 0">
+          <label class="form-label">City <span class="text-danger">*</span></label>
+          <select class="form-select" formControlName="city" [disabled]="loadingCities || filteredCities.length === 0"
+            [ngClass]="{'is-invalid': isFieldInvalid('city')}">
             <option value="">{{ loadingCities ? 'Loading...' : (filteredCities.length === 0 ? 'Select State first' :
               'Select') }}</option>
             <option *ngFor="let city of filteredCities" [value]="city.name">{{ city.name }}</option>
           </select>
+          <div class="invalid-feedback" *ngIf="isFieldInvalid('city')">
+            City is required.
+          </div>
         </div>
         <div class="col-md-4 mb-3">
-          <label class="form-label">Address</label>
-          <input type="text" class="form-control" formControlName="address">
+          <label class="form-label">Address <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" formControlName="address"
+            [ngClass]="{'is-invalid': isFieldInvalid('address')}">
+          <div class="invalid-feedback" *ngIf="isFieldInvalid('address')">
+            Address is required.
+          </div>
         </div>
       </div>
 

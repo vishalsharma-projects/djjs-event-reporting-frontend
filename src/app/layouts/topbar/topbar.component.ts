@@ -1,5 +1,5 @@
 import { Component, OnInit, Output, EventEmitter, Inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { DOCUMENT } from '@angular/common';
 import { AuthenticationService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
@@ -7,7 +7,7 @@ import { CookieService } from 'ngx-cookie-service';
 import { LanguageService } from '../../core/services/language.service';
 import { TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
-import { Observable, map } from 'rxjs';
+import { Observable, map, filter } from 'rxjs';
 import { changesLayout } from 'src/app/store/layouts/layout.actions';
 import { getLayoutMode } from 'src/app/store/layouts/layout.selector';
 import { RootReducerState } from 'src/app/store';
@@ -32,12 +32,15 @@ export class TopbarComponent implements OnInit {
   layout: string;
   dataLayout$: Observable<string>;
   // Define layoutMode as a property
-  
+
   // User information
   currentUser: any = null;
   isAuthenticated: boolean = false;
 
-  constructor(@Inject(DOCUMENT) private document: any, private router: Router, private authService: AuthenticationService,
+  // Breadcrumb items
+  breadcrumbItems: Array<{ label: string; link?: string; active?: boolean }> = [];
+
+  constructor(@Inject(DOCUMENT) private document: any, private router: Router, private activatedRoute: ActivatedRoute, private authService: AuthenticationService,
     public languageService: LanguageService,
     public translate: TranslateService,
     public _cookiesService: CookieService, public store: Store<RootReducerState>) {
@@ -79,6 +82,67 @@ export class TopbarComponent implements OnInit {
     } else {
       this.flagvalue = val.map(element => element.flag);
     }
+
+    // Subscribe to route changes to update breadcrumbs
+    this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe(() => {
+        this.buildBreadcrumbs();
+      });
+
+    // Build initial breadcrumbs
+    this.buildBreadcrumbs();
+  }
+
+  /**
+   * Build breadcrumbs from the current route
+   */
+  buildBreadcrumbs() {
+    this.breadcrumbItems = [];
+    let route = this.activatedRoute.root;
+    let url = '';
+
+    // Always start with Home
+    this.breadcrumbItems.push({
+      label: 'Home',
+      link: '/',
+      active: false
+    });
+
+    // Build breadcrumbs from route segments
+    while (route.firstChild) {
+      route = route.firstChild;
+      if (route.snapshot.url.length) {
+        const segment = route.snapshot.url[0].path;
+        url += `/${segment}`;
+
+        // Skip empty segments
+        if (segment && segment.trim() !== '') {
+          const label = this.formatLabel(segment);
+          this.breadcrumbItems.push({
+            label: label,
+            link: url,
+            active: false
+          });
+        }
+      }
+    }
+
+    // Mark the last item as active
+    if (this.breadcrumbItems.length > 0) {
+      this.breadcrumbItems[this.breadcrumbItems.length - 1].active = true;
+    }
+  }
+
+  /**
+   * Format route segment to readable label
+   */
+  formatLabel(segment: string): string {
+    // Convert kebab-case or snake_case to Title Case
+    return segment
+      .split(/[-_]/)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   }
 
   setLanguage(text: string, lang: string, flag: string) {
@@ -109,7 +173,7 @@ export class TopbarComponent implements OnInit {
   logout() {
     // Use the new authentication service for logout
     this.authService.logout();
-    
+
     // Navigate to login page
     this.router.navigate(['/auth/login']);
   }

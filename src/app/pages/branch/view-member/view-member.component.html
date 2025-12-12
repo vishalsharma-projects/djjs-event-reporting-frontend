@@ -1,0 +1,130 @@
+<app-page-title [title]="(member ? member.name : 'Member Details')" [breadcrumbItems]="breadCrumbItems"></app-page-title>
+
+<div class="row" *ngIf="!loading && member">
+  <div class="col-12">
+    <!-- Action Buttons -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <button class="btn btn-outline-secondary" (click)="goBack()">
+        <i class="fas fa-arrow-left me-2"></i>Back
+      </button>
+      <div>
+        <button class="btn btn-outline-primary me-2" (click)="editMember()">
+          <i class="fas fa-edit me-2"></i>Edit Member
+        </button>
+        <button class="btn btn-outline-danger" (click)="deleteMember()">
+          <i class="fas fa-trash me-2"></i>Delete Member
+        </button>
+      </div>
+    </div>
+
+    <!-- Member Header Card -->
+    <div class="card member-header-card mb-4" [@fadeIn]>
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <div class="member-avatar me-3">
+            <i class="fas" [ngClass]="member.member_type === 'preacher' ? 'fa-book-reader' : 'fa-hands-praying'"></i>
+          </div>
+          <div class="flex-grow-1">
+            <h3 class="mb-1">{{ member.name }}</h3>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <span class="badge" [ngClass]="member.member_type === 'preacher' ? 'bg-info' : 'bg-success'">
+                {{ member.member_type === 'preacher' ? 'Preacher' : 'Samarpit Sewadar' }}
+              </span>
+              <span class="badge bg-secondary" *ngIf="member.branch_role">{{ member.branch_role }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Member Details Cards -->
+    <div class="row g-3">
+      <!-- Personal Information -->
+      <div class="col-md-6">
+        <div class="card info-card">
+          <div class="card-header info-card-header">
+            <i class="fas fa-user me-2"></i>
+            <h6 class="mb-0">Personal Information</h6>
+          </div>
+          <div class="card-body">
+            <div class="info-item">
+              <label class="info-label">Age</label>
+              <p class="info-value">{{ member.age || 'N/A' }}</p>
+            </div>
+            <div class="info-item">
+              <label class="info-label">Qualification</label>
+              <p class="info-value">{{ member.qualification || 'N/A' }}</p>
+            </div>
+            <div class="info-item" *ngIf="member.date_of_birth">
+              <label class="info-label">Date of Birth</label>
+              <p class="info-value">
+                <i class="fas fa-calendar me-1 text-muted"></i>
+                {{ member.date_of_birth | date:'mediumDate' }}
+              </p>
+            </div>
+            <div class="info-item" *ngIf="member.date_of_samarpan">
+              <label class="info-label">Date of Samarpan</label>
+              <p class="info-value">
+                <i class="fas fa-calendar-check me-1 text-muted"></i>
+                {{ member.date_of_samarpan | date:'mediumDate' }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Role & Responsibility -->
+      <div class="col-md-6">
+        <div class="card info-card">
+          <div class="card-header info-card-header">
+            <i class="fas fa-briefcase me-2"></i>
+            <h6 class="mb-0">Role & Responsibility</h6>
+          </div>
+          <div class="card-body">
+            <div class="info-item">
+              <label class="info-label">Branch Role</label>
+              <p class="info-value">
+                <span class="badge bg-primary">{{ member.branch_role || 'N/A' }}</span>
+              </p>
+            </div>
+            <div class="info-item">
+              <label class="info-label">Responsibility</label>
+              <p class="info-value">{{ member.responsibility || 'N/A' }}</p>
+            </div>
+            <div class="info-item">
+              <label class="info-label">Member Type</label>
+              <p class="info-value">
+                <span class="badge" [ngClass]="member.member_type === 'preacher' ? 'bg-info' : 'bg-success'">
+                  <i class="fas me-1" [ngClass]="member.member_type === 'preacher' ? 'fa-book-reader' : 'fa-hands-praying'"></i>
+                  {{ member.member_type === 'preacher' ? 'Preacher' : 'Samarpit Sewadar' }}
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading State -->
+<div class="row" *ngIf="loading">
+  <div class="col-12 text-center p-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-3">Loading member details...</p>
+  </div>
+</div>
+
+<!-- Error State -->
+<div class="row" *ngIf="!loading && !member">
+  <div class="col-12">
+    <div class="alert alert-danger" role="alert">
+      Member not found or failed to load.
+    </div>
+  </div>
+</div>
+
+<p-toast></p-toast>
+

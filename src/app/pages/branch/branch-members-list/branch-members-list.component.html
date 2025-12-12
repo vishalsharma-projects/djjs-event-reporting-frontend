@@ -1,0 +1,93 @@
+<div class="card">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="mb-0">Members ({{ members.length }})</h5>
+      <div class="d-flex gap-2">
+        <div class="btn-group" role="group">
+          <button type="button" class="btn btn-sm"
+            [ngClass]="{'btn-primary': activeMemberType === 'all', 'btn-outline-primary': activeMemberType !== 'all'}"
+            (click)="filterByType('all')"
+            [style.background]="activeMemberType === 'all' ? 'linear-gradient(135deg, #ff6b35, #f7931e)' : ''"
+            [style.border]="activeMemberType === 'all' ? 'none' : '1px solid #ff6b35'"
+            [style.color]="activeMemberType === 'all' ? 'white' : '#ff6b35'">
+            All ({{ members.length }})
+          </button>
+          <button type="button" class="btn btn-sm"
+            [ngClass]="{'btn-primary': activeMemberType === 'preacher', 'btn-outline-primary': activeMemberType !== 'preacher'}"
+            (click)="filterByType('preacher')"
+            [style.background]="activeMemberType === 'preacher' ? 'linear-gradient(135deg, #ff6b35, #f7931e)' : ''"
+            [style.border]="activeMemberType === 'preacher' ? 'none' : '1px solid #ff6b35'"
+            [style.color]="activeMemberType === 'preacher' ? 'white' : '#ff6b35'">
+            Preacher ({{ preacherCount }})
+          </button>
+          <button type="button" class="btn btn-sm"
+            [ngClass]="{'btn-primary': activeMemberType === 'samarpit', 'btn-outline-primary': activeMemberType !== 'samarpit'}"
+            (click)="filterByType('samarpit')"
+            [style.background]="activeMemberType === 'samarpit' ? 'linear-gradient(135deg, #ff6b35, #f7931e)' : ''"
+            [style.border]="activeMemberType === 'samarpit' ? 'none' : '1px solid #ff6b35'"
+            [style.color]="activeMemberType === 'samarpit' ? 'white' : '#ff6b35'">
+            Samarpit ({{ samarpitCount }})
+          </button>
+        </div>
+        <button class="btn btn-sm" [ngClass]="{'btn-primary': true}" (click)="addMember()" style="background: linear-gradient(135deg, #ff6b35, #f7931e); border: none;">
+          <i class="fas fa-plus me-2"></i>Add Member
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="text-center p-4">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+
+    <!-- Members Table -->
+    <div *ngIf="!loading" class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Role</th>
+            <th>Responsibility</th>
+            <th>Age</th>
+            <th>Qualification</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let member of filteredMembers" style="cursor: pointer;" (click)="viewMember(member.id)">
+            <td>{{ member.name }}</td>
+            <td>
+              <span class="badge" [ngClass]="member.member_type === 'preacher' ? 'bg-info' : 'bg-success'">
+                {{ member.member_type }}
+              </span>
+            </td>
+            <td>{{ member.branch_role || 'N/A' }}</td>
+            <td>{{ member.responsibility || 'N/A' }}</td>
+            <td>{{ member.age || 'N/A' }}</td>
+            <td>{{ member.qualification || 'N/A' }}</td>
+            <td (click)="$event.stopPropagation()">
+              <button class="btn btn-sm btn-outline-primary me-1" (click)="viewMember(member.id)">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" (click)="deleteMember(member.id)">
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="filteredMembers.length === 0">
+            <td colspan="7" class="text-center text-muted p-4">
+              <i class="fas fa-users fa-2x mb-2 d-block"></i>
+              No members found
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<p-toast></p-toast>
+

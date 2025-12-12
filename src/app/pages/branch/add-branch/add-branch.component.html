@@ -1,3 +1,5 @@
+<app-page-title [title]="'Add Branch'" [breadcrumbItems]="breadCrumbItems"></app-page-title>
+
 <form [formGroup]="branchForm" (ngSubmit)="onSubmit()" class="branch-form">
 <div class="card profile-completion-card">
   <div class="card-body d-flex align-items-center">
@@ -33,49 +35,53 @@
 
     <!-- Branch Details -->
     <div class="branch-details">
-      <h5 class="mb-1">{{ branchName }}</h5>
-      <p class="mb-1"><strong>Email:</strong> {{ branchEmail }}</p>
-      <p class="mb-0"><strong>Coordinator:</strong> {{ coordinatorName }}</p>
+      <h5 class="mb-1">{{ branchForm.get('name')?.value || 'New Branch' }}</h5>
+      <p class="mb-1"><strong>Email:</strong> {{ branchForm.get('email')?.value || 'Not set' }}</p>
+      <p class="mb-0"><strong>Coordinator:</strong> {{ getCoordinatorName() || 'Not selected' }}</p>
     </div>
 
   </div>
 </div>
-  <!-- Tabs -->
-  <ul class="nav nav-tabs nav-tabs-custom" role="tablist">
-  <li class="nav-item">
-    <button class="nav-link"
-      [ngClass]="{'active': activeTab === 'branch'}"
-      (click)="setActiveTab('branch')"
-      type="button">
-      <span class="d-block d-sm-none"><i class="fas fa-user-plus"></i></span>
-      <span class="d-none d-sm-block">Branch Details</span>
-    </button>
-  </li>
-  <li class="nav-item">
-    <button class="nav-link"
-      [ngClass]="{'active': activeTab === 'members'}"
-      (click)="setActiveTab('members')"
-      type="button">
-      <span class="d-block d-sm-none"><i class="fas fa-users"></i></span>
-      <span class="d-none d-sm-block">Members</span>
-    </button>
-  </li>
-</ul>
-  <!-- Tab Content Branch Details-->
-  <div  class="tab-content p-3">
-      <div class="tab-pane"
-       [ngClass]="{'show active': activeTab === 'branch'}">
+  <!-- Branch Details Content -->
+  <div class="p-3">
       <!-- Branch details -->
       <section class="card mb-4">
         <div class="card-body">
           <h5 class="mb-3">Branch details</h5>
           <div class="row g-3">
             <div class="col-md-4">
+              <label class="form-label">Branch Name <span class="text-danger">*</span></label>
+              <input class="form-control" formControlName="name" placeholder="Enter branch name" />
+              <div *ngIf="branchForm.get('name')?.invalid && branchForm.get('name')?.touched" class="text-danger small">
+                Branch name is required
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Email <span class="text-danger">*</span></label>
+              <input type="email" class="form-control" formControlName="email" placeholder="Enter email" />
+              <div *ngIf="branchForm.get('email')?.invalid && branchForm.get('email')?.touched" class="text-danger small">
+                <span *ngIf="branchForm.get('email')?.errors?.['required']">Email is required</span>
+                <span *ngIf="branchForm.get('email')?.errors?.['email']">Invalid email format</span>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Contact Number <span class="text-danger">*</span></label>
+              <input type="tel" class="form-control" formControlName="contactNumber" placeholder="Enter contact number" />
+              <div *ngIf="branchForm.get('contactNumber')?.invalid && branchForm.get('contactNumber')?.touched" class="text-danger small">
+                Contact number is required
+              </div>
+            </div>
+          </div>
+          <div class="row g-3 mt-1">
+            <div class="col-md-4">
               <label class="form-label">Coordinator <span class="text-danger">*</span></label>
               <select class="form-select" formControlName="coordinator" [disabled]="loadingCoordinators">
                 <option value="">Select</option>
                 <option *ngFor="let coordinator of coordinatorsList" [value]="coordinator.id">{{coordinator.name}}</option>
               </select>
+              <div *ngIf="branchForm.get('coordinator')?.invalid && branchForm.get('coordinator')?.touched" class="text-danger small">
+                Coordinator is required
+              </div>
             </div>
             <div class="col-md-4">
               <label class="form-label">Established on <span class="text-danger">*</span></label>
@@ -96,31 +102,6 @@
               <label class="form-check-label" for="toggleSwitch">
                 is a Parent Branch
               </label>
-            </div>
-          </div>
-          <div class="row g-3 mt-1">
-            <div class="col-md-4">
-              <label class="form-label">Child Branch Name <span class="text-danger">*</span></label>
-              <select class="form-select" formControlName="childBranchName">
-                <option value="">Select</option>
-                <option value="Meerut">Amit Sharma</option>
-                <option value="Saharanpur">Priya Singh</option>
-              </select>
-            </div>
-            <div class="col-md-8">
-              <label class="form-label">Address <span class="text-danger">*</span></label>
-              <div class="input-group">
-                <input class="form-control" formControlName="Address" type="number" placeholder="Enter Address" />
-
-              </div>
-            </div>
-
-          </div>
-          <div class="row g-3 mt-1">
-            <div class="d-flex justify-content-between mt-4">
-              <button type="button" class="btn btn-outline-primary">
-                Add Child Branch
-              </button>
             </div>
           </div>
 
@@ -169,7 +150,7 @@
                 <option value="">Select</option>
                 <option *ngFor="let d of districtOptions" [value]="d.id">{{d.name}}</option>
               </select>
-              
+
             </div>
 
           </div>
@@ -190,7 +171,7 @@
           </div>
         </div>
       </section>
-      
+
       <!-- Infrastructure -->
       <section class="card mb-4">
         <div class="card-body">
@@ -274,154 +255,41 @@
         </div>
       </section>
 
-
-    </div>
-
-    <!-- Tab Content Add Member-->
-   <div class="tab-pane"
-       [ngClass]="{'show active': activeTab === 'members'}">
-      <!-- Add Members -->
+      <!-- Additional Branch Information -->
       <section class="card mb-4">
         <div class="card-body">
-          <h5 class="mb-3">Add Members</h5>
+          <h5 class="mb-3">Additional Information</h5>
           <div class="row g-3">
             <div class="col-md-3">
-              <label class="form-label">Member Type <span class="text-danger">*</span></label>
-              <select class="form-select" formControlName="memberType">
-                <option value="samarpit">Samarpit Sewadar</option>
-                <option value="preacher">Preacher</option>
-              </select>
+              <label class="form-label">Branch Code</label>
+              <input class="form-control" formControlName="branchCode" placeholder="Enter branch code" maxlength="50" />
             </div>
             <div class="col-md-3">
-              <label class="form-label">Name <span class="text-danger">*</span></label>
-              <input class="form-control" formControlName="name" type="text" placeholder="Enter name" />
+              <label class="form-label">Region ID</label>
+              <input type="number" class="form-control" formControlName="regionId" placeholder="Enter region ID" />
             </div>
             <div class="col-md-3">
-              <label class="form-label">Role <span class="text-danger">*</span></label>
-              <select class="form-select" formControlName="role">
-                <option value="">Select</option>
-                <option value="Coordinator">Coordinator</option>
-                <option value="Volunteer">Volunteer</option>
-                <option value="Member">Member</option>
-              </select>
+              <div class="form-check form-switch mt-4">
+                <input class="form-check-input orange-switch" type="checkbox" formControlName="status" id="statusSwitch">
+                <label class="form-check-label" for="statusSwitch">Status (Active)</label>
+              </div>
             </div>
             <div class="col-md-3">
-              <label class="form-label">Responsibility</label>
-              <select class="form-select" formControlName="responsibility">
-                <option value="">Select</option>
-                <option value="Teaching">Teaching</option>
-                <option value="Management">Management</option>
-                <option value="Support">Support</option>
-                <option value="Preach">Preach</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="row g-3 mt-1">
-            <div class="col-md-3">
-              <label class="form-label">Age</label>
-              <input class="form-control" formControlName="age" type="number" placeholder="Enter age" />
-            </div>
-            <div class="col-md-3">
-              <label class="form-label">Date of Samarpan</label>
-              <input class="form-control" formControlName="dateOfSamarpan" type="date" placeholder="YYYY-MM-DD" />
-            </div>
-            <div class="col-md-3">
-              <label class="form-label">Qualification</label>
-              <select class="form-select" formControlName="qualification">
-                <option value="">Select</option>
-                <option value="Graduate">Graduate</option>
-                <option value="Post Graduate">Post Graduate</option>
-                <option value="Diploma">Diploma</option>
-              </select>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label">Date of birth</label>
-              <input class="form-control" formControlName="dateOfBirth" type="date" placeholder="YYYY-MM-DD" />
-
-            </div>
-          </div>
-
-          <div class="row g-3 mt-1">
-
-            <div class="col-md-3 d-flex align-items-end">
-              <button type="button" class="btn btn-outline-primary w-100" (click)="addMember()">
-                <i class="fas fa-plus me-2"></i>Add Member
-              </button>
+              <div class="form-check form-switch mt-4">
+                <input class="form-check-input orange-switch" type="checkbox" formControlName="ncr" id="ncrSwitch">
+                <label class="form-check-label" for="ncrSwitch">NCR</label>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- List of Members -->
-      <section class="card mb-4">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">List of Members ({{members.length}})</h5>
-            <div class="btn-group">
-              <button type="button" class="btn btn-sm"
-                [ngClass]="{'btn-primary': activeMemberType==='preacher', 'btn-outline-primary': activeMemberType!=='preacher'}"
-                (click)="switchMemberType('preacher')">
-                Preacher ({{preacherCount}})
-              </button>
-              <button type="button" class="btn btn-sm"
-                [ngClass]="{'btn-primary': activeMemberType==='samarpit', 'btn-outline-primary': activeMemberType!=='samarpit'}"
-                (click)="switchMemberType('samarpit')">
-                Samarpit Sewadar ({{samarpitCount}})
-              </button>
-            </div>
-          </div>
-
-          <div class="table-responsive">
-            <table class="table table-bordered align-middle">
-              <thead class="table-light">
-                <tr>
-                  <th>Name</th>
-                  <th>Role</th>
-                  <th>Responsibility</th>
-                  <th>Age</th>
-                  <th>Date of samarpan</th>
-                  <th>Qualification</th>
-                  <th>Date of birth</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let member of filteredMembers">
-                  <td>{{member.value.name || '-'}}</td>
-                  <td>{{member.value.role || '-'}}</td>
-                  <td>{{member.value.responsibility || '-'}}</td>
-                  <td>{{member.value.age || '-'}}</td>
-                  <td>{{member.value.dateOfSamarpan || '-'}}</td>
-                  <td>{{member.value.qualification || '-'}}</td>
-                  <td>{{member.value.dateOfBirth || '-'}}</td>
-                </tr>
-                <tr *ngIf="filteredMembers.length === 0">
-                  <td colspan="7" class="text-center text-muted">No members to show</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="d-flex justify-content-between align-items-center">
-            <small class="text-muted">
-              Showing 1 to {{filteredMembers.length}} of {{filteredMembers.length}} entries
-            </small>
-            <div class="btn-group">
-              <button type="button" class="btn btn-sm btn-outline-secondary">Previous</button>
-              <button type="button" class="btn btn-sm btn-primary">1</button>
-              <button type="button" class="btn btn-sm btn-outline-secondary">Next</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-    </div>
   </div>
   <!-- Actions -->
   <div class="d-flex justify-content-end mb-5">
     <button type="submit" class="btn btn-primary" [disabled]="branchForm.invalid || isSubmitting">
       <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-      {{ isSubmitting ? 'Saving...' : 'Save & proceed' }}
+      {{ isSubmitting ? 'Saving...' : 'Save Branch' }}
     </button>
   </div>
 </form>

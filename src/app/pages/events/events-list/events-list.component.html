@@ -2,7 +2,7 @@
   <div class="col-12">
     <!-- Page Header with Filters -->
     <div class="page-title-box">
-      <div class="row align-items-center">
+      <div class="row align-items-center mb-1">
         <div class="col-md-6">
           <h4 class="page-title">
             EVENTS
@@ -26,9 +26,9 @@
       </div>
 
       <!-- Filter Section -->
-      <div class="row mt-3">
+      <div class="row mt-0">
         <div class="col-md-3">
-          <div class="form-group">
+          <div class="form-group mb-0">
             <label for="statusFilter" class="form-label">Status</label>
             <select class="form-select" id="statusFilter" [(ngModel)]="statusFilter" (change)="onStatusFilterChange()">
               <option value="all">All Events</option>
@@ -38,7 +38,7 @@
           </div>
         </div>
         <div class="col-md-3">
-          <div class="form-group">
+          <div class="form-group mb-0">
             <label for="monthFilter" class="form-label">Month</label>
             <select class="form-select" id="monthFilter">
               <option value="july-2025">July 2025</option>
@@ -49,13 +49,16 @@
           </div>
         </div>
         <div class="col-md-6">
-          <div class="form-group">
+          <div class="form-group mb-0">
             <label for="searchFilter" class="form-label">Search</label>
             <div class="input-group">
               <span class="input-group-text">
                 <i class="pi pi-search"></i>
               </span>
-              <input type="text" class="form-control" id="searchFilter" placeholder="Search by Branch or area name">
+              <input type="text" class="form-control" id="searchFilter"
+                     placeholder="Search by Branch or area name"
+                     [(ngModel)]="searchTerm"
+                     (input)="onSearchChange($any($event.target).value)">
             </div>
           </div>
         </div>
@@ -65,34 +68,18 @@
     <!-- PrimeNG Events Table -->
     <p-toast />
     <div class="table-container">
-      <p-table #dt [value]="events" dataKey="id" [rowHover]="true" [paginator]="true" [rows]="rows" [first]="first"
-        [rowsPerPageOptions]="rowsPerPageOptions" (onPageChange)="onPageChange($event)" (onSort)="onSort($event)"
+      <p-table #dt [value]="events" dataKey="id" [rowHover]="true" [paginator]="false" [rows]="rows" [first]="first"
+        (onPageChange)="onPageChange($event)" (onSort)="onSort($event)"
         [sortMode]="'single'" [tableStyle]="{ 'min-width': '100%' }">
 
         <!-- Table Header -->
         <ng-template pTemplate="header">
           <tr>
             <th style="width: 10%">Status</th>
-            <th style="width: 8%" [class.pinned-column]="isColumnPinned('eventType')">
-              <div class="d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center sortable-area" pSortableColumn="eventType">
-                  <span>Event Type (Scale)</span>
-                  <p-sortIcon field="eventType"></p-sortIcon>
-                </div>
-                <div class="dropdown-container" (click)="$event.stopPropagation()">
-                  <button class="btn btn-sm btn-link p-0" type="button" (click)="toggleDropdown('eventType')">
-                    <i class="pi pi-ellipsis-v"></i>
-                  </button>
-                  <div class="dropdown-menu" [class.show]="isDropdownOpen('eventType')">
-                    <a class="dropdown-item" href="#" (click)="showFilter('eventType'); $event.preventDefault()">
-                      <i class="pi pi-filter me-2"></i>Filter
-                    </a>
-                    <a class="dropdown-item" href="#" (click)="toggleColumnPin('eventType'); $event.preventDefault()">
-                      <i class="pi pi-thumbtack me-2" [class.text-warning]="isColumnPinned('eventType')"></i>
-                      {{ isColumnPinned('eventType') ? 'Unpin' : 'Pin' }}
-                    </a>
-                  </div>
-                </div>
+            <th style="width: 12%" [class.pinned-column]="isColumnPinned('eventType')">
+              <div class="d-flex align-items-center sortable-area" pSortableColumn="eventType">
+                <span>Event Type (Scale)</span>
+                <p-sortIcon field="eventType"></p-sortIcon>
               </div>
               <!-- Filter input inside column header -->
               <div *ngIf="activeFilter === 'eventType'" class="mt-2">
@@ -283,7 +270,7 @@
                 </button>
               </div>
             </th>
-            <th style="width: 8%" [class.pinned-column]="isColumnPinned('spiritualOrator')">
+            <th style="width: 7%; min-width: 100px;" [class.pinned-column]="isColumnPinned('spiritualOrator')">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="spiritualOrator">
                   <span>Spiritual Orator</span>
@@ -314,7 +301,7 @@
                 </button>
               </div>
             </th>
-            <th style="width: 8%" [class.pinned-column]="isColumnPinned('language')">
+            <th style="width: 5%; min-width: 80px;" [class.pinned-column]="isColumnPinned('language')">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="language">
                   <span>Language</span>
@@ -344,7 +331,7 @@
                 </button>
               </div>
             </th>
-            <th style="width: 8%" [class.pinned-column]="isColumnPinned('beneficiaries')">
+            <th style="width: 6%; min-width: 90px;" [class.pinned-column]="isColumnPinned('beneficiaries')">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="beneficiaries">
                   <span>Beneficiaries</span>
@@ -375,7 +362,7 @@
                 </button>
               </div>
             </th>
-            <th style="width: 8%" [class.pinned-column]="isColumnPinned('initiation')">
+            <th style="width: 6%; min-width: 85px;" [class.pinned-column]="isColumnPinned('initiation')">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="initiation">
                   <span>Initiation</span>
@@ -405,7 +392,7 @@
                 </button>
               </div>
             </th>
-            <th style="width: 8%" [class.pinned-column]="isColumnPinned('specialGuests')">
+            <th style="width: 5%; min-width: 100px;" [class.pinned-column]="isColumnPinned('specialGuests')">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="specialGuests">
                   <span>Special Guests</span>
@@ -436,7 +423,7 @@
                 </button>
               </div>
             </th>
-            <th style="width: 8%" [class.pinned-column]="isColumnPinned('volunteers')">
+            <th style="width: 5%; min-width: 90px;" [class.pinned-column]="isColumnPinned('volunteers')">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="volunteers">
                   <span>Volunteers</span>
@@ -466,7 +453,6 @@
                 </button>
               </div>
             </th>
-            <th style="width: 10%">Actions</th>
           </tr>
         </ng-template>
 
@@ -475,6 +461,39 @@
           <tr>
             <td>
               <div class="d-flex align-items-center gap-2">
+                <div class="action-menu-container" (click)="$event.stopPropagation()">
+                  <button
+                    class="btn btn-link p-0 action-menu-btn"
+                    type="button"
+                    (click)="toggleActionMenu(event.id)">
+                    <i class="pi pi-ellipsis-v"></i>
+                  </button>
+                  <div class="action-menu-dropdown" [class.show]="isActionMenuOpen(event.id)">
+                    <a class="dropdown-item" href="#"
+                      [routerLink]="event.status === 'incomplete' ? ['/events/add', event.id] : ['/events/add']"
+                      (click)="closeActionMenu()"
+                      title="Edit">
+                      <i class="pi pi-pencil"></i>
+                    </a>
+                    <a class="dropdown-item" href="#" (click)="openMoreDetailsModal(event); closeActionMenu(); $event.preventDefault()"
+                      title="More details">
+                      <i class="pi pi-eye"></i>
+                    </a>
+                    <a class="dropdown-item" href="#" (click)="downloadEvent(event.id); closeActionMenu(); $event.preventDefault()"
+                      title="Download">
+                      <i class="pi pi-download"></i>
+                    </a>
+                    <a class="dropdown-item" href="#" (click)="openGallery(event); closeActionMenu(); $event.preventDefault()"
+                      title="View in Gallery">
+                      <i class="pi pi-images"></i>
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item text-danger" href="#" (click)="deleteEvent(event.id); closeActionMenu(); $event.preventDefault()"
+                      title="Delete Event">
+                      <i class="pi pi-trash"></i>
+                    </a>
+                  </div>
+                </div>
                 <p-tag
                   [value]="event.status === 'complete' ? 'Complete' : 'Draft'"
                   [severity]="event.status === 'complete' ? 'success' : 'warning'">
@@ -531,36 +550,13 @@
               <i class="pi pi-info-circle text-primary ms-1" pTooltip="Click to view Volunteers"
                 tooltipPosition="top"></i>
             </td>
-            <td [class.pinned-column]="isColumnPinned('actions')">
-              <div class="d-flex gap-1">
-                <button class="btn btn-link p-0 action-btn"
-                  (click)="openMoreDetailsModal(event); $event.preventDefault()" data-tooltip="More Details">
-                  <i class="pi pi-eye me-2"></i>
-                </button>
-                <button class="btn btn-link p-0 action-btn"
-                  [routerLink]="event.status === 'incomplete' ? ['/events/add', event.id] : ['/events/add']"
-                  [data-tooltip]="event.status === 'incomplete' ? 'Continue Draft' : 'Edit Event'">
-                  <i class="pi pi-pencil"></i>
-                </button>
-                <button class="btn btn-link p-0 action-btn" (click)="downloadEvent(event.id)" data-tooltip="Download">
-                  <i class="pi pi-download"></i>
-                </button>
-                <button class="btn btn-link p-0 action-btn gallery-btn" (click)="openGallery(event); $event.preventDefault()"
-                  data-tooltip="View in Gallery">
-                  <i class="pi pi-images"></i>
-                </button>
-                <button class="btn btn-link p-0 action-btn text-danger" (click)="deleteEvent(event.id)" data-tooltip="Delete Event">
-                  <i class="pi pi-trash"></i>
-                </button>
-              </div>
-            </td>
           </tr>
         </ng-template>
 
         <!-- Empty Message -->
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="15" class="text-center p-4">
+            <td colspan="14" class="text-center p-4">
               <i class="pi pi-inbox text-muted" style="font-size: 2rem;"></i>
               <p class="text-muted mt-2">No events found.</p>
             </td>
@@ -568,6 +564,14 @@
         </ng-template>
       </p-table>
     </div>
+
+    <!-- Custom Pagination Component -->
+    <app-pagination
+      [first]="first"
+      [rows]="rows"
+      [totalRecords]="getTotalRecords()"
+      (pageChange)="onPageChange($event)">
+    </app-pagination>
   </div>
 </div>
 

@@ -6,22 +6,24 @@ import { UIModule } from './ui/ui.module';
 import { WidgetModule } from './widget/widget.module';
 import { ReactiveFormsModule } from '@angular/forms';
 import { FormModule } from '../pages/form/form.module';
+import { PaginationComponent } from './components/pagination/pagination.component';
 
 @NgModule({
-  declarations: [],
+  declarations: [PaginationComponent],
   imports: [
     CommonModule,
     UIModule,
-    WidgetModule , 
-    ReactiveFormsModule , 
+    WidgetModule ,
+    ReactiveFormsModule ,
     FormModule
   ],
-  exports :[ 
+  exports :[
     CommonModule,
     UIModule,
-    WidgetModule , 
-    ReactiveFormsModule , 
-    FormModule
+    WidgetModule ,
+    ReactiveFormsModule ,
+    FormModule,
+    PaginationComponent
   ]
 })
 

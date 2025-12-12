@@ -1,0 +1,44 @@
+// Breadcrumb styles in navbar
+.breadcrumb {
+  margin-bottom: 0;
+  padding: 0;
+  background: transparent;
+  font-size: 0.875rem;
+
+  .breadcrumb-item {
+    + .breadcrumb-item {
+      padding-left: 0.5rem;
+
+      &::before {
+        content: "/";
+        padding-right: 0.5rem;
+        color: var(--bs-gray-500);
+        font-weight: normal;
+      }
+    }
+
+    a {
+      color: var(--bs-gray-600);
+      text-decoration: none;
+      transition: color 0.2s;
+
+      &:hover {
+        color: var(--bs-primary);
+      }
+    }
+
+    &.active {
+      color: var(--bs-gray-800);
+      font-weight: 500;
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 991.98px) {
+  .breadcrumb {
+    display: none;
+  }
+}
+
+

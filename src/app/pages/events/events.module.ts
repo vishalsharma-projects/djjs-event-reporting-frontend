@@ -18,6 +18,7 @@ import { RippleModule } from 'primeng/ripple';
 import { MessageService } from 'primeng/api';
 
 import { UIModule } from '../../shared/ui/ui.module';
+import { SharedModule } from '../../shared/shared.module';
 import { EventsRoutingModule } from './events-routing.module';
 import { EventsListComponent } from './events-list/events-list.component';
 import { AddEventComponent } from './add-event/add-event.component';
@@ -58,6 +59,7 @@ const DEFAULT_DROPZONE_CONFIG: DropzoneConfigInterface = {
     TooltipModule,
     RippleModule,
     UIModule,
+    SharedModule,
     EventsRoutingModule
   ],
   providers: [

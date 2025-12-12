@@ -1,0 +1,209 @@
+<div class="branch-details-container" *ngIf="branch">
+  <div class="row g-2">
+      <!-- Basic Information Card -->
+      <div class="col-md-12">
+        <div class="info-card">
+          <div class="info-card-header">
+            <i class="fas fa-building me-2"></i>
+            <h6 class="mb-0">Basic Information</h6>
+          </div>
+          <div class="info-card-body">
+            <div class="row g-2">
+              <div class="col-md-6">
+                <div class="info-item">
+                  <label class="info-label">Branch Name</label>
+                  <p class="info-value">{{ branch.name || 'N/A' }}</p>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="info-item">
+                  <label class="info-label">Email</label>
+                  <p class="info-value">
+                    <a *ngIf="branch.email" [href]="'mailto:' + branch.email" class="text-decoration-none" style="color: #ff6b35;">
+                      <i class="fas fa-envelope me-1"></i>{{ branch.email }}
+                    </a>
+                    <span *ngIf="!branch.email">N/A</span>
+                  </p>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="info-item">
+                  <label class="info-label">Contact Number</label>
+                  <p class="info-value">
+                    <a *ngIf="branch.contact_number" [href]="'tel:' + branch.contact_number" class="text-decoration-none" style="color: #ff6b35;">
+                      <i class="fas fa-phone me-1"></i>{{ branch.contact_number }}
+                    </a>
+                    <span *ngIf="!branch.contact_number">N/A</span>
+                  </p>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="info-item">
+                  <label class="info-label">Coordinator</label>
+                  <p class="info-value">
+                    <i class="fas fa-user me-1 text-muted"></i>{{ branch.coordinator_name || 'N/A' }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Location Information Card -->
+      <div class="col-md-12">
+        <div class="info-card">
+          <div class="info-card-header">
+            <i class="fas fa-map-marker-alt me-2"></i>
+            <h6 class="mb-0">Location Information</h6>
+          </div>
+          <div class="info-card-body">
+            <div class="row g-2">
+              <div class="col-md-6">
+                <div class="info-item">
+                  <label class="info-label">Country</label>
+                  <p class="info-value">
+                    <i class="fas fa-globe me-1 text-muted"></i>{{ branch.country?.name || 'N/A' }}
+                  </p>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="info-item">
+                  <label class="info-label">State</label>
+                  <p class="info-value">{{ branch.state?.name || 'N/A' }}</p>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="info-item">
+                  <label class="info-label">District</label>
+                  <p class="info-value">{{ branch.district?.name || 'N/A' }}</p>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="info-item">
+                  <label class="info-label">City</label>
+                  <p class="info-value">{{ branch.city?.name || 'N/A' }}</p>
+                </div>
+              </div>
+              <div class="col-md-12">
+                <div class="info-item">
+                  <label class="info-label">Address</label>
+                  <p class="info-value">
+                    <i class="fas fa-map-marker-alt me-1 text-muted"></i>{{ branch.address || 'N/A' }}
+                  </p>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="info-item">
+                  <label class="info-label">Pincode</label>
+                  <p class="info-value">{{ branch.pincode || 'N/A' }}</p>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="info-item">
+                  <label class="info-label">Post Office</label>
+                  <p class="info-value">{{ branch.post_office || 'N/A' }}</p>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="info-item">
+                  <label class="info-label">Police Station</label>
+                  <p class="info-value">{{ branch.police_station || 'N/A' }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Additional Information Card -->
+      <div class="col-md-12">
+        <div class="info-card">
+          <div class="info-card-header">
+            <i class="fas fa-info-circle me-2"></i>
+            <h6 class="mb-0">Additional Information</h6>
+          </div>
+          <div class="info-card-body">
+            <div class="row g-2">
+              <div class="col-md-6">
+                <div class="info-item">
+                  <label class="info-label">Established On</label>
+                  <p class="info-value">
+                    <i class="fas fa-calendar me-1 text-muted"></i>
+                    {{ branch.established_on ? (branch.established_on | date:'mediumDate') : 'N/A' }}
+                  </p>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="info-item">
+                  <label class="info-label">Ashram Area</label>
+                  <p class="info-value">
+                    <i class="fas fa-ruler-combined me-1 text-muted"></i>
+                    {{ branch.aashram_area ? branch.aashram_area + ' sq km' : 'N/A' }}
+                  </p>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="info-item">
+                  <label class="info-label">Open Days</label>
+                  <p class="info-value">{{ branch.open_days || 'N/A' }}</p>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="info-item">
+                  <label class="info-label">Start Time</label>
+                  <p class="info-value">
+                    <i class="fas fa-clock me-1 text-muted"></i>{{ branch.daily_start_time || 'N/A' }}
+                  </p>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="info-item">
+                  <label class="info-label">End Time</label>
+                  <p class="info-value">
+                    <i class="fas fa-clock me-1 text-muted"></i>{{ branch.daily_end_time || 'N/A' }}
+                  </p>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="info-item">
+                  <label class="info-label">Status</label>
+                  <p class="info-value">
+                    <span class="badge" [ngClass]="branch.status ? 'bg-success' : 'bg-danger'">
+                      <i class="fas fa-circle me-1" style="font-size: 0.5rem;"></i>
+                      {{ branch.status ? 'Active' : 'Inactive' }}
+                    </span>
+                  </p>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="info-item">
+                  <label class="info-label">NCR</label>
+                  <p class="info-value">
+                    <span class="badge" [ngClass]="branch.ncr ? 'bg-info' : 'bg-secondary'">
+                      {{ branch.ncr ? 'Yes' : 'No' }}
+                    </span>
+                  </p>
+                </div>
+              </div>
+              <div class="col-md-6" *ngIf="branch.region_id">
+                <div class="info-item">
+                  <label class="info-label">Region ID</label>
+                  <p class="info-value">{{ branch.region_id }}</p>
+                </div>
+              </div>
+              <div class="col-md-6" *ngIf="branch.branch_code">
+                <div class="info-item">
+                  <label class="info-label">Branch Code</label>
+                  <p class="info-value">
+                    <span class="badge" style="background: linear-gradient(135deg, #ff6b35, #f7931e);">{{ branch.branch_code }}</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+</div>
+

@@ -30,10 +30,10 @@ export class LoginComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   constructor(
-    private formBuilder: UntypedFormBuilder, 
-    private route: ActivatedRoute, 
-    private router: Router, 
-    private authenticationService: AuthenticationService, 
+    private formBuilder: UntypedFormBuilder,
+    private route: ActivatedRoute,
+    private router: Router,
+    private authenticationService: AuthenticationService,
     private store: Store<RootReducerState>
   ) { }
 
@@ -46,7 +46,7 @@ export class LoginComponent implements OnInit, OnDestroy {
 
     // Get return URL from route parameters or default to '/'
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
-    
+
     // Check if there's a reason for redirect
     const reason = this.route.snapshot.queryParams['reason'];
     if (reason) {
@@ -67,12 +67,12 @@ export class LoginComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(authState => {
         this.loading = authState.loading;
-        
+
         // Only update error if it's not a reason-based error
         if (!reason) {
           this.error = authState.error;
         }
-        
+
         // If login successful, redirect
         if (authState.isLoggedIn && authState.token) {
           this.router.navigate([this.returnUrl]);

@@ -1,3 +1,5 @@
+<app-page-title [title]="'Edit Branch'" [breadcrumbItems]="breadCrumbItems"></app-page-title>
+
 <p-toast></p-toast>
 
 <div *ngIf="loadingBranch" class="text-center p-5">
@@ -288,6 +290,35 @@
         </div>
       </section>
 
+      <!-- Additional Branch Information -->
+      <section class="card mb-4">
+        <div class="card-body">
+          <h5 class="mb-3">Additional Information</h5>
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label">Branch Code</label>
+              <input class="form-control" formControlName="branchCode" placeholder="Enter branch code" maxlength="50" />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Region ID</label>
+              <input type="number" class="form-control" formControlName="regionId" placeholder="Enter region ID" />
+            </div>
+            <div class="col-md-3">
+              <div class="form-check form-switch mt-4">
+                <input class="form-check-input orange-switch" type="checkbox" formControlName="status" id="statusSwitch">
+                <label class="form-check-label" for="statusSwitch">Status (Active)</label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-check form-switch mt-4">
+                <input class="form-check-input orange-switch" type="checkbox" formControlName="ncr" id="ncrSwitch">
+                <label class="form-check-label" for="ncrSwitch">NCR</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
 
     </div>
 
@@ -297,6 +328,10 @@
       <!-- Add Members -->
       <section class="card mb-4">
         <div class="card-body">
+          <div class="alert alert-info mb-3" role="alert">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Note:</strong> Add members to this branch. You can add, edit, or remove members at any time.
+          </div>
           <h5 class="mb-3">Add Members</h5>
           <div class="row g-3">
             <div class="col-md-3">
@@ -397,10 +432,11 @@
                   <th>Date of samarpan</th>
                   <th>Qualification</th>
                   <th>Date of birth</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let member of filteredMembers">
+                <tr *ngFor="let member of filteredMembers; let i = index">
                   <td>{{member.value.name || '-'}}</td>
                   <td>{{member.value.role || '-'}}</td>
                   <td>{{member.value.responsibility || '-'}}</td>
@@ -408,9 +444,14 @@
                   <td>{{member.value.dateOfSamarpan || '-'}}</td>
                   <td>{{member.value.qualification || '-'}}</td>
                   <td>{{member.value.dateOfBirth || '-'}}</td>
+                  <td>
+                    <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeMember(i)">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </td>
                 </tr>
                 <tr *ngIf="filteredMembers.length === 0">
-                  <td colspan="7" class="text-center text-muted">No members to show</td>
+                  <td colspan="8" class="text-center text-muted">No members to show</td>
                 </tr>
               </tbody>
             </table>

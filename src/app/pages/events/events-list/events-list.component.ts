@@ -1,8 +1,10 @@
-import { Component, OnInit, HostListener, AfterViewChecked, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, HostListener, AfterViewChecked, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { EventApiService, EventDetails } from 'src/app/core/services/event-api.service';
 import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
 interface EventData {
   id: string;
@@ -88,15 +90,17 @@ interface EventData {
   templateUrl: './events-list.component.html',
   styleUrls: ['./events-list.component.scss']
 })
-export class EventsListComponent implements OnInit, AfterViewChecked {
+export class EventsListComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   // PrimeNG Table Configuration
   events: EventData[] = [];
+  allEventsData: EventData[] = []; // Store all events for pagination
+  filteredEventsData: EventData[] = []; // Store filtered events
 
   // Pagination
   first = 0;
-  rows = 5;
-  rowsPerPageOptions = [5, 10, 20];
+  rows = 10;
+  rowsPerPageOptions = [10, 20, 50];
 
   // Sorting
   sortField: string = '';
@@ -118,8 +122,14 @@ export class EventsListComponent implements OnInit, AfterViewChecked {
   // Drafts management
   draftsCount: number = 0;
 
+  // Search functionality with debouncing
+  searchTerm: string = '';
+  private searchSubject = new Subject<string>();
+  private destroy$ = new Subject<void>();
+
   // Dropdown management
   openDropdown: string | null = null;
+  openActionMenu: string | null = null; // Track which action menu is open (by event id)
 
   // Modal management
   selectedEvent: EventData | null = null;
@@ -867,6 +877,33 @@ export class EventsListComponent implements OnInit, AfterViewChecked {
   ngOnInit(): void {
     this.loadEvents();
     this.initializeFilters();
+    this.setupSearchDebounce();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  /**
+   * Setup debounced search
+   */
+  setupSearchDebounce(): void {
+    this.searchSubject.pipe(
+      debounceTime(300), // Wait 300ms after user stops typing
+      distinctUntilChanged(), // Only emit if value changed
+      takeUntil(this.destroy$)
+    ).subscribe(searchTerm => {
+      this.searchTerm = searchTerm;
+      this.applyFiltersAndSearch();
+    });
+  }
+
+  /**
+   * Called when search input changes
+   */
+  onSearchChange(searchValue: string): void {
+    this.searchSubject.next(searchValue);
   }
 
   /**
@@ -879,10 +916,12 @@ export class EventsListComponent implements OnInit, AfterViewChecked {
     this.eventApiService.getEvents(status).subscribe({
       next: (apiEvents) => {
         // Map API events to component EventData format
-        this.events = apiEvents.map(event => this.mapApiEventToEventData(event));
+        this.allEventsData = apiEvents.map(event => this.mapApiEventToEventData(event));
+        this.filteredEventsData = []; // Reset filtered data
+        this.updatePaginatedEvents();
 
         // Count drafts (incomplete events)
-        this.draftsCount = this.events.filter(e => e.status === 'incomplete').length;
+        this.draftsCount = this.allEventsData.filter(e => e.status === 'incomplete').length;
 
         this.loadingEvents = false;
       },
@@ -895,11 +934,12 @@ export class EventsListComponent implements OnInit, AfterViewChecked {
           life: 3000
         });
         // Fallback to sample data - ensure all have status
-        this.events = this.allEvents.map(e => ({
+        this.allEventsData = this.allEvents.map(e => ({
           ...e,
           status: e.status || 'incomplete'
         }));
-        this.draftsCount = this.events.filter(e => e.status === 'incomplete').length;
+        this.updatePaginatedEvents();
+        this.draftsCount = this.allEventsData.filter(e => e.status === 'incomplete').length;
         this.loadingEvents = false;
       }
     });
@@ -909,6 +949,7 @@ export class EventsListComponent implements OnInit, AfterViewChecked {
    * Update status filter and reload events
    */
   onStatusFilterChange(): void {
+    this.first = 0; // Reset to first page
     this.loadEvents();
   }
 
@@ -998,12 +1039,71 @@ export class EventsListComponent implements OnInit, AfterViewChecked {
   clearFilter(column: string): void {
     if (this.filters[column]) {
       this.filters[column] = '';
+      this.applyFiltersAndSearch();
     }
   }
 
   applyFilter(): void {
-    // This method will be called when filter input changes
-    // The filtering is handled automatically by PrimeNG
+    // This method is called when filter input changes
+    this.applyFiltersAndSearch();
+  }
+
+  /**
+   * Apply all filters and search
+   */
+  applyFiltersAndSearch(): void {
+    let filtered = [...this.allEventsData];
+
+    // Apply search term (searches in branch, city, state, and name)
+    if (this.searchTerm && this.searchTerm.trim()) {
+      const searchLower = this.searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(event => {
+        const branchMatch = event.branch?.toLowerCase().includes(searchLower) || false;
+        const cityMatch = event.city?.toLowerCase().includes(searchLower) || false;
+        const stateMatch = event.state?.toLowerCase().includes(searchLower) || false;
+        const nameMatch = event.name?.toLowerCase().includes(searchLower) || false;
+        return branchMatch || cityMatch || stateMatch || nameMatch;
+      });
+    }
+
+    // Apply column filters
+    Object.keys(this.filters).forEach(key => {
+      const filterValue = this.filters[key];
+      if (filterValue && filterValue.toString().trim()) {
+        const filterLower = filterValue.toString().toLowerCase().trim();
+        filtered = filtered.filter(event => {
+          const fieldValue = this.getFieldValue(event, key);
+          if (fieldValue === null || fieldValue === undefined) {
+            return false;
+          }
+          return fieldValue.toString().toLowerCase().includes(filterLower);
+        });
+      }
+    });
+
+    this.filteredEventsData = filtered;
+    this.first = 0; // Reset to first page when filtering
+    this.updatePaginatedEvents();
+  }
+
+  /**
+   * Get field value from event object
+   */
+  private getFieldValue(event: EventData, field: string): any {
+    switch (field) {
+      case 'eventType':
+        return `${event.eventType} (${event.scale})`;
+      case 'beneficiaries':
+        return event.beneficiaries?.total?.toString() || '';
+      case 'initiation':
+        return event.initiation?.total?.toString() || '';
+      case 'specialGuests':
+        return event.specialGuests?.toString() || '';
+      case 'volunteers':
+        return event.volunteers?.toString() || '';
+      default:
+        return (event as any)[field] || '';
+    }
   }
 
   // Dropdown methods
@@ -1019,6 +1119,20 @@ export class EventsListComponent implements OnInit, AfterViewChecked {
     return this.openDropdown === column;
   }
 
+  // Action menu methods
+  toggleActionMenu(eventId: string): void {
+    this.openActionMenu = this.openActionMenu === eventId ? null : eventId;
+    this.openDropdown = null; // Close column dropdowns when opening action menu
+  }
+
+  closeActionMenu(): void {
+    this.openActionMenu = null;
+  }
+
+  isActionMenuOpen(eventId: string): boolean {
+    return this.openActionMenu === eventId;
+  }
+
   // Close dropdown when clicking outside
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event | null): void {
@@ -1030,8 +1144,9 @@ export class EventsListComponent implements OnInit, AfterViewChecked {
     const target = event.target as HTMLElement;
 
     // Close dropdowns if clicking outside
-    if (!target.closest('.dropdown-container')) {
+    if (!target.closest('.dropdown-container') && !target.closest('.action-menu-container')) {
       this.closeDropdown();
+      this.closeActionMenu();
     }
 
     // Close filters if clicking outside
@@ -1063,10 +1178,37 @@ export class EventsListComponent implements OnInit, AfterViewChecked {
     return this.pinnedColumns.includes(column);
   }
 
+  // Update paginated events
+  updatePaginatedEvents(): void {
+    const start = this.first;
+    const end = this.first + this.rows;
+    // Use filteredEventsData if filters are applied, otherwise use allEventsData
+    const sourceData = this.hasActiveFilters()
+      ? this.filteredEventsData
+      : this.allEventsData;
+    this.events = sourceData.slice(start, end);
+  }
+
+  /**
+   * Check if any filters are active
+   */
+  hasActiveFilters(): boolean {
+    return !!this.searchTerm || Object.values(this.filters).some(v => v && v.toString().trim());
+  }
+
   // Pagination methods
   onPageChange(event: any): void {
     this.first = event.first;
-    this.rows = event.rows;
+    this.rows = event.rows || this.rows; // Keep current rows if not provided
+    this.updatePaginatedEvents();
+  }
+
+  // Get total records for pagination component
+  getTotalRecords(): number {
+    const sourceData = this.hasActiveFilters()
+      ? this.filteredEventsData
+      : this.allEventsData;
+    return sourceData.length;
   }
 
   // Utility methods for the template

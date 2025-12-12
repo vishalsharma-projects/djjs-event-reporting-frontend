@@ -4,6 +4,7 @@ import { LocationService, Branch, BranchPayload, Country, State, District, City,
 import { TokenStorageService } from 'src/app/core/services/token-storage.service'
 import { Router, ActivatedRoute } from '@angular/router'
 import { MessageService } from 'primeng/api'
+import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service'
 
 @Component({
   selector: 'app-edit-branch',
@@ -42,13 +43,17 @@ export class EditBranchComponent implements OnInit {
     // Submitting state
     isSubmitting = false;
 
+    // Breadcrumb items
+    breadCrumbItems: Array<{}> = [];
+
     constructor(
         private fb: FormBuilder,
         private locationService: LocationService,
         private tokenStorage: TokenStorageService,
         private router: Router,
         private route: ActivatedRoute,
-        private messageService: MessageService
+        private messageService: MessageService,
+        private confirmationDialog: ConfirmationDialogService
     ) { }
 
     //for Tabs
@@ -84,8 +89,18 @@ export class EditBranchComponent implements OnInit {
             openDays: [''],
             dailyStartTime: [''],
             dailyEndTime: [''],
+            status: [true],
+            ncr: [false],
+            regionId: [''],
+            branchCode: [''],
             members: this.fb.array([])
         });
+
+        // Set initial breadcrumbs
+        this.breadCrumbItems = [
+          { label: 'Branches', routerLink: '/branch' },
+          { label: 'Edit Branch', active: true }
+        ];
 
         // Get branch ID from route
         const idParam = this.route.snapshot.paramMap.get('id');
@@ -193,8 +208,15 @@ export class EditBranchComponent implements OnInit {
                                 address: branch.address || '',
                                 openDays: branch.open_days || '',
                                 dailyStartTime: branch.daily_start_time || '',
-                                dailyEndTime: branch.daily_end_time || ''
+                                dailyEndTime: branch.daily_end_time || '',
+                                status: branch.status !== undefined ? branch.status : true,
+                                ncr: branch.ncr !== undefined ? branch.ncr : false,
+                                regionId: branch.region_id || '',
+                                branchCode: branch.branch_code || ''
                             });
+
+                            // Load members for this branch
+                            this.loadBranchMembers();
 
                             // Load states for this country, then set location values
                             this.loadingStates = true;
@@ -324,6 +346,7 @@ export class EditBranchComponent implements OnInit {
     addMember() {
         const memberType = this.branchForm.get('memberType')?.value || 'samarpit';
         this.members.push(this.fb.group({
+            id: [null], // null for new members, will be set for existing members
             name: ['', Validators.required],
             role: ['', Validators.required],
             responsibility: [''],
@@ -333,6 +356,63 @@ export class EditBranchComponent implements OnInit {
             dateOfBirth: [''],
             memberType: [memberType, Validators.required]
         }));
+    }
+
+    removeMember(index: number) {
+        const memberControl = this.members.at(index);
+        const memberId = memberControl.get('id')?.value;
+        const memberName = memberControl.get('name')?.value || 'this member';
+
+        if (memberId) {
+            // Existing member - confirm deletion first
+            this.confirmationDialog.confirmDelete({
+                title: 'Delete Member',
+                text: `Are you sure you want to delete "${memberName}"? This action cannot be undone.`,
+                successTitle: 'Member Deleted',
+                successText: `Member "${memberName}" deleted successfully`,
+                showSuccessMessage: false // We'll use PrimeNG message service instead
+            }).then((result) => {
+                if (result.value) {
+                    this.locationService.deleteBranchMember(memberId).subscribe({
+                        next: () => {
+                            this.members.removeAt(index);
+                            this.messageService.add({
+                                severity: 'success',
+                                summary: 'Success',
+                                detail: `Member "${memberName}" deleted successfully`,
+                                life: 3000
+                            });
+                        },
+                        error: (error) => {
+                            console.error('Error deleting member:', error);
+                            let errorMessage = 'Failed to delete member. Please try again.';
+
+                            if (error.error) {
+                                if (error.error.message) {
+                                    errorMessage = error.error.message;
+                                } else if (error.error.error) {
+                                    errorMessage = error.error.error;
+                                } else if (typeof error.error === 'string') {
+                                    errorMessage = error.error;
+                                }
+                            } else if (error.message) {
+                                errorMessage = error.message;
+                            }
+
+                            this.messageService.add({
+                                severity: 'error',
+                                summary: 'Error',
+                                detail: errorMessage,
+                                life: 5000
+                            });
+                        }
+                    });
+                }
+            });
+        } else {
+            // New member - just remove from form (no confirmation needed for unsaved member)
+            this.members.removeAt(index);
+        }
     }
 
     switchMemberType(type: 'preacher' | 'samarpit') {
@@ -389,13 +469,13 @@ export class EditBranchComponent implements OnInit {
             const branchData: BranchPayload = {
                 aashram_area: parseFloat(formValue.ashramArea) || 0,
                 address: formValue.address || '',
-                city: city?.name || '',
+                city_id: city?.id || null,
                 contact_number: '', // Not in form, set empty
                 coordinator_name: coordinator?.name || '',
-                country: country?.name || '',
+                country_id: country?.id || null,
                 daily_end_time: formValue.dailyEndTime || '',
                 daily_start_time: formValue.dailyStartTime || '',
-                district: district?.name || '',
+                district_id: district?.id || null,
                 email: this.branchEmail || '',
                 established_on: establishedOn || '',
                 id: this.branchId,
@@ -404,7 +484,11 @@ export class EditBranchComponent implements OnInit {
                 pincode: formValue.pincode || '',
                 police_station: formValue.thana || '',
                 post_office: formValue.postOffice || '',
-                state: state?.name || '',
+                state_id: state?.id || null,
+                status: formValue.status !== undefined ? formValue.status : true,
+                ncr: formValue.ncr !== undefined ? formValue.ncr : false,
+                region_id: formValue.regionId ? parseInt(formValue.regionId, 10) : null,
+                branch_code: formValue.branchCode || '',
                 updated_by: updatedBy,
                 updated_on: currentTimestamp
             };
@@ -413,23 +497,52 @@ export class EditBranchComponent implements OnInit {
             this.locationService.updateBranch(this.branchId, branchData).subscribe({
                 next: (response) => {
                     console.log('Branch updated successfully:', response);
-                    this.messageService.add({
-                        severity: 'success',
-                        summary: 'Success',
-                        detail: 'Branch updated successfully!'
+
+                    // Save/update members
+                    this.saveOrUpdateMembers(() => {
+                        this.messageService.add({
+                            severity: 'success',
+                            summary: 'Success',
+                            detail: 'Branch and members updated successfully!'
+                        });
+                        this.isSubmitting = false;
+                        // Navigate back to branch list
+                        setTimeout(() => {
+                            this.router.navigate(['/branch']);
+                        }, 1500);
                     });
-                    this.isSubmitting = false;
-                    // Navigate back to branch list
-                    setTimeout(() => {
-                        this.router.navigate(['/branch']);
-                    }, 1000);
                 },
                 error: (error) => {
                     console.error('Error updating branch:', error);
+                    let errorMessage = 'Failed to update branch. Please try again.';
+
+                    if (error.error) {
+                        if (error.error.message) {
+                            errorMessage = error.error.message;
+                        } else if (error.error.error) {
+                            errorMessage = error.error.error;
+                        } else if (typeof error.error === 'string') {
+                            errorMessage = error.error;
+                        }
+                    } else if (error.message) {
+                        errorMessage = error.message;
+                    }
+
+                    if (error.status === 400) {
+                        errorMessage = 'Invalid data provided. Please check all fields and try again.';
+                    } else if (error.status === 404) {
+                        errorMessage = 'Branch not found. It may have been deleted.';
+                    } else if (error.status === 403) {
+                        errorMessage = 'You do not have permission to update this branch.';
+                    } else if (error.status === 409) {
+                        errorMessage = 'A branch with this email or contact number already exists.';
+                    }
+
                     this.messageService.add({
                         severity: 'error',
                         summary: 'Error',
-                        detail: error.error?.message || 'Failed to update branch. Please try again.'
+                        detail: errorMessage,
+                        life: 5000
                     });
                     this.isSubmitting = false;
                 }
@@ -526,6 +639,119 @@ export class EditBranchComponent implements OnInit {
             error: (error) => {
                 console.error('Error loading coordinators:', error);
                 this.loadingCoordinators = false;
+            }
+        });
+    }
+
+    /**
+     * Load branch members from API
+     */
+    loadBranchMembers() {
+        if (!this.branchId) return;
+
+        this.locationService.getBranchMembers(this.branchId).subscribe({
+            next: (members) => {
+                // Clear existing members
+                while (this.members.length !== 0) {
+                    this.members.removeAt(0);
+                }
+
+                // Add members to form
+                members.forEach((member: any) => {
+                    this.members.push(this.fb.group({
+                        id: [member.id],
+                        name: [member.name || '', Validators.required],
+                        role: [member.branch_role || '', Validators.required],
+                        responsibility: [member.responsibility || ''],
+                        age: [member.age || ''],
+                        dateOfSamarpan: [member.date_of_samarpan ? member.date_of_samarpan.split('T')[0] : ''],
+                        qualification: [member.qualification || ''],
+                        dateOfBirth: [member.date_of_birth ? member.date_of_birth.split('T')[0] : ''],
+                        memberType: [member.member_type || 'samarpit', Validators.required]
+                    }));
+                });
+            },
+            error: (error) => {
+                console.error('Error loading branch members:', error);
+            }
+        });
+    }
+
+    /**
+     * Save or update members after branch update
+     */
+    saveOrUpdateMembers(callback?: () => void) {
+        const membersToProcess = this.members.controls.filter(m => m.valid);
+        if (membersToProcess.length === 0) {
+            if (callback) callback();
+            return;
+        }
+
+        let completed = 0;
+        const total = membersToProcess.length;
+        let hasError = false;
+
+        membersToProcess.forEach((memberControl) => {
+            const memberData = memberControl.value;
+            const memberId = memberData.id;
+            const memberPayload = {
+                branch_id: this.branchId,
+                member_type: memberData.memberType,
+                name: memberData.name,
+                branch_role: memberData.role || '',
+                responsibility: memberData.responsibility || '',
+                age: memberData.age ? parseInt(memberData.age, 10) : 0,
+                date_of_samarpan: memberData.dateOfSamarpan || null,
+                qualification: memberData.qualification || '',
+                date_of_birth: memberData.dateOfBirth || null
+            };
+
+            if (memberId) {
+                // Update existing member
+                this.locationService.updateBranchMember(memberId, memberPayload).subscribe({
+                    next: () => {
+                        completed++;
+                        if (completed === total && !hasError) {
+                            if (callback) callback();
+                        }
+                    },
+                    error: (error) => {
+                        console.error('Error updating member:', error);
+                        hasError = true;
+                        completed++;
+                        if (completed === total) {
+                            this.messageService.add({
+                                severity: 'warn',
+                                summary: 'Warning',
+                                detail: 'Branch updated but some members could not be saved.'
+                            });
+                            if (callback) callback();
+                        }
+                    }
+                });
+            } else {
+                // Create new member
+                this.locationService.createBranchMember(memberPayload).subscribe({
+                    next: () => {
+                        completed++;
+                        if (completed === total && !hasError) {
+                            if (callback) callback();
+                        }
+                    },
+                    error: (error) => {
+                        console.error('Error creating member:', error);
+                        hasError = true;
+                        completed++;
+                        if (completed === total) {
+                            this.messageService.add({
+                                severity: 'warn',
+                                summary: 'Warning',
+                                detail: 'Branch updated but some members could not be saved.'
+                            });
+                            if (callback) callback();
+                        }
+                    }
+                });
             }
         });
     }

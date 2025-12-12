@@ -179,39 +179,8 @@ dropzone>.dropzone.dz-wrapper {
 }
 
 .modal-dialog {
-  position: relative;
-  width: auto;
-  margin: 1.75rem auto;
-  pointer-events: none;
-  max-width: 500px;
-
-  @media (min-width: 576px) {
-    max-width: 500px;
-    margin: 1.75rem auto;
-  }
-
-  @media (min-width: 992px) {
-    max-width: 800px;
-  }
-
-  @media (min-width: 1200px) {
-    max-width: 1140px;
-  }
-
-  // Allow component-specific overrides for slide-in panels (right-side modals)
-  // Component styles with !important will take precedence
-}
-
-.modal-dialog-centered {
-  display: flex;
-  align-items: center;
-  min-height: calc(100% - 3.5rem);
-
-  &::before {
-    display: block;
-    height: calc(100vh - 3.5rem);
-    content: "";
-  }
+  top: auto !important;
+  bottom: auto !important;
 }
 
 .slick-dots {
@@ -256,10 +225,6 @@ html {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  overflow-x: hidden;
 }
 
 body {
@@ -267,10 +232,6 @@ body {
   transition: all 0.3s ease-in-out;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
-  position: relative;
 }
 
 // Smooth transitions for all interactive elements
@@ -390,16 +351,8 @@ textarea,
 
 // Modal backdrop fade animation
 .modal-backdrop {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  z-index: 1040 !important;
-  background-color: rgba(0, 0, 0, 0.5) !important;
   transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   opacity: 0;
-  cursor: pointer;
 
   &.show {
     opacity: 0.5;
@@ -411,33 +364,22 @@ textarea,
   }
 }
 
-// Modal dialog animations - Base styles (component-specific styles with !important will override)
+// Modal dialog animations
 .modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1050;
-  overflow-x: hidden;
-  overflow-y: auto;
-  outline: 0;
-  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  display: none;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 
   &.fade {
     opacity: 0;
     transition: opacity 0.15s linear;
 
     .modal-dialog {
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
       transform: translate(0, -50px) scale(0.95);
       opacity: 0;
     }
   }
 
   &.show {
-    display: block;
     opacity: 1;
 
     .modal-dialog {
@@ -448,17 +390,8 @@ textarea,
 
   // Modal content smooth transitions
   .modal-content {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    pointer-events: auto;
-    background-color: #fff;
-    background-clip: padding-box;
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    border-radius: 0.5rem;
-    outline: 0;
     transition: box-shadow 0.3s ease, transform 0.3s ease;
+    border: none;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   }
 
@@ -498,416 +431,6 @@ textarea,
 // Centered modal animation
 .modal-dialog-centered {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-// Prevent body scroll when modal is open
-body.modal-open {
-  overflow: hidden !important;
-  padding-right: 0 !important;
-
-  // Ensure layout elements don't interfere with modals
-  #layout-wrapper,
-  .main-content,
-  .page-content {
-    overflow: visible !important;
-  }
-}
-
-// Global modal z-index fix - ensure modals are always on top
-.modal {
-  z-index: 1050 !important;
-
-  &.show {
-    z-index: 1050 !important;
-  }
-}
-
-.modal-backdrop {
-  z-index: 1040 !important;
-}
-
-// Ensure modals are above sidebar and topbar
-.modal.show,
-.modal-backdrop.show {
-  z-index: 1050 !important;
-}
-
-.modal-backdrop.show {
-  z-index: 1040 !important;
-}
-
-// ==========================================
-// Volunteer Drawer - Global Styles
-// ==========================================
-// Note: Drawer is appended to <body>, so styles must be global
-
-.volunteer-drawer-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  z-index: 1999;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-
-  &.show {
-    opacity: 1;
-    visibility: visible;
-  }
-}
-
-.volunteer-drawer {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 48%;
-  max-width: 720px;
-  height: 100vh;
-  background: #fff;
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
-  z-index: 2000;
-  display: flex;
-  flex-direction: column;
-  transform: translateX(100%);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
-
-  &.show {
-    transform: translateX(0);
-  }
-
-  // Prevent text selection during swipe on mobile
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-
-  // Re-enable text selection for content
-  .drawer-content {
-    -webkit-user-select: text;
-    -moz-user-select: text;
-    -ms-user-select: text;
-    user-select: text;
-  }
-}
-
-.drawer-header {
-  padding: 24px 32px;
-  border-bottom: 1px solid #eee;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-shrink: 0;
-
-  h5 {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #212529;
-  }
-}
-
-.drawer-content {
-  padding: 24px 32px;
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-
-  // Custom scrollbar
-  &::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: #f8f9fa;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: #dee2e6;
-    border-radius: 4px;
-
-    &:hover {
-      background: #adb5bd;
-    }
-  }
-
-  // Horizontal scrollbar
-  &::-webkit-scrollbar:horizontal {
-    height: 8px;
-  }
-
-  // Table styling
-  table {
-    min-width: 900px;
-    width: max-content;
-    border-collapse: collapse;
-    font-size: 0.875rem;
-
-    thead {
-      background-color: #f8f9fa;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-
-      th {
-        padding: 0.75rem 1rem;
-        text-align: left;
-        font-weight: 600;
-        color: #495057;
-        border-bottom: 2px solid #dee2e6;
-        font-size: 0.8125rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        white-space: nowrap;
-      }
-    }
-
-    tbody {
-      tr {
-        border-bottom: 1px solid #e9ecef;
-        transition: background-color 0.15s ease;
-
-        &:hover {
-          background-color: #f8f9fa;
-        }
-
-        &:last-child {
-          border-bottom: none;
-        }
-      }
-
-      td {
-        padding: 0.75rem 1rem;
-        color: #212529;
-        vertical-align: middle;
-        font-size: 0.875rem;
-        line-height: 1.5;
-        white-space: nowrap;
-      }
-    }
-  }
-
-  // Empty state
-  .text-center {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 3rem 1.5rem;
-    text-align: center;
-    color: #6c757d;
-  }
-}
-
-.drawer-footer {
-  padding: 24px 32px;
-  border-top: 1px solid #eee;
-  display: flex;
-  justify-content: flex-end;
-  flex-shrink: 0;
-}
-
-.drawer-close {
-  background: transparent;
-  border: none;
-  font-size: 22px;
-  opacity: 0.6;
-  cursor: pointer;
-  padding: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  min-width: 2rem;
-  min-height: 2rem;
-  border-radius: 0.25rem;
-  transition: all 0.2s ease;
-  color: #6c757d;
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-
-  &:hover {
-    opacity: 1;
-    background-color: rgba(0, 0, 0, 0.05);
-    color: #212529;
-  }
-
-  &:active {
-    opacity: 1;
-    background-color: rgba(0, 0, 0, 0.1);
-    transform: scale(0.95);
-  }
-
-  &:focus {
-    outline: 2px solid #556ee6;
-    outline-offset: 2px;
-  }
-}
-
-// ==========================================
-// Responsive Adjustments for Volunteer Drawer
-// ==========================================
-
-// Desktop (≥1200px): width: 48%, max-width: 720px
-@media (min-width: 1200px) {
-  .volunteer-drawer {
-    width: 48%;
-    max-width: 720px;
-  }
-}
-
-// Tablet (768px - 1199px): width: 65%
-@media (min-width: 768px) and (max-width: 1199px) {
-  .volunteer-drawer {
-    width: 65%;
-    max-width: none;
-  }
-
-  .drawer-header,
-  .drawer-content,
-  .drawer-footer {
-    padding: 20px 24px;
-  }
-
-  .drawer-content {
-    table {
-      font-size: 0.8125rem;
-
-      thead th {
-        padding: 0.625rem 0.75rem;
-        font-size: 0.75rem;
-      }
-
-      tbody td {
-        padding: 0.625rem 0.75rem;
-        font-size: 0.8125rem;
-      }
-    }
-  }
-}
-
-// Mobile (<768px): width: 100%, full-screen drawer
-@media (max-width: 767px) {
-  .volunteer-drawer {
-    width: 100%;
-    max-width: 100%;
-    min-width: 100%;
-  }
-
-  .volunteer-drawer-backdrop {
-    background: rgba(0, 0, 0, 0.6);
-  }
-
-  .drawer-header,
-  .drawer-content,
-  .drawer-footer {
-    padding: 16px 20px;
-  }
-
-  .drawer-header {
-    h5 {
-      font-size: 1.125rem;
-    }
-
-    .drawer-close {
-      font-size: 20px;
-      width: 1.75rem;
-      height: 1.75rem;
-      min-width: 1.75rem;
-      min-height: 1.75rem;
-    }
-  }
-
-  .drawer-content {
-    padding: 16px 20px;
-
-    // Table maintains horizontal scroll on mobile
-    table {
-      min-width: 900px; // Maintain table width for horizontal scroll
-      width: max-content;
-      font-size: 0.8125rem;
-
-      thead th {
-        padding: 0.625rem 0.75rem;
-        font-size: 0.75rem;
-      }
-
-      tbody td {
-        padding: 0.625rem 0.75rem;
-        font-size: 0.8125rem;
-        white-space: nowrap;
-      }
-    }
-
-    .text-center {
-      padding: 2rem 1rem;
-
-      i {
-        font-size: 2.5rem !important;
-      }
-
-      p {
-        font-size: 0.875rem;
-      }
-    }
-  }
-
-  .drawer-footer {
-    .btn {
-      width: 100%;
-      padding: 0.75rem 1rem;
-      min-height: 44px; // Touch-friendly minimum size
-      font-size: 0.875rem;
-      -webkit-tap-highlight-color: transparent;
-    }
-  }
-}
-
-// Small mobile devices (up to 575px)
-@media (max-width: 575px) {
-  .drawer-header,
-  .drawer-content,
-  .drawer-footer {
-    padding: 14px 16px;
-  }
-
-  .drawer-header {
-    h5 {
-      font-size: 1rem;
-    }
-
-    .drawer-close {
-      font-size: 18px;
-      width: 1.5rem;
-      height: 1.5rem;
-      min-width: 1.5rem;
-      min-height: 1.5rem;
-    }
-  }
-
-  .drawer-content {
-    table {
-      font-size: 0.75rem;
-
-      thead th {
-        padding: 0.5rem 0.625rem;
-        font-size: 0.6875rem;
-      }
-
-      tbody td {
-        padding: 0.5rem 0.625rem;
-        font-size: 0.75rem;
-      }
-    }
-  }
 }
 
 // Smooth sidebar transitions
@@ -1272,6 +795,285 @@ form {
   &.hide {
     animation: slideOutRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
+}
+
+// ==========================================
+// Colorful PrimeNG Toast Styles
+// ==========================================
+
+.p-toast {
+  z-index: 11000 !important;
+
+  .p-toast-message {
+    margin: 0 0 1rem 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+    border-radius: 12px !important;
+    border: none !important;
+    padding: 1rem 1.25rem !important;
+    min-width: 350px;
+    max-width: 500px;
+    animation: slideInRight 0.3s ease-out;
+    cursor: pointer;
+    transition: all 0.3s ease !important;
+    position: relative;
+    overflow: hidden;
+
+    // Interactive hover effect
+    &:hover {
+      transform: translateX(-5px) scale(1.02) !important;
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    // Progress bar for auto-hide (visual indicator)
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 3px;
+      background-color: rgba(255, 255, 255, 0.6);
+      width: 100%;
+      transform-origin: left;
+      animation: progressBar 3s linear forwards;
+      z-index: 2;
+    }
+
+    // Adjust animation duration based on toast type
+    &.p-toast-message-success::after {
+      animation-duration: 3s;
+    }
+
+    &.p-toast-message-info::after {
+      animation-duration: 3s;
+    }
+
+    &.p-toast-message-warn::after {
+      animation-duration: 4s;
+    }
+
+    &.p-toast-message-error::after {
+      animation-duration: 5s;
+    }
+
+    .p-toast-message-content {
+      padding: 0 !important;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .p-toast-message-icon {
+      font-size: 1.5rem !important;
+      margin: 0 !important;
+      flex-shrink: 0;
+    }
+
+    .p-toast-message-text {
+      flex: 1;
+      margin: 0 !important;
+
+      .p-toast-summary {
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+        margin-bottom: 0.25rem !important;
+        display: block;
+      }
+
+      .p-toast-detail {
+        font-size: 0.875rem !important;
+        line-height: 1.5 !important;
+        margin: 0 !important;
+        white-space: pre-line;
+      }
+    }
+
+    .p-toast-icon-close {
+      width: 1.75rem !important;
+      height: 1.75rem !important;
+      border-radius: 50% !important;
+      transition: all 0.2s ease !important;
+      margin-top: 0.125rem !important;
+      cursor: pointer;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      flex-shrink: 0;
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.3) !important;
+        transform: scale(1.15) rotate(90deg);
+      }
+
+      &:active {
+        transform: scale(0.95);
+      }
+    }
+
+    // Success Toast - Green
+    &.p-toast-message-success {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+      color: white !important;
+
+      .p-toast-message-icon {
+        color: white !important;
+      }
+
+      .p-toast-summary {
+        color: white !important;
+      }
+
+      .p-toast-detail {
+        color: rgba(255, 255, 255, 0.95) !important;
+      }
+
+      .p-toast-icon-close {
+        color: white !important;
+
+        &:hover {
+          background-color: rgba(255, 255, 255, 0.2) !important;
+        }
+      }
+    }
+
+    // Info Toast - Blue
+    &.p-toast-message-info {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+      color: white !important;
+
+      .p-toast-message-icon {
+        color: white !important;
+      }
+
+      .p-toast-summary {
+        color: white !important;
+      }
+
+      .p-toast-detail {
+        color: rgba(255, 255, 255, 0.95) !important;
+      }
+
+      .p-toast-icon-close {
+        color: white !important;
+
+        &:hover {
+          background-color: rgba(255, 255, 255, 0.2) !important;
+        }
+      }
+    }
+
+    // Warning Toast - Orange/Yellow
+    &.p-toast-message-warn {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+      color: white !important;
+
+      .p-toast-message-icon {
+        color: white !important;
+      }
+
+      .p-toast-summary {
+        color: white !important;
+      }
+
+      .p-toast-detail {
+        color: rgba(255, 255, 255, 0.95) !important;
+      }
+
+      .p-toast-icon-close {
+        color: white !important;
+
+        &:hover {
+          background-color: rgba(255, 255, 255, 0.2) !important;
+        }
+      }
+    }
+
+    // Error Toast - Red
+    &.p-toast-message-error {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+      color: white !important;
+
+      .p-toast-message-icon {
+        color: white !important;
+      }
+
+      .p-toast-summary {
+        color: white !important;
+      }
+
+      .p-toast-detail {
+        color: rgba(255, 255, 255, 0.95) !important;
+      }
+
+      .p-toast-icon-close {
+        color: white !important;
+
+        &:hover {
+          background-color: rgba(255, 255, 255, 0.2) !important;
+        }
+      }
+    }
+  }
+}
+
+// Toast Container Positioning
+.p-toast-top-right {
+  top: 20px !important;
+  right: 20px !important;
+}
+
+.p-toast-top-left {
+  top: 20px !important;
+  left: 20px !important;
+}
+
+.p-toast-bottom-right {
+  bottom: 20px !important;
+  right: 20px !important;
+}
+
+.p-toast-bottom-left {
+  bottom: 20px !important;
+  left: 20px !important;
+}
+
+// Toast Animation
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+// Progress bar animation for auto-hide
+@keyframes progressBar {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+// Pause animation on hover
+.p-toast-message:hover::after {
+  animation-play-state: paused !important;
 }
 
 @keyframes slideOutRight {

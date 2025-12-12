@@ -1,9 +1,11 @@
-import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Router, NavigationEnd } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { LocationService, Branch } from 'src/app/core/services/location.service';
 import { TokenStorageService } from 'src/app/core/services/token-storage.service';
 import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
+import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 
 interface BranchData {
   id: string;
@@ -21,13 +23,17 @@ interface BranchData {
   templateUrl: './branch-list.component.html',
   styleUrls: ['./branch-list.component.scss']
 })
-export class BranchListComponent implements OnInit {
+export class BranchListComponent implements OnInit, OnDestroy {
 
   branches: BranchData[] = [];
+
+  // Breadcrumb items
+  breadCrumbItems: Array<{}> = [];
   expandedRows: { [key: string]: boolean } = {};
   loading: boolean = false;
   loadingMembers: { [key: string]: boolean } = {};
   membersLoaded: { [key: string]: boolean } = {};
+  private routerSubscription?: Subscription;
 
   // Pagination & Filters
   first = 0;
@@ -52,8 +58,34 @@ export class BranchListComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    // Set breadcrumbs
+    this.breadCrumbItems = [
+      { label: 'Branches', active: true }
+    ];
+
     // Load branches from service
     this.loadBranches();
+
+    // Subscribe to router events to reload branches when returning to this page
+    this.routerSubscription = this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe((event: any) => {
+        // Reload branches when navigating to branch list
+        if (event.url === '/branch' || event.url.startsWith('/branch?')) {
+          this.loadBranches();
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    // Clean up subscription
+    if (this.routerSubscription) {
+      this.routerSubscription.unsubscribe();
+    }
+    // Clear search timeout
+    if ((this as any).searchTimeout) {
+      clearTimeout((this as any).searchTimeout);
+    }
   }
 
   loadBranches(sortField?: string, sortOrder?: number) {
@@ -64,15 +96,37 @@ export class BranchListComponent implements OnInit {
     const shouldUseSearch = searchTerm && searchTerm.length > 0;
 
     // Use search API if we have a search term, otherwise get all branches
-    // Search by name (primary) and coordinator (secondary) - API will return matches for either
+    // Search by name and coordinator - API will search both fields with OR logic
     const branchesObservable = shouldUseSearch
       ? this.locationService.searchBranches(searchTerm, searchTerm)
       : this.locationService.getAllBranches();
 
+    // Debug logging
+    console.log('Loading branches:', {
+      searchTerm: searchTerm,
+      shouldUseSearch: shouldUseSearch,
+      first: this.first,
+      rows: this.rows
+    });
+
     branchesObservable.subscribe({
       next: (branches: Branch[]) => {
+        console.log('API Response - Raw branches:', branches);
+        console.log('API Response - Branch count:', branches?.length || 0);
+
+        // Handle empty results gracefully
+        if (!branches || branches.length === 0) {
+          console.log('No branches returned from API');
+          this.branches = [];
+          this.totalRecords = 0;
+          this.loading = false;
+          return;
+        }
+
         // Convert API branch data to BranchData format
-        let convertedBranches: BranchData[] = branches.map(branch => ({
+        let convertedBranches: BranchData[] = branches.map(branch => {
+          console.log('Converting branch:', branch.id, branch.name);
+          return {
           id: branch.id?.toString() || '',
           branchName: branch.name || 'Unnamed Branch',
           coordinatorName: branch.coordinator_name || 'Not specified',
@@ -81,28 +135,23 @@ export class BranchListComponent implements OnInit {
           establishedOn: branch.established_on ? new Date(branch.established_on) : new Date(branch.created_on || Date.now()),
           ashramArea: branch.aashram_area ? `${branch.aashram_area} sq km` : '0 sq km',
           members: [] // Members not included in API response
-        }));
+          };
+        });
 
-        // Apply client-side filtering
-        // Note: When using search API, name/coordinator filtering is done server-side
-        // We only need client-side filtering for state/city (not supported by API search)
-        if (this.globalFilterValue) {
+        console.log('Converted branches:', convertedBranches.length);
+
+        // Don't apply additional client-side filtering when using search API
+        // The API already handles name and coordinator search
+        // Only apply client-side filtering if NOT using search API (for state/city)
+        if (this.globalFilterValue && !shouldUseSearch) {
           const filterValue = this.globalFilterValue.toLowerCase();
-          if (shouldUseSearch) {
-            // API already filtered by name/coordinator, only filter by state/city client-side
-            convertedBranches = convertedBranches.filter(branch =>
-              branch.state.toLowerCase().includes(filterValue) ||
-              branch.city.toLowerCase().includes(filterValue)
-            );
-          } else {
-            // Full client-side filtering when not using search API
-            convertedBranches = convertedBranches.filter(branch =>
-              branch.branchName.toLowerCase().includes(filterValue) ||
-              branch.coordinatorName.toLowerCase().includes(filterValue) ||
-              branch.state.toLowerCase().includes(filterValue) ||
-              branch.city.toLowerCase().includes(filterValue)
-            );
-          }
+          // Full client-side filtering when not using search API
+          convertedBranches = convertedBranches.filter(branch =>
+            (branch.branchName && branch.branchName.toLowerCase().includes(filterValue)) ||
+            (branch.coordinatorName && branch.coordinatorName.toLowerCase().includes(filterValue)) ||
+            (branch.state && branch.state.toLowerCase().includes(filterValue)) ||
+            (branch.city && branch.city.toLowerCase().includes(filterValue))
+          );
         }
 
         // Apply sorting if provided
@@ -116,19 +165,55 @@ export class BranchListComponent implements OnInit {
           });
         }
 
+        // Store all converted branches before pagination
+        const allBranches = convertedBranches;
+
         // Apply pagination
         const start = this.first;
         const end = start + this.rows;
-        this.branches = convertedBranches.slice(start, end);
-        this.totalRecords = convertedBranches.length;
+        this.branches = allBranches.slice(start, end);
+        this.totalRecords = allBranches.length;
         this.loading = false;
+
+        // Debug logging
+        console.log('Loaded branches:', {
+          total: allBranches.length,
+          showing: this.branches.length,
+          start: start,
+          end: end,
+          searchTerm: this.globalFilterValue
+        });
       },
       error: (error) => {
         console.error('Error loading branches:', error);
+
+        // Handle "no branches found" as info, not error
+        const errorMessage = error.error?.error || error.error?.message || error.message || '';
+        const isNotFound = error.status === 404 || errorMessage.toLowerCase().includes('no branches found');
+
+        if (isNotFound) {
+          // No branches found is not an error, just show empty state
+          this.branches = [];
+          this.totalRecords = 0;
+          this.loading = false;
+          return;
+        }
+
+        // Only show error for actual errors
+        let errorDetail = 'Failed to load branches. Please try again.';
+        if (error.error) {
+          if (error.error.error && !error.error.error.toLowerCase().includes('no branches found')) {
+            errorDetail = error.error.error;
+          } else if (error.error.message && !error.error.message.toLowerCase().includes('no branches found')) {
+            errorDetail = error.error.message;
+          }
+        }
+
         this.messageService.add({
           severity: 'error',
           summary: 'Error',
-          detail: 'Failed to load branches. Please try again.'
+          detail: errorDetail,
+          life: 5000
         });
         this.loading = false;
         this.branches = [];
@@ -148,11 +233,32 @@ export class BranchListComponent implements OnInit {
     this.loadBranches(field, order);
   }
 
-  // Handle global filter
+  // Handle global filter with debouncing
   onGlobalFilterChange(event: any) {
-    this.globalFilterValue = event.target.value;
-    this.first = 0;
-    this.loadBranches();
+    const newValue = event.target.value || '';
+    this.globalFilterValue = newValue;
+    this.first = 0; // Reset to first page when searching
+
+    console.log('Search input changed:', newValue);
+
+    // Debounce search to avoid too many API calls
+    // Clear any existing timeout
+    if ((this as any).searchTimeout) {
+      clearTimeout((this as any).searchTimeout);
+    }
+
+    // If search is cleared, load immediately
+    if (!newValue || newValue.trim() === '') {
+      console.log('Search cleared, loading all branches');
+      this.loadBranches();
+      return;
+    }
+
+    // Set new timeout - wait 300ms after user stops typing
+    (this as any).searchTimeout = setTimeout(() => {
+      console.log('Executing search after debounce:', this.globalFilterValue);
+      this.loadBranches();
+    }, 300);
   }
 
   // Handle row expand
@@ -221,6 +327,10 @@ export class BranchListComponent implements OnInit {
   }
 
   // Edit branch
+  viewBranch(branchId: string) {
+    this.router.navigate(['/branch/view', branchId]);
+  }
+
   editBranch(branchId: string) {
     this.router.navigate(['/branch/edit', branchId]);
   }

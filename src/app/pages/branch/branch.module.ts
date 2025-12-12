@@ -23,6 +23,11 @@ import { EditBranchAssistanceComponent } from './branchAssistance/edit-branch-as
 import { SharedModule } from 'src/app/shared/shared.module';
 import { AddBranchComponent } from './add-branch/add-branch.component';
 import { EditBranchComponent } from './edit-branch/edit-branch.component';
+import { ViewBranchComponent } from './view-branch/view-branch.component';
+import { BranchDetailsComponent } from './branch-details/branch-details.component';
+import { BranchMembersListComponent } from './branch-members-list/branch-members-list.component';
+import { ViewMemberComponent } from './view-member/view-member.component';
+import { AddMemberComponent } from './add-member/add-member.component';
 
 
 const DEFAULT_DROPZONE_CONFIG: DropzoneConfigInterface = {
@@ -36,6 +41,11 @@ const DEFAULT_DROPZONE_CONFIG: DropzoneConfigInterface = {
     BranchListComponent,
     AddBranchComponent,
     EditBranchComponent,
+    ViewBranchComponent,
+    BranchDetailsComponent,
+    BranchMembersListComponent,
+    ViewMemberComponent,
+    AddMemberComponent,
     ListBranchAssistanceComponent,
     AddBranchAssistanceComponent,
     EditBranchAssistanceComponent

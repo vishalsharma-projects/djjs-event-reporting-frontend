@@ -1,0 +1,72 @@
+.branch-details-container {
+  .info-card {
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+    overflow: hidden;
+
+    &:hover {
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .info-card-header {
+      background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+      color: white;
+      padding: 0.75rem 1.25rem;
+      display: flex;
+      align-items: center;
+
+      i {
+        font-size: 1.1rem;
+      }
+
+      h6 {
+        color: white;
+        font-weight: 600;
+        margin: 0;
+      }
+    }
+
+    .info-card-body {
+      padding: 1rem 1.5rem;
+    }
+
+    .info-item {
+      padding: 0.5rem 0;
+
+      .info-label {
+        color: #6c757d;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+        display: block;
+      }
+
+      .info-value {
+        color: #212529;
+        font-size: 1rem;
+        margin: 0;
+        font-weight: 500;
+
+        a {
+          transition: color 0.2s ease;
+
+          &:hover {
+            color: #667eea !important;
+          }
+        }
+
+        .badge {
+          font-size: 0.875rem;
+          padding: 0.5rem 0.75rem;
+        }
+      }
+    }
+  }
+}
+

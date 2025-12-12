@@ -442,3 +442,65 @@ margin-bottom: 20px;
   color:#495057;
   font-size: 14px;
 }
+
+// Highlight error field animation
+.highlight-error {
+  animation: highlightPulse 0.5s ease-in-out 3;
+  border-color: #dc3545 !important;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+}
+
+@keyframes highlightPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+// Validation Toggle Styles
+.form-check {
+  .form-check-input {
+    width: 2.5rem;
+    height: 1.25rem;
+    cursor: pointer;
+    border-color: #dee2e6;
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+
+    &:checked {
+      background-color: #28a745;
+      border-color: #28a745;
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+    }
+
+    &:focus {
+      border-color: #28a745;
+      box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25);
+    }
+  }
+
+  .form-check-label {
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-left: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.3s ease;
+
+    i {
+      font-size: 1rem;
+    }
+
+    &.text-success {
+      color: #28a745 !important;
+    }
+
+    &.text-muted {
+      color: #6c757d !important;
+    }
+  }
+}

@@ -1,0 +1,192 @@
+import { Component, Input, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { LocationService } from 'src/app/core/services/location.service';
+import { MessageService } from 'primeng/api';
+import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
+
+export interface BranchMember {
+  id: number;
+  name: string;
+  member_type: string;
+  branch_role?: string;
+  responsibility?: string;
+  age?: number;
+  date_of_samarpan?: string;
+  qualification?: string;
+  date_of_birth?: string;
+  branch_id: number;
+}
+
+@Component({
+  selector: 'app-branch-members-list',
+  templateUrl: './branch-members-list.component.html',
+  styleUrls: ['./branch-members-list.component.scss']
+})
+export class BranchMembersListComponent implements OnInit {
+  @Input() branchId: number | null = null;
+  members: BranchMember[] = [];
+  loading: boolean = false;
+  filteredMembers: BranchMember[] = [];
+  activeMemberType: 'all' | 'preacher' | 'samarpit' = 'all';
+
+  constructor(
+    private locationService: LocationService,
+    private router: Router,
+    private messageService: MessageService,
+    private confirmationDialog: ConfirmationDialogService
+  ) { }
+
+  ngOnInit(): void {
+    if (this.branchId) {
+      this.loadMembers();
+    }
+  }
+
+  loadMembers() {
+    if (!this.branchId) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Warning',
+        detail: 'Branch ID is missing. Cannot load members.'
+      });
+      return;
+    }
+
+    this.loading = true;
+    this.locationService.getBranchMembers(this.branchId).subscribe({
+      next: (members: any[]) => {
+        this.members = members || [];
+        this.filteredMembers = this.members;
+        this.loading = false;
+
+        if (this.members.length === 0) {
+          this.messageService.add({
+            severity: 'info',
+            summary: 'Info',
+            detail: 'No members found for this branch.',
+            life: 3000
+          });
+        }
+      },
+      error: (error) => {
+        console.error('Error loading members:', error);
+        let errorMessage = 'Failed to load members. Please try again.';
+
+        if (error.error) {
+          if (error.error.message) {
+            errorMessage = error.error.message;
+          } else if (error.error.error) {
+            errorMessage = error.error.error;
+          } else if (typeof error.error === 'string') {
+            errorMessage = error.error;
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: errorMessage,
+          life: 5000
+        });
+        this.loading = false;
+      }
+    });
+  }
+
+  filterByType(type: 'all' | 'preacher' | 'samarpit') {
+    this.activeMemberType = type;
+    if (type === 'all') {
+      this.filteredMembers = this.members;
+    } else {
+      this.filteredMembers = this.members.filter(m => m.member_type === type);
+    }
+  }
+
+  viewMember(memberId: number) {
+    if (this.branchId) {
+      this.router.navigate(['/branch', this.branchId, 'members', memberId]);
+    }
+  }
+
+  addMember() {
+    if (this.branchId) {
+      this.router.navigate(['/branch', this.branchId.toString(), 'members', 'add']);
+    }
+  }
+
+  deleteMember(memberId: number) {
+    if (!memberId) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Member ID is missing. Cannot delete member.'
+      });
+      return;
+    }
+
+    const member = this.members.find(m => m.id === memberId);
+    const memberName = member ? member.name : 'this member';
+
+    this.confirmationDialog.confirmDelete({
+      title: 'Delete Member',
+      text: `Are you sure you want to delete "${memberName}"? This action cannot be undone.`,
+      successTitle: 'Member Deleted',
+      successText: `Member "${memberName}" deleted successfully`,
+      showSuccessMessage: false // We'll use PrimeNG message service instead
+    }).then((result) => {
+      if (result.value) {
+        this.locationService.deleteBranchMember(memberId).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Success',
+              detail: `Member "${memberName}" deleted successfully`,
+              life: 3000
+            });
+            this.loadMembers();
+          },
+          error: (error) => {
+            console.error('Error deleting member:', error);
+            let errorMessage = 'Failed to delete member. Please try again.';
+
+            if (error.error) {
+              if (error.error.message) {
+                errorMessage = error.error.message;
+              } else if (error.error.error) {
+                errorMessage = error.error.error;
+              } else if (typeof error.error === 'string') {
+                errorMessage = error.error;
+              }
+            } else if (error.message) {
+              errorMessage = error.message;
+            }
+
+            if (error.status === 404) {
+              errorMessage = 'Member not found. It may have been already deleted.';
+            } else if (error.status === 403) {
+              errorMessage = 'You do not have permission to delete this member.';
+            }
+
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: errorMessage,
+              life: 5000
+            });
+          }
+        });
+      }
+    });
+  }
+
+  get preacherCount(): number {
+    return this.members.filter(m => m.member_type === 'preacher').length;
+  }
+
+  get samarpitCount(): number {
+    return this.members.filter(m => m.member_type === 'samarpit').length;
+  }
+}
+

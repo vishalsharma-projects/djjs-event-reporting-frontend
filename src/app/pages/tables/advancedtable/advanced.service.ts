@@ -78,7 +78,7 @@ export class AdvancedService {
     constructor(private pipe: DecimalPipe) {
         this._search$.pipe(
             tap(() => this._loading$.next(true)),
-            debounceTime(200),
+            debounceTime(300), // Wait 300ms after user stops typing
             switchMap(() => this._search()),
             delay(200),
             tap(() => this._loading$.next(false))

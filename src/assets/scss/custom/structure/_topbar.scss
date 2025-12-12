@@ -3,26 +3,31 @@
 //
 
 #page-topbar {
-    position: fixed;
-    top: 0;
-    right: 0;
-    left: 0;
-    z-index: 1002;
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    left: 0 !important;
+    z-index: 10000 !important;
     background-color: var(--#{$prefix}header-bg);
     box-shadow: $box-shadow;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
     will-change: transform;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
 
-    // Hide on scroll down (optional - uncomment if needed)
-    // &.hidden {
-    //     transform: translateY(-100%);
-    // }
+    // Ensure navbar is always visible - prevent hiding
+    &.hidden {
+        transform: translateY(0) !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
 }
 
 .navbar-header {
-    display: flex;
+    display: flex !important;
     -ms-flex-pack: justify;
     justify-content: space-between;
     align-items: center;
@@ -34,7 +39,9 @@
     transition: height 0.3s ease, padding 0.3s ease;
     position: relative;
     overflow: visible;
-    z-index: auto;
+    z-index: 10000 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 
     .dropdown .show {
         &.header-item {
@@ -69,8 +76,10 @@
     height: $header-height;
     max-height: $header-height;
     box-sizing: border-box;
-    z-index: auto;
+    z-index: 10000 !important;
     flex-shrink: 0;
+    visibility: visible !important;
+    opacity: 1 !important;
 
     // Ensure logo is always visible but contained
     .logo {
@@ -94,7 +103,7 @@
 }
 
 .logo {
-    line-height: 70px;
+    line-height: 55px;
     display: flex;
     align-items: center;
     justify-content: center;

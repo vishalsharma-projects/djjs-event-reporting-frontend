@@ -1,0 +1,93 @@
+// Custom Compact Pagination
+.custom-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-top: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0 0 0.5rem 0.5rem;
+
+  .pagination-info {
+    font-size: 0.875rem;
+    color: #6c757d;
+    font-weight: 400;
+  }
+
+  .pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+
+    .pagination-btn {
+      border: 1px solid #dee2e6;
+      background: white;
+      color: #495057;
+      padding: 0.375rem 0.75rem;
+      font-size: 0.875rem;
+      font-weight: 400;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      min-height: 2rem;
+      line-height: 1.5;
+
+      &:hover:not(:disabled) {
+        background: #f8f9fa;
+        border-color: #adb5bd;
+      }
+
+      &:disabled {
+        background: white;
+        color: #adb5bd;
+        cursor: not-allowed;
+        border-color: #e9ecef;
+      }
+
+      &.page-number {
+        min-width: 2rem;
+        justify-content: center;
+        padding: 0.375rem 0.5rem;
+
+        &.active {
+          background: #495057;
+          border-color: #495057;
+          color: white;
+          font-weight: 500;
+        }
+      }
+
+      &.prev-btn,
+      &.next-btn {
+        padding: 0.375rem 0.625rem;
+      }
+
+      .pi {
+        font-size: 0.75rem;
+      }
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .custom-pagination {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+
+    .pagination-info {
+      text-align: center;
+    }
+
+    .pagination-controls {
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+  }
+}
+

@@ -1,0 +1,30 @@
+<!-- Custom Compact Pagination -->
+<div class="custom-pagination">
+  <div class="pagination-info">
+    {{ getPaginationInfo() }}
+  </div>
+  <div class="pagination-controls">
+    <button
+      class="pagination-btn prev-btn"
+      [disabled]="isPreviousDisabled()"
+      (click)="goToPreviousPage()">
+      <i class="pi pi-chevron-left"></i>
+      Previous
+    </button>
+    <button
+      class="pagination-btn page-number"
+      [class.active]="getCurrentPage() === page"
+      *ngFor="let page of getPageNumbers()"
+      (click)="goToPage(page)">
+      {{ page }}
+    </button>
+    <button
+      class="pagination-btn next-btn"
+      [disabled]="isNextDisabled()"
+      (click)="goToNextPage()">
+      Next
+      <i class="pi pi-chevron-right"></i>
+    </button>
+  </div>
+</div>
+

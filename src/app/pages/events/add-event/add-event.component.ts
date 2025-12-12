@@ -259,13 +259,14 @@
 //   }
 // }
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FormBuilder, FormGroup, FormArray } from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { LocationService, Country, State, District, City } from 'src/app/core/services/location.service';
 import { EventMasterDataService, EventType, EventCategory, PromotionMaterialType } from 'src/app/core/services/event-master-data.service';
 import { EventDraftService } from 'src/app/core/services/event-draft.service';
 import { EventApiService, EventDetails, EventWithRelatedData, SpecialGuest, Volunteer, EventMedia } from 'src/app/core/services/event-api.service';
-import { MessageService } from 'primeng/api';
+import { ToastService } from 'src/app/core/services/toast.service';
+import { ValidationSettingsService } from 'src/app/core/services/validation-settings.service';
 import { debounceTime, Subscription } from 'rxjs';
 
 @Component({
@@ -277,6 +278,9 @@ export class AddEventComponent implements OnInit, OnDestroy {
 
   currentStep = 1;
   totalSteps = 4;
+
+  // Form submission flag for validation display
+  formSubmitted: boolean = false;
 
   // Success and error messages
   successMessage: string = '';
@@ -591,7 +595,8 @@ export class AddEventComponent implements OnInit, OnDestroy {
     private eventMasterDataService: EventMasterDataService,
     private eventDraftService: EventDraftService,
     private eventApiService: EventApiService,
-    private messageService: MessageService
+    private toastService: ToastService,
+    public validationSettings: ValidationSettingsService
   ) { }
 
   ngOnInit(): void {
@@ -645,28 +650,28 @@ export class AddEventComponent implements OnInit, OnDestroy {
   initializeForms(): void {
     // General Details Form
     this.generalDetailsForm = this.fb.group({
-      eventType: [''],
-      eventCategory: [''],
+      eventType: ['', Validators.required],
+      eventCategory: ['', Validators.required],
       eventSubCategory: [''],
       eventName: [''],
       kathaType: [''],
       scale: [''],
       theme: [''],
       language: [''],
-      duration: [''],
+      duration: ['', Validators.required],
       dailyStartTime: [''],
       dailyEndTime: [''],
       spiritualOrator: [''],
-      country: [''],
+      country: ['', Validators.required],
       pincode: [''],
       postOffice: ['Karnataka'],
       thana: [''],
       tehsil: [''],
-      state: ['Karnataka'],
+      state: ['Karnataka', Validators.required],
       district: [''],
-      city: ['Bangalore'],
+      city: ['Bangalore', Validators.required],
       addressType: [''],
-      address: [''],
+      address: ['', Validators.required],
       prachar: [['Area 1', 'Area 2']],
       areaCovered: ['0.00'],
       donationType: ['Cash'],
@@ -1456,12 +1461,7 @@ export class AddEventComponent implements OnInit, OnDestroy {
     if (this.startDate && this.endDate) {
       // Validate that end date is after start date
       if (this.endDate < this.startDate) {
-        this.messageService.add({
-          severity: 'warn',
-          summary: 'Invalid Date Range',
-          detail: 'End date must be after start date',
-          life: 3000
-        });
+        this.toastService.warning('End date must be after start date', 'Invalid Date Range');
         // Clear end date if invalid
         this.endDate = null;
         this.generalDetailsForm.patchValue({
@@ -1715,12 +1715,7 @@ export class AddEventComponent implements OnInit, OnDestroy {
     }
 
     // Show message
-    this.messageService.add({
-      severity: 'info',
-      summary: 'Files Selected',
-      detail: `${files.length} file(s) selected. They will be uploaded when you save the event.`,
-      life: 3000
-    });
+    this.toastService.info(`${files.length} file(s) selected. They will be uploaded when you save the event.`, 'Files Selected');
 
     // Reset input
     input.value = '';
@@ -1769,32 +1764,133 @@ export class AddEventComponent implements OnInit, OnDestroy {
     files.forEach((file) => {
       this.eventApiService.uploadFile(file, eventId, undefined, category).subscribe({
         next: (response) => {
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Upload Success',
-            detail: `${file.name} uploaded successfully`,
-            life: 3000
-          });
+          this.toastService.success(`${file.name} uploaded successfully`, 'Upload Success');
         },
         error: (error) => {
           console.error('Upload error:', error);
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Upload Failed',
-            detail: `Failed to upload ${file.name}: ${error?.error?.error || 'Unknown error'}`,
-            life: 5000
-          });
+          this.toastService.error(`Failed to upload ${file.name}: ${error?.error?.error || 'Unknown error'}`, 'Upload Failed');
         }
       });
     });
   }
 
   nextStep(): void {
+    // Mark form as submitted for validation display
+    this.formSubmitted = true;
+
+    // Validate current step before moving to next (only if validation is enabled)
+    if (this.validationSettings.isValidationEnabled()) {
+      if (this.currentStep === 1) {
+        // Mark all fields as touched to show validation errors
+        this.markFormGroupTouched(this.generalDetailsForm);
+
+        if (this.generalDetailsForm.invalid) {
+          // Show toast message if validation is enabled
+          if (this.validationSettings.shouldShowToastErrors()) {
+            const errors = this.getFormValidationErrors(this.generalDetailsForm);
+            this.toastService.validationError('Please fill in all required fields in General Details.', errors);
+          }
+          // If strict mode is enabled, block navigation
+          if (this.validationSettings.isStrictMode()) {
+            return;
+          }
+        }
+      } else if (this.currentStep === 2) {
+        // Media promotion step - no required validations for now
+      } else if (this.currentStep === 3) {
+        // Special guests step - no required validations for now
+      } else if (this.currentStep === 4) {
+        // Volunteers step - no required validations for now
+      }
+    }
+
     // Save current step before moving to next
     this.saveCurrentStep();
     if (this.currentStep < this.totalSteps) {
       this.currentStep++;
+      this.formSubmitted = false; // Reset for next step
     }
+  }
+
+  /**
+   * Mark all fields in a form group as touched to show validation errors
+   */
+  markFormGroupTouched(formGroup: FormGroup): void {
+    Object.keys(formGroup.controls).forEach(key => {
+      const control = formGroup.get(key);
+      control?.markAsTouched();
+
+      if (control instanceof FormGroup) {
+        this.markFormGroupTouched(control);
+      }
+    });
+  }
+
+  /**
+   * Helper method to check if a field is invalid and should show error
+   */
+  isFieldInvalid(fieldName: string, formGroup: FormGroup = this.generalDetailsForm): boolean {
+    // Check if validation is enabled and should show field errors
+    if (!this.validationSettings.shouldShowFieldErrors()) {
+      return false;
+    }
+    const field = formGroup.get(fieldName);
+    return !!(field && field.invalid && (field.touched || this.formSubmitted));
+  }
+
+  /**
+   * Helper method to get error message for a field
+   */
+  getFieldError(fieldName: string, formGroup: FormGroup = this.generalDetailsForm): string {
+    if (!this.validationSettings.shouldShowFieldErrors()) {
+      return '';
+    }
+    const field = formGroup.get(fieldName);
+    if (field && field.errors && (field.touched || this.formSubmitted)) {
+      if (field.errors['required']) {
+        return `${fieldName} is required.`;
+      }
+      if (field.errors['email']) {
+        return 'Please enter a valid email address.';
+      }
+      if (field.errors['pattern']) {
+        return 'Please enter a valid value.';
+      }
+    }
+    return '';
+  }
+
+  /**
+   * Get all validation errors from a form group
+   */
+  getFormValidationErrors(formGroup: FormGroup): string[] {
+    const errors: string[] = [];
+    Object.keys(formGroup.controls).forEach(key => {
+      const control = formGroup.get(key);
+      if (control && control.invalid && (control.touched || this.formSubmitted)) {
+        const fieldName = this.formatFieldName(key);
+        if (control.errors?.['required']) {
+          errors.push(`${fieldName} is required`);
+        }
+        if (control.errors?.['email']) {
+          errors.push(`${fieldName} must be a valid email`);
+        }
+        if (control.errors?.['pattern']) {
+          errors.push(`${fieldName} has invalid format`);
+        }
+      }
+    });
+    return errors;
+  }
+
+  /**
+   * Format field name for display (e.g., 'eventType' -> 'Event Type')
+   */
+  formatFieldName(fieldName: string): string {
+    return fieldName
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, str => str.toUpperCase())
+      .trim();
   }
 
   previousStep(): void {
@@ -1876,22 +1972,12 @@ export class AddEventComponent implements OnInit, OnDestroy {
       next: (response: EventWithRelatedData) => {
         this.populateFormsFromEvent(response);
         this.loadingEvent = false;
-        this.messageService.add({
-          severity: 'info',
-          summary: 'Event Loaded',
-          detail: 'Event data loaded. You can continue editing.',
-          life: 3000
-        });
+        this.toastService.info('Event data loaded. You can continue editing.', 'Event Loaded');
       },
       error: (error) => {
         console.error('Error loading event:', error);
         this.loadingEvent = false;
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'Failed to load event data.',
-          life: 3000
-        });
+        this.toastService.error('Failed to load event data.', 'Error');
       }
     });
   }
@@ -2047,24 +2133,18 @@ export class AddEventComponent implements OnInit, OnDestroy {
     const mediaPromotion = this.mediaPromotionForm.value;
 
     // Validate required fields (only for final submission, not for drafts)
-    if (!isDraft) {
+    if (!isDraft && this.validationSettings.isValidationEnabled()) {
       if (!generalDetails.eventType) {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Validation Error',
-          detail: 'Event Type is required.',
-          life: 3000
-        });
+        if (this.validationSettings.shouldShowToastErrors()) {
+          this.toastService.validationError('Event Type is required.');
+        }
         throw new Error('Event Type is required');
       }
 
       if (!generalDetails.eventCategory) {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Validation Error',
-          detail: 'Event Category is required.',
-          life: 3000
-        });
+        if (this.validationSettings.shouldShowToastErrors()) {
+          this.toastService.validationError('Event Category is required.');
+        }
         throw new Error('Event Category is required');
       }
     }
@@ -2095,13 +2175,10 @@ export class AddEventComponent implements OnInit, OnDestroy {
               durationString = duration; // Keep original format for backend
             } else {
               // Invalid date format - only throw if not a draft
-              if (!isDraft) {
-                this.messageService.add({
-                  severity: 'error',
-                  summary: 'Validation Error',
-                  detail: 'Duration must be in format: "dd MMM yyyy - dd MMM yyyy" (e.g., "01 Jan 2024 - 05 Jan 2024")',
-                  life: 5000
-                });
+              if (!isDraft && this.validationSettings.isValidationEnabled()) {
+                if (this.validationSettings.shouldShowToastErrors()) {
+                  this.toastService.validationError('Duration must be in format: "dd MMM yyyy - dd MMM yyyy" (e.g., "01 Jan 2024 - 05 Jan 2024")');
+                }
                 throw new Error('Invalid duration format');
               }
               // For drafts, just use the string as-is
@@ -2109,26 +2186,20 @@ export class AddEventComponent implements OnInit, OnDestroy {
             }
           } catch (e) {
             // If parsing fails and not a draft, show error
-            if (!isDraft) {
-              this.messageService.add({
-                severity: 'error',
-                summary: 'Validation Error',
-                detail: 'Duration must be in format: "dd MMM yyyy - dd MMM yyyy" (e.g., "01 Jan 2024 - 05 Jan 2024")',
-                life: 5000
-              });
+            if (!isDraft && this.validationSettings.isValidationEnabled()) {
+              if (this.validationSettings.shouldShowToastErrors()) {
+                this.toastService.validationError('Duration must be in format: "dd MMM yyyy - dd MMM yyyy" (e.g., "01 Jan 2024 - 05 Jan 2024")');
+              }
               throw new Error('Invalid duration format');
             }
             // For drafts, just use the string as-is
             durationString = duration;
           }
         } else {
-          if (!isDraft) {
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Validation Error',
-              detail: 'Duration must include both start and end dates separated by " - "',
-              life: 5000
-            });
+          if (!isDraft && this.validationSettings.isValidationEnabled()) {
+            if (this.validationSettings.shouldShowToastErrors()) {
+              this.toastService.validationError('Duration must include both start and end dates separated by " - "');
+            }
             throw new Error('Invalid duration format');
           }
           // For drafts, don't send invalid duration
@@ -2136,13 +2207,10 @@ export class AddEventComponent implements OnInit, OnDestroy {
         }
       } else {
         // Duration doesn't contain " - "
-        if (!isDraft) {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Validation Error',
-            detail: 'Duration must be in format: "dd MMM yyyy - dd MMM yyyy" (e.g., "01 Jan 2024 - 05 Jan 2024")',
-            life: 5000
-          });
+        if (!isDraft && this.validationSettings.isValidationEnabled()) {
+          if (this.validationSettings.shouldShowToastErrors()) {
+            this.toastService.validationError('Duration must be in format: "dd MMM yyyy - dd MMM yyyy" (e.g., "01 Jan 2024 - 05 Jan 2024")');
+          }
           throw new Error('Invalid duration format');
         }
         // For drafts, don't send invalid duration - send empty string
@@ -2150,13 +2218,10 @@ export class AddEventComponent implements OnInit, OnDestroy {
       }
     } else {
       // Duration is required only for final submission
-      if (!isDraft) {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Validation Error',
-          detail: 'Duration is required. Please enter dates in format: "dd MMM yyyy - dd MMM yyyy" (e.g., "01 Jan 2024 - 05 Jan 2024")',
-          life: 5000
-        });
+      if (!isDraft && this.validationSettings.isValidationEnabled()) {
+        if (this.validationSettings.shouldShowToastErrors()) {
+          this.toastService.validationError('Duration is required. Please enter dates in format: "dd MMM yyyy - dd MMM yyyy" (e.g., "01 Jan 2024 - 05 Jan 2024")');
+        }
         throw new Error('Duration is required');
       }
       // For drafts, duration can be empty - set to empty string
@@ -2164,13 +2229,10 @@ export class AddEventComponent implements OnInit, OnDestroy {
     }
 
     // Final check: if durationString is still undefined and not a draft, it's an error
-    if (!isDraft && !durationString) {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Validation Error',
-        detail: 'Duration is required. Please enter dates in format: "dd MMM yyyy - dd MMM yyyy" (e.g., "01 Jan 2024 - 05 Jan 2024")',
-        life: 5000
-      });
+    if (!isDraft && !durationString && this.validationSettings.isValidationEnabled()) {
+      if (this.validationSettings.shouldShowToastErrors()) {
+        this.toastService.validationError('Duration is required. Please enter dates in format: "dd MMM yyyy - dd MMM yyyy" (e.g., "01 Jan 2024 - 05 Jan 2024")');
+      }
       throw new Error('Duration is required');
     }
 
@@ -2257,23 +2319,13 @@ export class AddEventComponent implements OnInit, OnDestroy {
         // Update existing event as draft
         this.eventApiService.updateEvent(this.eventId, payload, 'incomplete').subscribe({
           next: () => {
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Draft Saved',
-              detail: 'Event saved as draft successfully.',
-              life: 3000
-            });
+            this.toastService.success('Event saved as draft successfully.', 'Draft Saved');
             this.router.navigate(['/events']);
           },
           error: (error) => {
             console.error('Error saving draft:', error);
             const errorMessage = error?.error?.error || error?.message || 'Failed to save draft.';
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Error',
-              detail: errorMessage,
-              life: 5000
-            });
+            this.toastService.error(errorMessage, 'Error');
           }
         });
       } else {
@@ -2289,23 +2341,13 @@ export class AddEventComponent implements OnInit, OnDestroy {
               this.uploadFilesAfterEventCreation(newEventId);
             }
 
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Draft Saved',
-              detail: 'Event saved as draft successfully.',
-              life: 3000
-            });
+            this.toastService.success('Event saved as draft successfully.', 'Draft Saved');
             this.router.navigate(['/events']);
           },
           error: (error) => {
             console.error('Error creating draft:', error);
             const errorMessage = error?.error?.error || error?.message || 'Failed to save draft.';
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Error',
-              detail: errorMessage,
-              life: 5000
-            });
+            this.toastService.error(errorMessage, 'Error');
           }
         });
       }
@@ -2321,6 +2363,34 @@ export class AddEventComponent implements OnInit, OnDestroy {
    */
   onSubmit(): void {
     if (this.currentStep === this.totalSteps) {
+      // Mark all forms as submitted for validation display
+      this.formSubmitted = true;
+
+      // Validate all forms (only if validation is enabled)
+      if (this.validationSettings.isValidationEnabled()) {
+        // Mark all fields as touched to show validation errors
+        this.markFormGroupTouched(this.generalDetailsForm);
+
+        // Validate all forms
+        let isValid = true;
+
+        if (this.generalDetailsForm.invalid) {
+          isValid = false;
+        }
+
+        if (!isValid) {
+          // Show toast message with validation errors if validation is enabled
+          if (this.validationSettings.shouldShowToastErrors()) {
+            const errors = this.getFormValidationErrors(this.generalDetailsForm);
+            this.toastService.validationError('Please fill in all required fields before submitting.', errors);
+          }
+          // If strict mode is enabled, block submission
+          if (this.validationSettings.isStrictMode()) {
+            return;
+          }
+        }
+      }
+
       try {
         // For final submission, use strict validation (isDraft = false)
         const eventData = this.mapFormDataToApiFormat(false);
@@ -2348,12 +2418,7 @@ export class AddEventComponent implements OnInit, OnDestroy {
           // Update existing event and mark as complete
           this.eventApiService.updateEvent(this.eventId, payload, 'complete').subscribe({
             next: () => {
-              this.messageService.add({
-                severity: 'success',
-                summary: 'Success',
-                detail: 'Event submitted successfully.',
-                life: 3000
-              });
+              this.toastService.success('Event submitted successfully.', 'Success');
               // Clear draft after successful submission
               this.eventDraftService.clearDraftIdFromStorage();
               this.draftId = null;
@@ -2362,12 +2427,7 @@ export class AddEventComponent implements OnInit, OnDestroy {
             error: (error) => {
               console.error('Error updating event:', error);
               const errorMessage = error?.error?.error || error?.message || 'Failed to submit event.';
-              this.messageService.add({
-                severity: 'error',
-                summary: 'Error',
-                detail: errorMessage,
-                life: 5000
-              });
+              this.toastService.error(errorMessage, 'Error');
             }
           });
         } else {
@@ -2384,12 +2444,7 @@ export class AddEventComponent implements OnInit, OnDestroy {
                 this.uploadFilesAfterEventCreation(newEventId);
               }
 
-              this.messageService.add({
-                severity: 'success',
-                summary: 'Success',
-                detail: 'Event submitted successfully.',
-                life: 3000
-              });
+              this.toastService.success('Event submitted successfully.', 'Success');
               // Clear draft after successful submission
               this.eventDraftService.clearDraftIdFromStorage();
               this.draftId = null;
@@ -2399,12 +2454,7 @@ export class AddEventComponent implements OnInit, OnDestroy {
               console.error('Error creating event:', error);
               console.error('Error response:', error?.error);
               const errorMessage = error?.error?.error || error?.message || 'Failed to submit event.';
-              this.messageService.add({
-                severity: 'error',
-                summary: 'Error',
-                detail: errorMessage,
-                life: 5000
-              });
+              this.toastService.error(errorMessage, 'Error');
             }
           });
         }
@@ -2719,6 +2769,37 @@ export class AddEventComponent implements OnInit, OnDestroy {
   removeDonationType(index: number): void {
     if (this.donationTypes.length > 1) {
       this.donationTypes.splice(index, 1);
+    }
+  }
+
+  /**
+   * Handle toast close event
+   */
+  onToastClose(event: any): void {
+    // Optional: Handle toast close if needed
+  }
+
+  /**
+   * Handle toast click event - make toasts interactive
+   */
+  onToastClick(event: any): void {
+    const message = event.message;
+    if (message && message.data && message.data.onClick) {
+      // Execute custom click handler if provided
+      if (typeof message.data.onClick === 'function') {
+        message.data.onClick();
+      }
+    } else if (message && message.severity === 'error' && message.summary === 'Validation Error') {
+      // For validation errors, scroll to first invalid field
+      const firstInvalidField = document.querySelector('.is-invalid');
+      if (firstInvalidField) {
+        firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Highlight the field briefly
+        firstInvalidField.classList.add('highlight-error');
+        setTimeout(() => {
+          firstInvalidField.classList.remove('highlight-error');
+        }, 2000);
+      }
     }
   }
 }

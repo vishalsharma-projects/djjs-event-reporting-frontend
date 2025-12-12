@@ -22,19 +22,19 @@ export class AuthInterceptor implements HttpInterceptor {
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     // Get token from auth service
     const token = this.authService.getToken();
-    
+
     // Clone the request and add authorization header if token exists
     if (token) {
       // Check if token is expired before adding it
       if (this.authService.isTokenExpired(token)) {
         // Token is expired, logout and redirect
         this.authService.logout();
-        this.router.navigate(['/auth/login'], { 
-          queryParams: { reason: 'expired' } 
+        this.router.navigate(['/auth/login'], {
+          queryParams: { reason: 'expired' }
         });
         return throwError(() => new Error('Token expired'));
       }
-      
+
       request = request.clone({
         setHeaders: {
           Authorization: `Bearer ${token}`
@@ -48,11 +48,11 @@ export class AuthInterceptor implements HttpInterceptor {
         // If unauthorized (401), redirect to login
         if (error.status === 401) {
           this.authService.logout();
-          this.router.navigate(['/auth/login'], { 
-            queryParams: { reason: 'unauthorized' } 
+          this.router.navigate(['/auth/login'], {
+            queryParams: { reason: 'unauthorized' }
           });
         }
-        
+
         return throwError(() => error);
       })
     );

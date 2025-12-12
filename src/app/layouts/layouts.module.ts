@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 
 import { SimplebarAngularModule } from 'simplebar-angular';
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
+import { ToastModule } from 'primeng/toast';
 
 import { UIModule } from '../shared/ui/ui.module';
 import { LayoutComponent } from './layout.component';
@@ -25,6 +26,7 @@ import { TranslateModule } from '@ngx-translate/core';
     TranslateModule,
     RouterModule,
     BsDropdownModule.forRoot(),
+    ToastModule,
     UIModule,
     SimplebarAngularModule
   ],

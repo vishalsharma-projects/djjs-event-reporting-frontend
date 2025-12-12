@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 
 export interface Country {
@@ -89,6 +90,10 @@ export interface Branch {
   open_days?: string;
   daily_start_time?: string;
   daily_end_time?: string;
+  status?: boolean;
+  ncr?: boolean;
+  region_id?: number | null;
+  branch_code?: string;
   created_on: string;
   created_by?: string;
   updated_on?: string;
@@ -102,15 +107,18 @@ export interface Branch {
 export interface BranchPayload {
   aashram_area: number;
   address?: string;
-  city: string; // Location name as string
+  city_id?: number | null; // Location ID
+  city?: string; // Location name (for backward compatibility)
   contact_number: string;
   coordinator_name: string;
-  country: string; // Location name as string
+  country_id?: number | null; // Location ID
+  country?: string; // Location name (for backward compatibility)
   created_by?: string;
   created_on?: string;
   daily_end_time?: string;
   daily_start_time?: string;
-  district: string; // Location name as string
+  district_id?: number | null; // Location ID
+  district?: string; // Location name (for backward compatibility)
   email: string;
   established_on: string;
   id?: number; // Optional for create, required for update
@@ -119,7 +127,12 @@ export interface BranchPayload {
   pincode?: string;
   police_station?: string;
   post_office?: string;
-  state: string; // Location name as string
+  state_id?: number | null; // Location ID
+  state?: string; // Location name (for backward compatibility)
+  status?: boolean;
+  ncr?: boolean;
+  region_id?: number | null;
+  branch_code?: string;
   updated_by?: string;
   updated_on?: string;
 }
@@ -311,13 +324,15 @@ export class LocationService {
     let url = `${this.apiBaseUrl}/api/branches/search`;
     const params: string[] = [];
 
-    if (name) {
-      params.push(`name=${encodeURIComponent(name)}`);
+    // Only add non-empty parameters
+    if (name && name.trim()) {
+      params.push(`name=${encodeURIComponent(name.trim())}`);
     }
-    if (coordinator) {
-      params.push(`coordinator=${encodeURIComponent(coordinator)}`);
+    if (coordinator && coordinator.trim()) {
+      params.push(`coordinator=${encodeURIComponent(coordinator.trim())}`);
     }
 
+    // If we have parameters, add them to URL
     if (params.length > 0) {
       url += `?${params.join('&')}`;
     }

@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms'
 import { LocationService, BranchPayload, Country, State, District, City, Coordinator } from 'src/app/core/services/location.service'
 import { TokenStorageService } from 'src/app/core/services/token-storage.service'
 import { Router } from '@angular/router'
+import { MessageService } from 'primeng/api'
 
 @Component({
     selector: 'app-add-branch',
@@ -11,16 +12,12 @@ import { Router } from '@angular/router'
 })
 export class AddBranchComponent implements OnInit {
     branchForm: FormGroup;
-    activeMemberType: 'preacher' | 'samarpit' = 'samarpit';
     activeTab: string = 'branch';   // default tab
 
     //Track progress
     completion = 0; // example, bind dynamically based on form fill %
     circumference = 2 * Math.PI * 45; // radius = 45
 
-    branchName = "Delhi Branch";
-    branchEmail = "delhi.branch@example.com";
-    coordinatorName = "John Doe";
 
     // Location data from API
     countryList: Country[] = [];
@@ -39,21 +36,24 @@ export class AddBranchComponent implements OnInit {
     // Submitting state
     isSubmitting = false;
 
+    // Breadcrumb items
+    breadCrumbItems: Array<{}> = [];
+
     constructor(
         private fb: FormBuilder,
         private locationService: LocationService,
         private tokenStorage: TokenStorageService,
-        private router: Router
+        private router: Router,
+        private messageService: MessageService
     ) { }
 
-    //for Tabs
-    setActiveTab(tab: string) {
-        this.activeTab = tab;
-    }
 
 
     ngOnInit(): void {
         this.branchForm = this.fb.group({
+            name: ['', Validators.required],
+            email: ['', [Validators.required, Validators.email]],
+            contactNumber: ['', Validators.required],
             coordinator: ['', Validators.required],
             establishedOn: ['', Validators.required],
             ashramArea: ['', Validators.required],
@@ -64,7 +64,6 @@ export class AddBranchComponent implements OnInit {
             tehsil: [''],
             state: ['', Validators.required],
             city: ['', Validators.required],
-            addressType: ['', Validators.required],
             address: ['', Validators.required],
             districts: ['', Validators.required],
             areaCovered: [''],
@@ -77,34 +76,17 @@ export class AddBranchComponent implements OnInit {
             openDays: [''],
             dailyStartTime: [''],
             dailyEndTime: [''],
-            members: this.fb.array([])
+            status: [true],
+            ncr: [false],
+            regionId: [''],
+            branchCode: ['']
         });
 
-        // Fill dummy data for 8 Samarpit sewadar and 2 Preachers
-        const dummyMembers = [
-            { name: 'Sewadar 1', role: 'Role 1', responsibility: 'Resp 1', age: 30, dateOfSamarpan: '2020-01-01', qualification: 'Graduate', dateOfBirth: '1990-01-01', memberType: 'samarpit' },
-            { name: 'Sewadar 2', role: 'Role 2', responsibility: 'Resp 2', age: 28, dateOfSamarpan: '2019-05-10', qualification: 'Post Graduate', dateOfBirth: '1992-05-10', memberType: 'samarpit' },
-            { name: 'Sewadar 3', role: 'Role 3', responsibility: 'Resp 3', age: 35, dateOfSamarpan: '2018-03-15', qualification: 'Graduate', dateOfBirth: '1987-03-15', memberType: 'samarpit' },
-            { name: 'Sewadar 4', role: 'Role 4', responsibility: 'Resp 4', age: 40, dateOfSamarpan: '2017-07-20', qualification: 'Diploma', dateOfBirth: '1982-07-20', memberType: 'samarpit' },
-            { name: 'Sewadar 5', role: 'Role 5', responsibility: 'Resp 5', age: 25, dateOfSamarpan: '2021-09-05', qualification: 'Graduate', dateOfBirth: '1997-09-05', memberType: 'samarpit' },
-            { name: 'Sewadar 6', role: 'Role 6', responsibility: 'Resp 6', age: 32, dateOfSamarpan: '2016-11-11', qualification: 'Post Graduate', dateOfBirth: '1990-11-11', memberType: 'samarpit' },
-            { name: 'Sewadar 7', role: 'Role 7', responsibility: 'Resp 7', age: 29, dateOfSamarpan: '2015-12-25', qualification: 'Graduate', dateOfBirth: '1993-12-25', memberType: 'samarpit' },
-            { name: 'Sewadar 8', role: 'Role 8', responsibility: 'Resp 8', age: 27, dateOfSamarpan: '2022-02-02', qualification: 'Diploma', dateOfBirth: '1995-02-02', memberType: 'samarpit' },
-            { name: 'Preacher 1', role: 'Role P1', responsibility: 'Preach', age: 45, dateOfSamarpan: '2010-01-01', qualification: 'Graduate', dateOfBirth: '1975-01-01', memberType: 'preacher' },
-            { name: 'Preacher 2', role: 'Role P2', responsibility: 'Preach', age: 50, dateOfSamarpan: '2008-05-10', qualification: 'Post Graduate', dateOfBirth: '1970-05-10', memberType: 'preacher' }
+        // Set breadcrumbs
+        this.breadCrumbItems = [
+          { label: 'Branches', routerLink: '/branch' },
+          { label: 'Add Branch', active: true }
         ];
-        dummyMembers.forEach(data => {
-            this.members.push(this.fb.group({
-                name: [data.name, Validators.required],
-                role: [data.role, Validators.required],
-                responsibility: [data.responsibility],
-                age: [data.age],
-                dateOfSamarpan: [data.dateOfSamarpan],
-                qualification: [data.qualification],
-                dateOfBirth: [data.dateOfBirth],
-                memberType: [data.memberType, Validators.required]
-            }));
-        });
 
         // Load countries and coordinators on init
         this.loadCountries();
@@ -168,42 +150,29 @@ export class AddBranchComponent implements OnInit {
         }));
     }
 
-    get members(): FormArray {
-        return this.branchForm.get('members') as FormArray;
-    }
-
-    addMember() {
-        const memberType = this.branchForm.get('memberType')?.value || 'samarpit';
-        this.members.push(this.fb.group({
-            name: ['', Validators.required],
-            role: ['', Validators.required],
-            responsibility: [''],
-            age: [''],
-            dateOfSamarpan: [''],
-            qualification: [''],
-            dateOfBirth: [''],
-            memberType: [memberType, Validators.required]
-        }));
-    }
-
-    switchMemberType(type: 'preacher' | 'samarpit') {
-        this.activeMemberType = type;
-    }
-
-    get filteredMembers() {
-        return this.members.controls.filter(m => m.value.memberType === this.activeMemberType);
-    }
-
-    get preacherCount() {
-        return this.members.controls.filter(m => m.value.memberType === 'preacher').length;
-    }
-
-    get samarpitCount() {
-        return this.members.controls.filter(m => m.value.memberType === 'samarpit').length;
-    }
-
     onSubmit() {
-        if (this.branchForm.valid && !this.isSubmitting) {
+        // Validate form
+        if (!this.branchForm.valid) {
+            // Mark all fields as touched to show validation errors
+            Object.keys(this.branchForm.controls).forEach(key => {
+                const control = this.branchForm.get(key);
+                if (control) {
+                    control.markAsTouched();
+                    control.markAsDirty();
+                }
+            });
+
+            // Show validation error message
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Validation Error',
+                detail: 'Please fill in all required fields correctly before submitting.',
+                life: 4000
+            });
+            return;
+        }
+
+        if (!this.isSubmitting) {
             this.isSubmitting = true;
 
             const formValue = this.branchForm.value;
@@ -236,28 +205,32 @@ export class AddBranchComponent implements OnInit {
                 establishedOn = new Date(establishedOn).toISOString();
             }
 
-            // Prepare API payload
+            // Prepare API payload - send IDs instead of names to avoid null issues
             const branchData: BranchPayload = {
                 aashram_area: parseFloat(formValue.ashramArea) || 0,
                 address: formValue.address || '',
-                city: city?.name || '',
-                contact_number: '', // Not in form, set empty
+                city_id: city?.id || null,
+                contact_number: formValue.contactNumber || '',
                 coordinator_name: coordinator?.name || '',
-                country: country?.name || '',
+                country_id: country?.id || null,
                 created_by: createdBy,
                 created_on: currentTimestamp,
                 daily_end_time: formValue.dailyEndTime || '',
                 daily_start_time: formValue.dailyStartTime || '',
-                district: district?.name || '',
-                email: this.branchEmail || '',
+                district_id: district?.id || null,
+                email: formValue.email || '',
                 established_on: establishedOn || '',
                 id: 0, // Will be set by backend
-                name: this.branchName || '',
+                name: formValue.name || '',
                 open_days: formValue.openDays || '',
                 pincode: formValue.pincode || '',
                 police_station: formValue.thana || '',
                 post_office: formValue.postOffice || '',
-                state: state?.name || '',
+                state_id: state?.id || null,
+                status: formValue.status !== undefined ? formValue.status : true,
+                ncr: formValue.ncr !== undefined ? formValue.ncr : false,
+                region_id: formValue.regionId ? parseInt(formValue.regionId, 10) : null,
+                branch_code: formValue.branchCode || '',
                 updated_by: createdBy,
                 updated_on: currentTimestamp
             };
@@ -266,22 +239,69 @@ export class AddBranchComponent implements OnInit {
             this.locationService.createBranch(branchData).subscribe({
                 next: (response) => {
                     console.log('Branch created successfully:', response);
+                    const branchId = response.id;
+
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Success',
+                        detail: 'Branch created successfully! You can now add members to this branch.',
+                        life: 3000
+                    });
                     this.isSubmitting = false;
-                    // Optionally navigate to branch list or show success message
-                    // this.router.navigate(['/branch/list']);
+
+                    // Redirect to branch list to show the new branch
+                    setTimeout(() => {
+                        this.router.navigate(['/branch']);
+                    }, 1500);
                 },
                 error: (error) => {
                     console.error('Error creating branch:', error);
+                    let errorMessage = 'Failed to create branch. Please try again.';
+
+                    if (error.error) {
+                        if (error.error.message) {
+                            errorMessage = error.error.message;
+                        } else if (error.error.error) {
+                            errorMessage = error.error.error;
+                        } else if (typeof error.error === 'string') {
+                            errorMessage = error.error;
+                        }
+                    } else if (error.message) {
+                        errorMessage = error.message;
+                    }
+
+                    if (error.status === 400) {
+                        errorMessage = 'Invalid data provided. Please check all fields and try again.';
+                    } else if (error.status === 409) {
+                        errorMessage = 'A branch with this email or contact number already exists.';
+                    } else if (error.status === 403) {
+                        errorMessage = 'You do not have permission to create branches.';
+                    }
+
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: errorMessage,
+                        life: 5000
+                    });
                     this.isSubmitting = false;
-                    // Handle error (show error message to user)
                 }
             });
-        } else {
-            // Mark all fields as touched to show validation errors
-            Object.keys(this.branchForm.controls).forEach(key => {
-                this.branchForm.get(key)?.markAsTouched();
-            });
         }
+    }
+
+    /**
+     * Get form errors for debugging
+     */
+    getFormErrors(): any {
+        const errors: any = {};
+        Object.keys(this.branchForm.controls).forEach(key => {
+            const control = this.branchForm.get(key);
+            if (control && control.errors) {
+                errors[key] = control.errors;
+            }
+        });
+        return errors;
     }
 
     /**
@@ -370,6 +390,18 @@ export class AddBranchComponent implements OnInit {
                 this.loadingCoordinators = false;
             }
         });
+    }
+
+    /**
+     * Get coordinator name for display
+     */
+    getCoordinatorName(): string {
+        const coordinatorId = this.branchForm.get('coordinator')?.value;
+        if (coordinatorId) {
+            const coordinator = this.coordinatorsList.find(c => c.id == coordinatorId || c.id === Number(coordinatorId));
+            return coordinator?.name || '';
+        }
+        return '';
     }
 
 }
