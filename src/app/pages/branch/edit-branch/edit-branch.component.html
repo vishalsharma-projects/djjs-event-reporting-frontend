@@ -108,35 +108,45 @@
           </div>
           <div class="row g-3 mt-1">
             <div class="form-check form-switch">
-              <input class="form-check-input orange-switch" type="checkbox" id="toggleParent" checked>
-              <label class="form-check-label" for="toggleSwitch">
+              <input class="form-check-input orange-switch" type="checkbox" id="toggleParent" formControlName="isParentBranch">
+              <label class="form-check-label" for="toggleParent">
                 is a Parent Branch
               </label>
             </div>
           </div>
-          <div class="row g-3 mt-1">
-            <div class="col-md-4">
+          <div *ngIf="branchForm.get('isParentBranch')?.value" class="row g-3 mt-1">
+            <div class="col-12">
+              <h6 class="mb-3">Child Branches</h6>
+              <div formArrayName="childBranches">
+                <div *ngFor="let childBranch of childBranches.controls; let i = index" [formGroupName]="i" class="card mb-3">
+                  <div class="card-body">
+                    <div class="row g-3">
+                      <div class="col-md-5">
               <label class="form-label">Child Branch Name <span class="text-danger">*</span></label>
-              <select class="form-select" formControlName="childBranchName">
-                <option value="">Select</option>
-                <option value="Meerut">Amit Sharma</option>
-                <option value="Saharanpur">Priya Singh</option>
+                        <select class="form-select" formControlName="name">
+                          <option value="">Select Branch</option>
+                          <option *ngFor="let branch of childBranchesList" [value]="branch.id" [disabled]="branch.id === branchId">
+                            {{branch.name}}
+                          </option>
               </select>
+                        <input type="hidden" formControlName="id" />
             </div>
-            <div class="col-md-8">
+                      <div class="col-md-6">
               <label class="form-label">Address <span class="text-danger">*</span></label>
-              <div class="input-group">
-                <input class="form-control" formControlName="Address" type="number" placeholder="Enter Address" />
-
+                        <input type="text" class="form-control" formControlName="address" placeholder="Enter address" />
+                      </div>
+                      <div class="col-md-1 d-flex align-items-end">
+                        <button type="button" class="btn btn-outline-danger" (click)="removeChildBranch(i)">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-outline-primary" (click)="addChildBranch()">
+                  <i class="fas fa-plus me-2"></i>Add Child Branch
+                </button>
               </div>
-            </div>
-
-          </div>
-          <div class="row g-3 mt-1">
-            <div class="d-flex justify-content-between mt-4">
-              <button type="button" class="btn btn-outline-primary">
-                Add Child Branch
-              </button>
             </div>
           </div>
 

@@ -94,6 +94,13 @@ export interface Branch {
   ncr?: boolean;
   region_id?: number | null;
   branch_code?: string;
+  parent_branch_id?: number | null;
+  children?: Branch[]; // Child branches if this is a parent
+  infrastructure?: Array<{
+    id: number;
+    type: string;
+    count: number;
+  }>;
   created_on: string;
   created_by?: string;
   updated_on?: string;
@@ -133,6 +140,7 @@ export interface BranchPayload {
   ncr?: boolean;
   region_id?: number | null;
   branch_code?: string;
+  parent_branch_id?: number | null; // Parent branch ID for child branches
   updated_by?: string;
   updated_on?: string;
 }
@@ -304,9 +312,17 @@ export class LocationService {
   }
 
   /**
-   * Update an existing branch
+   * Get child branches by parent branch ID
    */
-  updateBranch(branchId: number, branchData: BranchPayload): Observable<Branch> {
+  getChildBranches(parentBranchId: number): Observable<Branch[]> {
+    return this.http.get<Branch[]>(`${this.apiBaseUrl}/api/branches/parent/${parentBranchId}/children`);
+  }
+
+  /**
+   * Update an existing branch
+   * Accepts partial BranchPayload since backend accepts map[string]interface{}
+   */
+  updateBranch(branchId: number, branchData: Partial<BranchPayload> | any): Observable<Branch> {
     return this.http.put<Branch>(`${this.apiBaseUrl}/api/branches/${branchId}`, branchData);
   }
 

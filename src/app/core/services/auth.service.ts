@@ -4,18 +4,18 @@ import { Store } from '@ngrx/store';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { 
-  login, 
-  loginSuccess, 
-  loginFailure, 
-  logout, 
-  logoutSuccess 
+import {
+  login,
+  loginSuccess,
+  loginFailure,
+  logout,
+  logoutSuccess
 } from '../../store/Authentication/authentication.actions';
 import { LoginRequest, LoginResponse, User } from '../../store/Authentication/auth.models';
 import { RootReducerState } from '../../store/index';
 
-@Injectable({ 
-  providedIn: 'root' 
+@Injectable({
+  providedIn: 'root'
 })
 export class AuthenticationService {
 
@@ -34,24 +34,24 @@ export class AuthenticationService {
     // Dispatch login action
     this.store.dispatch(login({ credentials }));
 
-    const url = `${this.apiUrl}/login`;
-    
+    const url = `${this.apiUrl}/api/login`;
+
     return this.http.post<LoginResponse>(url, credentials).pipe(
       tap(response => {
         // Store token in localStorage
         this.storeToken(response.token);
-        
+
         // Dispatch success action with email from credentials
         this.store.dispatch(loginSuccess({ response, email: credentials.email }));
-        
+
         console.log('Login successful:', response);
       }),
       catchError(error => {
         const errorMessage = this.handleError(error);
-        
+
         // Dispatch failure action
         this.store.dispatch(loginFailure({ error: errorMessage }));
-        
+
         return throwError(() => new Error(errorMessage));
       })
     );
@@ -63,13 +63,13 @@ export class AuthenticationService {
   logout(): void {
     // Dispatch logout action
     this.store.dispatch(logout());
-    
+
     // Clear token from localStorage
     this.clearToken();
-    
+
     // Dispatch logout success action
     this.store.dispatch(logoutSuccess());
-    
+
     console.log('User logged out successfully');
   }
 
@@ -91,15 +91,15 @@ export class AuthenticationService {
       const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
         return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
       }).join(''));
-      
+
       const payload = JSON.parse(jsonPayload);
       const currentTime = Date.now() / 1000;
-      
+
       // Check if token has expiration and if it's expired
       if (payload.exp && payload.exp < currentTime) {
         return true;
       }
-      
+
       return false;
     } catch (error) {
       // If we can't decode the token, consider it expired
@@ -144,7 +144,7 @@ export class AuthenticationService {
    */
   private handleError(error: any): string {
     let errorMessage = 'An error occurred during login';
-    
+
     if (error.error) {
       if (error.error.message) {
         errorMessage = error.error.message;
@@ -171,7 +171,7 @@ export class AuthenticationService {
           errorMessage = `HTTP error ${error.status}`;
       }
     }
-    
+
     return errorMessage;
   }
 

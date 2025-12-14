@@ -1,7 +1,8 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { LocationService, Branch } from 'src/app/core/services/location.service';
+import { ChildBranchService, ChildBranch, ChildBranchMember } from 'src/app/core/services/child-branch.service';
 import { TokenStorageService } from 'src/app/core/services/token-storage.service';
 import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
 import { Subscription } from 'rxjs';
@@ -16,6 +17,20 @@ interface BranchData {
   establishedOn: Date;
   ashramArea: string;
   members: any[];
+  children?: ChildBranchData[]; // Child branches from separate table
+  isParent?: boolean; // Whether this branch has children
+}
+
+interface ChildBranchData {
+  id: string;
+  branchName: string;
+  coordinatorName: string; // Inherited from parent
+  state: string;
+  city: string;
+  establishedOn: Date;
+  ashramArea: string;
+  members: ChildBranchMember[];
+  parentBranchId: number;
 }
 
 @Component({
@@ -48,10 +63,14 @@ export class BranchListComponent implements OnInit, OnDestroy {
   dropdownOpen: { [key: string]: boolean } = {};
   pinnedColumns: string[] = [];
 
+  // Action menu state
+  openActionMenu: string | null = null;
+
 
   constructor(
     private router: Router,
     private locationService: LocationService,
+    private childBranchService: ChildBranchService,
     private messageService: MessageService,
     private tokenStorage: TokenStorageService,
     private confirmationDialog: ConfirmationDialogService
@@ -126,15 +145,36 @@ export class BranchListComponent implements OnInit, OnDestroy {
         // Convert API branch data to BranchData format
         let convertedBranches: BranchData[] = branches.map(branch => {
           console.log('Converting branch:', branch.id, branch.name);
+
+          // Convert child branches if they exist
+          const children: ChildBranchData[] = [];
+          if (branch.children && Array.isArray(branch.children)) {
+            branch.children.forEach((child: Branch) => {
+              children.push({
+                id: child.id?.toString() || '',
+                branchName: child.name || 'Unnamed Branch',
+                coordinatorName: child.coordinator_name || 'Not specified',
+                state: child.state?.name || '',
+                city: child.city?.name || '',
+                establishedOn: child.established_on ? new Date(child.established_on) : new Date(child.created_on || Date.now()),
+                ashramArea: child.aashram_area ? `${child.aashram_area} sq km` : '0 sq km',
+                members: [],
+                parentBranchId: branch.id || 0
+              });
+            });
+          }
+
           return {
-          id: branch.id?.toString() || '',
-          branchName: branch.name || 'Unnamed Branch',
-          coordinatorName: branch.coordinator_name || 'Not specified',
-          state: branch.state?.name || '',
-          city: branch.city?.name || '',
-          establishedOn: branch.established_on ? new Date(branch.established_on) : new Date(branch.created_on || Date.now()),
-          ashramArea: branch.aashram_area ? `${branch.aashram_area} sq km` : '0 sq km',
-          members: [] // Members not included in API response
+            id: branch.id?.toString() || '',
+            branchName: branch.name || 'Unnamed Branch',
+            coordinatorName: branch.coordinator_name || 'Not specified',
+            state: branch.state?.name || '',
+            city: branch.city?.name || '',
+            establishedOn: branch.established_on ? new Date(branch.established_on) : new Date(branch.created_on || Date.now()),
+            ashramArea: branch.aashram_area ? `${branch.aashram_area} sq km` : '0 sq km',
+            members: [], // Members not included in API response
+            children: children,
+            isParent: children.length > 0
           };
         });
 
@@ -266,10 +306,72 @@ export class BranchListComponent implements OnInit, OnDestroy {
     const branchId = event.data.id;
     this.expandedRows[branchId] = true;
 
-    // Fetch members if not already loaded
-    if (!this.membersLoaded[branchId]) {
-      this.loadBranchMembers(branchId);
+    const branch = this.branches.find(b => b.id === branchId);
+
+    // Always try to load child branches for any branch
+    // This ensures we show child branches even if they weren't in the initial response
+    if (branch) {
+      if (!branch.children || branch.children.length === 0) {
+        // Try loading child branches - if it's not a parent, API will return empty array
+        this.loadChildBranches(branchId);
+      }
     }
+
+    // Note: We no longer load parent branch members - only child branches are shown
+  }
+
+  // Load child branches for a parent branch using the new child branch API
+  loadChildBranches(parentBranchId: string) {
+    const parentBranchIdNum = parseInt(parentBranchId, 10);
+    if (isNaN(parentBranchIdNum)) {
+      console.error('Invalid parent branch ID:', parentBranchId);
+      return;
+    }
+
+    // Set loading state
+    this.loadingMembers['children_' + parentBranchId] = true;
+
+    // Get parent branch to inherit coordinator
+    const parentBranch = this.branches.find(b => b.id === parentBranchId);
+    const parentCoordinator = parentBranch?.coordinatorName || 'Not specified';
+
+    this.childBranchService.getChildBranchesByParent(parentBranchIdNum).subscribe({
+      next: (childBranches: ChildBranch[]) => {
+        // Convert child branches to ChildBranchData format
+        // Coordinator is inherited from parent, so use parent's coordinator
+        const children: ChildBranchData[] = childBranches.map((child: ChildBranch) => ({
+          id: child.id?.toString() || '',
+          branchName: child.name || 'Unnamed Branch',
+          coordinatorName: child.coordinator_name || parentCoordinator, // Inherit from parent if not set
+          state: child.state?.name || '',
+          city: child.city?.name || '',
+          establishedOn: child.established_on ? new Date(child.established_on) : new Date(child.created_on || Date.now()),
+          ashramArea: child.aashram_area ? `${child.aashram_area} sq km` : '0 sq km',
+          members: child.members || [],
+          parentBranchId: child.parent_branch_id
+        }));
+
+        // Update the parent branch's children
+        if (parentBranch) {
+          parentBranch.children = children;
+          parentBranch.isParent = children.length > 0;
+        }
+
+        this.loadingMembers['children_' + parentBranchId] = false;
+        this.membersLoaded['children_' + parentBranchId] = true;
+      },
+      error: (error) => {
+        console.error('Error loading child branches:', error);
+        this.loadingMembers['children_' + parentBranchId] = false;
+        this.membersLoaded['children_' + parentBranchId] = true;
+
+        // Set empty array on error
+        if (parentBranch) {
+          parentBranch.children = [];
+          parentBranch.isParent = false;
+        }
+      }
+    });
   }
 
   // Handle row collapse
@@ -321,17 +423,201 @@ export class BranchListComponent implements OnInit, OnDestroy {
     });
   }
 
+  // Load child branch members using the new child branch API
+  loadChildBranchMembers(childBranchId: string) {
+    const childBranchIdNum = parseInt(childBranchId, 10);
+    if (isNaN(childBranchIdNum)) {
+      console.error('Invalid child branch ID:', childBranchId);
+      return;
+    }
+
+    this.loadingMembers[childBranchId] = true;
+    this.childBranchService.getChildBranchMembers(childBranchIdNum).subscribe({
+      next: (members: ChildBranchMember[]) => {
+        // Map API response to ChildBranchMember structure (keep original structure)
+        const mappedMembers: ChildBranchMember[] = members.map(member => ({
+          id: member.id,
+          child_branch_id: member.child_branch_id || childBranchIdNum,
+          member_type: member.member_type || '',
+          name: member.name || '',
+          branch_role: member.branch_role || '',
+          responsibility: member.responsibility || '',
+          age: member.age || 0,
+          date_of_samarpan: member.date_of_samarpan || '',
+          qualification: member.qualification || '',
+          date_of_birth: member.date_of_birth || '',
+          created_on: member.created_on,
+          updated_on: member.updated_on,
+          created_by: member.created_by,
+          updated_by: member.updated_by
+        }));
+
+        // Find and update the child branch's members
+        for (const branch of this.branches) {
+          if (branch.children) {
+            const childBranch = branch.children.find(c => c.id === childBranchId);
+            if (childBranch) {
+              childBranch.members = mappedMembers;
+              break;
+            }
+          }
+        }
+        this.loadingMembers[childBranchId] = false;
+        this.membersLoaded[childBranchId] = true;
+      },
+      error: (error) => {
+        console.error('Error loading child branch members:', error);
+        this.loadingMembers[childBranchId] = false;
+        this.membersLoaded[childBranchId] = true;
+      }
+    });
+  }
+
   // Add new branch
   addBranch() {
     this.router.navigate(['/branch/add']);
   }
 
-  // Edit branch
+  // Add child branch - navigate to add child branch page
+  addChildBranch(parentBranchId: string) {
+    this.router.navigate(['/branch/child-branch/add', parentBranchId]);
+  }
+
+  // Add member to branch - navigate to add member page
+  addBranchMember(branchId: string) {
+    this.router.navigate(['/branch', branchId, 'members', 'add']);
+  }
+
+  // Add member to child branch - navigate to add child branch member page
+  addChildBranchMember(childBranchId: string) {
+    this.router.navigate(['/branch/child-branch', childBranchId, 'members', 'add']);
+  }
+
+  // Download branch details
+  downloadBranch(branchId: string, isChildBranch: boolean = false): void {
+    if (!branchId) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Warning',
+        detail: 'Branch ID is required for download',
+        life: 3000
+      });
+      return;
+    }
+
+    const branchIdNum = parseInt(branchId, 10);
+    if (isNaN(branchIdNum)) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Invalid branch ID',
+        life: 3000
+      });
+      return;
+    }
+
+    // TODO: Implement download service call when backend API is ready
+    // For now, show a message
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Info',
+      detail: `Download functionality for ${isChildBranch ? 'child ' : ''}branch will be available soon`,
+      life: 3000
+    });
+
+    // When backend is ready, uncomment and use:
+    /*
+    const downloadObservable = isChildBranch
+      ? this.childBranchService.downloadChildBranch(branchIdNum)
+      : this.locationService.downloadBranch(branchIdNum);
+
+    downloadObservable.subscribe({
+      next: (blob: Blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${isChildBranch ? 'child_' : ''}branch_${branchId}_${new Date().getTime()}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: `${isChildBranch ? 'Child branch' : 'Branch'} downloaded successfully`,
+          life: 3000
+        });
+      },
+      error: (error) => {
+        console.error('Error downloading branch:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: error?.error?.error || 'Failed to download branch',
+          life: 5000
+        });
+      }
+    });
+    */
+  }
+
+  // Open branch gallery
+  openBranchGallery(branchId: string, isChildBranch: boolean = false): void {
+    if (!branchId) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Warning',
+        detail: 'Branch ID is required for gallery',
+        life: 3000
+      });
+      return;
+    }
+
+    // Navigate to gallery with branch ID and type
+    this.router.navigate(['/branch/gallery'], {
+      queryParams: {
+        branchId: branchId,
+        isChildBranch: isChildBranch
+      }
+    });
+  }
+
+  // View branch - check if it's a child branch or parent branch
   viewBranch(branchId: string) {
+    // Check if it's a child branch
+    let isChildBranch = false;
+    for (const branch of this.branches) {
+      if (branch.children) {
+        const childBranch = branch.children.find(c => c.id === branchId);
+        if (childBranch) {
+          isChildBranch = true;
+          // Navigate to child branch view
+          this.router.navigate(['/branch/child-branch/view', branchId]);
+          return;
+        }
+      }
+    }
+    // If not a child branch, navigate to regular branch view
     this.router.navigate(['/branch/view', branchId]);
   }
 
+  // Edit branch - check if it's a child branch or parent branch
   editBranch(branchId: string) {
+    // Check if it's a child branch
+    let isChildBranch = false;
+    for (const branch of this.branches) {
+      if (branch.children) {
+        const childBranch = branch.children.find(c => c.id === branchId);
+        if (childBranch) {
+          isChildBranch = true;
+          // Navigate to child branch edit
+          this.router.navigate(['/branch/child-branch/edit', branchId]);
+          return;
+        }
+      }
+    }
+    // If not a child branch, navigate to regular branch edit
     this.router.navigate(['/branch/edit', branchId]);
   }
 
@@ -343,31 +629,86 @@ export class BranchListComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Find the branch to get its name
+    let branchName = 'this branch';
+    for (const branch of this.branches) {
+      if (branch.id === branchId) {
+        branchName = branch.branchName;
+        break;
+      }
+      // Also check in children
+      if (branch.children) {
+        const childBranch = branch.children.find(c => c.id === branchId);
+        if (childBranch) {
+          branchName = childBranch.branchName;
+          break;
+        }
+      }
+    }
+
+    // Check if it's a child branch
+    let isChildBranch = false;
+    for (const branch of this.branches) {
+      if (branch.children) {
+        const childBranch = branch.children.find(c => c.id === branchId);
+        if (childBranch) {
+          isChildBranch = true;
+          break;
+        }
+      }
+    }
+
     // Confirm deletion
     this.confirmationDialog.confirmDelete({
-      title: 'Delete Branch',
-      text: 'Are you sure you want to delete this branch? This action cannot be undone.',
-      successTitle: 'Branch Deleted',
-      successText: 'Branch deleted successfully',
+      title: isChildBranch ? 'Delete Child Branch' : 'Delete Branch',
+      text: `Are you sure you want to delete "${branchName}"? This action cannot be undone and will remove all associated data.`,
+      successTitle: isChildBranch ? 'Child Branch Deleted' : 'Branch Deleted',
+      successText: `${isChildBranch ? 'Child branch' : 'Branch'} deleted successfully`,
       showSuccessMessage: false // We'll use PrimeNG message service instead
     }).then((result) => {
       if (result.value) {
         this.loading = true;
-        this.locationService.deleteBranch(branchIdNum).subscribe({
+
+        // Use appropriate service based on branch type
+        const deleteObservable = isChildBranch
+          ? this.childBranchService.deleteChildBranch(branchIdNum)
+          : this.locationService.deleteBranch(branchIdNum);
+
+        deleteObservable.subscribe({
           next: () => {
             this.messageService.add({
               severity: 'success',
               summary: 'Success',
-              detail: 'Branch deleted successfully'
+              detail: `${isChildBranch ? 'Child branch' : 'Branch'} "${branchName}" deleted successfully`
             });
-            this.loadBranches(); // Reload the list
+
+            // Remove the branch from children list if it's a child branch
+            for (const branch of this.branches) {
+              if (branch.children) {
+                const index = branch.children.findIndex(c => c.id === branchId);
+                if (index !== -1) {
+                  branch.children.splice(index, 1);
+                  branch.isParent = branch.children.length > 0;
+                  break;
+                }
+              }
+            }
+
+            // Reload the list to refresh all data
+            this.loadBranches();
           },
           error: (error) => {
             console.error('Error deleting branch:', error);
+            let errorMessage = `Failed to delete ${isChildBranch ? 'child branch' : 'branch'}. Please try again.`;
+            if (error.error?.error) {
+              errorMessage = error.error.error;
+            } else if (error.error?.message) {
+              errorMessage = error.error.message;
+            }
             this.messageService.add({
               severity: 'error',
               summary: 'Error',
-              detail: 'Failed to delete branch. Please try again.'
+              detail: errorMessage
             });
             this.loading = false;
           }
@@ -425,5 +766,34 @@ export class BranchListComponent implements OnInit, OnDestroy {
   applyPinning() {
     // Custom logic to apply pinning if needed
     console.log('Pinned columns:', this.pinnedColumns);
+  }
+
+  // Action menu methods
+  toggleActionMenu(branchId: string): void {
+    this.openActionMenu = this.openActionMenu === branchId ? null : branchId;
+  }
+
+  closeActionMenu(): void {
+    this.openActionMenu = null;
+  }
+
+  isActionMenuOpen(branchId: string): boolean {
+    return this.openActionMenu === branchId;
+  }
+
+  // Close dropdown when clicking outside
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event | null): void {
+    // Check if event exists and has target
+    if (!event || !event.target) {
+      return;
+    }
+
+    const target = event.target as HTMLElement;
+
+    // Close action menu if clicking outside
+    if (!target.closest('.action-menu-container')) {
+      this.closeActionMenu();
+    }
   }
 }

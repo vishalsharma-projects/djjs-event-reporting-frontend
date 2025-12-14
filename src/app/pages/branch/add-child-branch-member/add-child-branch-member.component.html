@@ -1,0 +1,122 @@
+<app-page-title [title]="'Add Member to Child Branch'" [breadcrumbItems]="breadCrumbItems"></app-page-title>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0">Add New Member to Child Branch</h5>
+          <button class="btn btn-outline-secondary btn-sm" (click)="goBack()">
+            <i class="fas fa-arrow-left me-1"></i>Back
+          </button>
+        </div>
+
+        <div *ngIf="loading" class="text-center p-4">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="text-muted mt-2">Loading child branch information...</p>
+        </div>
+
+        <div *ngIf="childBranchName" class="alert alert-info mb-3">
+          <i class="pi pi-info-circle me-2"></i>
+          <strong>Child Branch:</strong> {{ childBranchName }}
+        </div>
+
+        <form [formGroup]="memberForm" (ngSubmit)="onSubmit()">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Member Type <span class="text-danger">*</span></label>
+              <select class="form-select"
+                [ngClass]="{'is-invalid': memberForm.get('member_type')?.invalid && memberForm.get('member_type')?.touched}"
+                formControlName="member_type">
+                <option value="">Select Member Type</option>
+                <option value="samarpit">Samarpit Sewadar</option>
+                <option value="preacher">Preacher</option>
+              </select>
+              <div *ngIf="memberForm.get('member_type')?.invalid && memberForm.get('member_type')?.touched" class="text-danger small mt-1">
+                Member type is required
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control"
+                [ngClass]="{'is-invalid': memberForm.get('name')?.invalid && memberForm.get('name')?.touched}"
+                formControlName="name" placeholder="Enter member name" />
+              <div *ngIf="memberForm.get('name')?.invalid && memberForm.get('name')?.touched" class="text-danger small mt-1">
+                <span *ngIf="memberForm.get('name')?.errors?.['required']">Name is required</span>
+                <span *ngIf="memberForm.get('name')?.errors?.['minlength']">Name must be at least 2 characters</span>
+                <span *ngIf="memberForm.get('name')?.errors?.['maxlength']">Name cannot exceed 100 characters</span>
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Branch Role <span class="text-danger">*</span></label>
+              <select class="form-select"
+                [ngClass]="{'is-invalid': memberForm.get('branch_role')?.invalid && memberForm.get('branch_role')?.touched}"
+                formControlName="branch_role">
+                <option value="">Select Role</option>
+                <option value="Coordinator">Coordinator</option>
+                <option value="Volunteer">Volunteer</option>
+                <option value="Member">Member</option>
+              </select>
+              <div *ngIf="memberForm.get('branch_role')?.invalid && memberForm.get('branch_role')?.touched" class="text-danger small mt-1">
+                Branch role is required
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Responsibility</label>
+              <select class="form-select" formControlName="responsibility">
+                <option value="">Select Responsibility</option>
+                <option value="Teaching">Teaching</option>
+                <option value="Management">Management</option>
+                <option value="Support">Support</option>
+                <option value="Preach">Preach</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Age</label>
+              <input type="number" class="form-control"
+                [ngClass]="{'is-invalid': memberForm.get('age')?.invalid && memberForm.get('age')?.touched}"
+                formControlName="age" placeholder="Enter age" min="1" max="120" />
+              <div *ngIf="memberForm.get('age')?.invalid && memberForm.get('age')?.touched" class="text-danger small mt-1">
+                <span *ngIf="memberForm.get('age')?.errors?.['min']">Age must be at least 1</span>
+                <span *ngIf="memberForm.get('age')?.errors?.['max']">Age cannot exceed 120</span>
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Qualification</label>
+              <select class="form-select" formControlName="qualification">
+                <option value="">Select Qualification</option>
+                <option value="Graduate">Graduate</option>
+                <option value="Post Graduate">Post Graduate</option>
+                <option value="Diploma">Diploma</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Date of Birth</label>
+              <input type="date" class="form-control" formControlName="date_of_birth" max="{{ maxDateOfBirth }}" />
+              <small class="text-muted">Select the member's date of birth</small>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Date of Samarpan</label>
+              <input type="date" class="form-control" formControlName="date_of_samarpan" min="{{ memberForm.get('date_of_birth')?.value || '' }}" />
+              <small class="text-muted">Select the date when member took samarpan</small>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2 mt-3">
+            <button type="button" class="btn btn-outline-secondary" (click)="goBack()">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="memberForm.invalid || isSubmitting" style="background: linear-gradient(135deg, #ff6b35, #f7931e); border: none;">
+              <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status"></span>
+              {{ isSubmitting ? 'Saving...' : 'Save Member' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p-toast></p-toast>
+
+

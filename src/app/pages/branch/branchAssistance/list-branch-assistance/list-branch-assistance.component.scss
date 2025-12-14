@@ -1,23 +1,24 @@
+// Global button styling for all primary buttons in this component
+.btn-primary {
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  border: none;
+  padding: 10px 20px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: linear-gradient(135deg, #e55a2b, #e0851a);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+  }
+}
+
 .page-title-box {
   padding: 20px 0;
 
   h4 {
     color: #495057;
     font-weight: 600;
-  }
-
-  .btn-primary {
-    background: linear-gradient(135deg, #ff6b35, #f7931e);
-    border: none;
-    padding: 10px 20px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-
-    &:hover {
-      background: linear-gradient(135deg, #e55a2b, #e0851a);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
-    }
   }
 }
 
@@ -84,7 +85,7 @@
 
   .p-datatable-tbody > tr.expanded-row td {
     background-color: #fafafa;
-    border-left: 3px solid #007bff;
+    border-left: 3px solid #ff6b35;
     padding: 12px;
   }
 }
@@ -122,8 +123,46 @@
   }
 
   .p-paginator-pages .p-paginator-page.p-highlight {
-    background-color: #007bff;
+    background-color: #ff6b35;
     color: #fff;
+  }
+}
+
+// Button styling - replace blue colors with orange theme
+.btn-outline-info {
+  border-color: #ff6b35;
+  color: #ff6b35;
+
+  &:hover {
+    background-color: #ff6b35;
+    border-color: #ff6b35;
+    color: white;
+  }
+}
+
+// PrimeNG button styling - replace secondary (blue) with orange theme
+::ng-deep {
+  .p-button.p-button-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: #fff;
+
+    &:hover {
+      background-color: #5a6268;
+      border-color: #545b62;
+    }
+  }
+
+  // Override secondary to use orange for edit buttons
+  .p-button[severity="secondary"]:not(.p-button-danger) {
+    background-color: #ff6b35;
+    border-color: #ff6b35;
+    color: #fff;
+
+    &:hover {
+      background-color: #e55a2b;
+      border-color: #e55a2b;
+    }
   }
 }
 

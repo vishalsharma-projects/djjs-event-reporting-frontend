@@ -1,0 +1,165 @@
+<app-page-title [title]="'Edit Child Branch'" [breadcrumbItems]="breadCrumbItems"></app-page-title>
+
+<div *ngIf="loading" class="text-center p-4">
+  <div class="spinner-border text-primary" role="status">
+    <span class="visually-hidden">Loading...</span>
+  </div>
+</div>
+
+<form *ngIf="!loading && childBranch" [formGroup]="childBranchForm" (ngSubmit)="onSubmit()" class="branch-form">
+  <div class="p-3">
+    <!-- Parent Branch Info -->
+    <section class="card mb-4 border-primary" *ngIf="parentBranch">
+      <div class="card-body">
+        <h5 class="mb-3 text-primary">
+          <i class="pi pi-sitemap me-2"></i>Parent Branch: {{ parentBranch.name }}
+        </h5>
+        <p class="mb-0"><strong>Coordinator:</strong> {{ parentCoordinatorName }}</p>
+      </div>
+    </section>
+
+    <!-- Child Branch Details -->
+    <section class="card mb-4">
+      <div class="card-body">
+        <h5 class="mb-3">Child Branch Details</h5>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Branch Name <span class="text-danger">*</span></label>
+            <input class="form-control" formControlName="name" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Email <span class="text-danger">*</span></label>
+            <input type="email" class="form-control" formControlName="email" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Contact Number <span class="text-danger">*</span></label>
+            <input type="tel" class="form-control" formControlName="contactNumber" />
+          </div>
+        </div>
+        <div class="row g-3 mt-1">
+          <div class="col-md-4">
+            <label class="form-label">Established on <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" formControlName="establishedOn" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Ashram area <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <input class="form-control" formControlName="ashramArea" type="number" step="0.01" />
+              <span class="input-group-text">Sq km</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Area Allotted -->
+    <section class="card mb-4">
+      <div class="card-body">
+        <h5 class="mb-3">Area Allotted</h5>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Country <span class="text-danger">*</span></label>
+            <select class="form-select" formControlName="country">
+              <option value="">Select</option>
+              <option *ngFor="let c of countryList" [value]="c.id">{{c.name}}</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Pincode <span class="text-danger">*</span></label>
+            <input class="form-control" formControlName="pincode" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Post office <span class="text-danger">*</span></label>
+            <input class="form-control" formControlName="postOffice" />
+          </div>
+        </div>
+        <div class="row g-3 mt-1">
+          <div class="col-md-4">
+            <label class="form-label">Police Station</label>
+            <input class="form-control" formControlName="thana" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">States <span class="text-danger">*</span></label>
+            <select class="form-select" formControlName="state">
+              <option value="">Select</option>
+              <option *ngFor="let s of stateList" [value]="s.id">{{s.name}}</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Districts <span class="text-danger">*</span></label>
+            <select class="form-select" formControlName="districts">
+              <option value="">Select</option>
+              <option *ngFor="let d of districtOptions" [value]="d.id">{{d.name}}</option>
+            </select>
+          </div>
+        </div>
+        <div class="row g-3 mt-1">
+          <div class="col-md-4">
+            <label class="form-label">City <span class="text-danger">*</span></label>
+            <select class="form-select" formControlName="city">
+              <option value="">Select</option>
+              <option *ngFor="let c of cityList" [value]="c.id">{{c.name}}</option>
+            </select>
+          </div>
+          <div class="col-md-8">
+            <label class="form-label">Address <span class="text-danger">*</span></label>
+            <input class="form-control" formControlName="address" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Daily Operation & Additional Info -->
+    <section class="card mb-4">
+      <div class="card-body">
+        <h5 class="mb-3">Daily Operation</h5>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Open days</label>
+            <input class="form-control" formControlName="openDays" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Daily start time</label>
+            <input type="time" class="form-control" formControlName="dailyStartTime" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Daily end time</label>
+            <input type="time" class="form-control" formControlName="dailyEndTime" />
+          </div>
+        </div>
+        <div class="row g-3 mt-3">
+          <div class="col-md-3">
+            <label class="form-label">Branch Code</label>
+            <input class="form-control" formControlName="branchCode" />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Region ID</label>
+            <input type="number" class="form-control" formControlName="regionId" />
+          </div>
+          <div class="col-md-3">
+            <div class="form-check form-switch mt-4">
+              <input class="form-check-input" type="checkbox" formControlName="status" id="statusSwitch">
+              <label class="form-check-label" for="statusSwitch">Status (Active)</label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check form-switch mt-4">
+              <input class="form-check-input" type="checkbox" formControlName="ncr" id="ncrSwitch">
+              <label class="form-check-label" for="ncrSwitch">NCR</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2 mb-5">
+    <button type="button" class="btn btn-secondary" (click)="cancel()">Cancel</button>
+    <button type="submit" class="btn btn-primary" [disabled]="childBranchForm.invalid || isSubmitting">
+      <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+      {{ isSubmitting ? 'Saving...' : 'Update Child Branch' }}
+    </button>
+  </div>
+</form>
+
+

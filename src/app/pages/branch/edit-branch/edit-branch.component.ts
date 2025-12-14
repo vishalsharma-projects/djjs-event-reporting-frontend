@@ -1,14 +1,16 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core'
 import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms'
 import { LocationService, Branch, BranchPayload, Country, State, District, City, Coordinator } from 'src/app/core/services/location.service'
+import { ChildBranchService, ChildBranchPayload } from 'src/app/core/services/child-branch.service'
 import { TokenStorageService } from 'src/app/core/services/token-storage.service'
 import { Router, ActivatedRoute } from '@angular/router'
 import { MessageService } from 'primeng/api'
 import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service'
+import { forkJoin, of } from 'rxjs'
 
 @Component({
-  selector: 'app-edit-branch',
-  templateUrl: './edit-branch.component.html',
+    selector: 'app-edit-branch',
+    templateUrl: './edit-branch.component.html',
     styleUrls: ['./edit-branch.component.scss']
 })
 export class EditBranchComponent implements OnInit {
@@ -31,6 +33,7 @@ export class EditBranchComponent implements OnInit {
     cityList: City[] = [];
     districtOptions: District[] = [];
     coordinatorsList: Coordinator[] = [];
+    childBranchesList: Branch[] = []; // List of all branches for child branch selection
 
     // Loading states
     loadingCountries = false;
@@ -49,11 +52,13 @@ export class EditBranchComponent implements OnInit {
     constructor(
         private fb: FormBuilder,
         private locationService: LocationService,
+        private childBranchService: ChildBranchService,
         private tokenStorage: TokenStorageService,
         private router: Router,
         private route: ActivatedRoute,
         private messageService: MessageService,
-        private confirmationDialog: ConfirmationDialogService
+        private confirmationDialog: ConfirmationDialogService,
+        private cdr: ChangeDetectorRef
     ) { }
 
     //for Tabs
@@ -76,10 +81,12 @@ export class EditBranchComponent implements OnInit {
             tehsil: [''],
             state: ['', Validators.required],
             city: ['', Validators.required],
-            addressType: ['', Validators.required],
+            addressType: [''], // Optional field
             address: ['', Validators.required],
             districts: ['', Validators.required],
             areaCovered: [''],
+            isParentBranch: [false], // Toggle for parent branch
+            childBranches: this.fb.array([]), // FormArray for child branches
             infrastructure: this.fb.array([
                 this.fb.group({
                     roomType: [''],
@@ -98,8 +105,8 @@ export class EditBranchComponent implements OnInit {
 
         // Set initial breadcrumbs
         this.breadCrumbItems = [
-          { label: 'Branches', routerLink: '/branch' },
-          { label: 'Edit Branch', active: true }
+            { label: 'Branches', routerLink: '/branch' },
+            { label: 'Edit Branch', active: true }
         ];
 
         // Get branch ID from route
@@ -126,32 +133,28 @@ export class EditBranchComponent implements OnInit {
             return;
         }
 
-        // Load countries and coordinators on init
-        this.loadCountries();
-        this.loadCoordinators();
+        // Load all required data first, then load branch data
+        this.loadInitialData();
 
-        // Load branch data after a short delay to ensure coordinators are loaded
-        // This ensures findCoordinatorId can find the coordinator
-        setTimeout(() => {
-            this.loadBranchData();
-        }, 500);
+        // Listen for changes to reset dependent selects (only after initial load)
+        let isInitialLoad = true;
 
-        // Listen for changes to reset dependent selects
         this.branchForm.get('country')?.valueChanges.subscribe(countryId => {
+            if (isInitialLoad) return; // Skip during initial load
+
             if (countryId) {
                 this.loadStates(countryId);
             } else {
                 this.stateList = [];
                 this.cityList = [];
                 this.districtOptions = [];
-            }
-            // Don't reset if we're loading branch data
-            if (!this.loadingBranch) {
-                this.branchForm.patchValue({ state: '', city: '', districts: '' });
+                this.branchForm.patchValue({ state: '', city: '', districts: '' }, { emitEvent: false });
             }
         });
 
         this.branchForm.get('state')?.valueChanges.subscribe(stateId => {
+            if (isInitialLoad) return; // Skip during initial load
+
             const countryId = this.branchForm.get('country')?.value;
             if (stateId && countryId) {
                 this.loadDistricts(stateId, countryId);
@@ -159,12 +162,14 @@ export class EditBranchComponent implements OnInit {
             } else {
                 this.cityList = [];
                 this.districtOptions = [];
-            }
-            // Don't reset if we're loading branch data
-            if (!this.loadingBranch) {
-                this.branchForm.patchValue({ city: '', districts: '' });
+                this.branchForm.patchValue({ city: '', districts: '' }, { emitEvent: false });
             }
         });
+
+        // Set flag to false after initial data load completes
+        setTimeout(() => {
+            isInitialLoad = false;
+        }, 5000);
 
         // Watch form changes
         this.branchForm.valueChanges.subscribe(() => {
@@ -175,85 +180,273 @@ export class EditBranchComponent implements OnInit {
     }
 
     /**
+     * Load initial data (countries, coordinators, branches) before loading branch data
+     */
+    loadInitialData() {
+        let countriesLoaded = false;
+        let coordinatorsLoaded = false;
+        let branchesLoaded = false;
+
+        const checkAndLoadBranch = () => {
+            if (countriesLoaded && coordinatorsLoaded && branchesLoaded) {
+                this.loadBranchData();
+            }
+        };
+
+        // Load countries
+        this.loadingCountries = true;
+        this.locationService.getCountries().subscribe({
+            next: (countries) => {
+                this.countryList = countries;
+                this.loadingCountries = false;
+                countriesLoaded = true;
+                checkAndLoadBranch();
+            },
+            error: (error) => {
+                console.error('Error loading countries:', error);
+                this.loadingCountries = false;
+                countriesLoaded = true; // Set to true even on error to prevent blocking
+                checkAndLoadBranch();
+            }
+        });
+
+        // Load coordinators
+        this.loadingCoordinators = true;
+        this.locationService.getCoordinators().subscribe({
+            next: (coordinators) => {
+                this.coordinatorsList = coordinators;
+                this.loadingCoordinators = false;
+                coordinatorsLoaded = true;
+                checkAndLoadBranch();
+            },
+            error: (error) => {
+                console.error('Error loading coordinators:', error);
+                this.loadingCoordinators = false;
+                coordinatorsLoaded = true; // Set to true even on error to prevent blocking
+                checkAndLoadBranch();
+            }
+        });
+
+        // Load all branches
+        this.locationService.getAllBranches().subscribe({
+            next: (branches) => {
+                this.childBranchesList = branches;
+                branchesLoaded = true;
+                checkAndLoadBranch();
+            },
+            error: (error) => {
+                console.error('Error loading branches:', error);
+                branchesLoaded = true; // Set to true even on error to prevent blocking
+                checkAndLoadBranch();
+            }
+        });
+    }
+
+    /**
      * Load branch data from API
      */
     loadBranchData() {
-        if (!this.branchId) return;
+        if (!this.branchId) {
+            console.error('No branch ID available');
+            return;
+        }
 
         this.loadingBranch = true;
+        console.log('Loading branch data for ID:', this.branchId);
+
         this.locationService.getBranchById(this.branchId).subscribe({
             next: (branch) => {
-                // Set branch info
+                console.log('Branch data received:', JSON.stringify(branch, null, 2));
+
+                if (!branch) {
+                    console.error('Branch data is null or undefined');
+                    this.loadingBranch = false;
+                    return;
+                }
+
+                // Set branch info for display
                 this.branchName = branch.name || '';
                 this.branchEmail = branch.email || '';
                 this.coordinatorName = branch.coordinator_name || '';
 
-                // Load countries first, then populate form
-                this.locationService.getCountries().subscribe({
-                    next: (countries) => {
-                        this.countryList = countries;
-                        // Find country by name (branch.country is an object with name property)
-                        const country = countries.find(c => c.name === branch.country?.name || c.id === branch.country_id);
-                        if (country) {
-                            // Set basic form values first
-                            const coordinatorId = this.findCoordinatorId(branch.coordinator_name);
-                            this.branchForm.patchValue({
-                                coordinator: coordinatorId || '',
-                                establishedOn: branch.established_on ? branch.established_on.split('T')[0] : '',
-                                ashramArea: branch.aashram_area || 0,
-                                country: country.id,
-                                pincode: branch.pincode || '',
-                                postOffice: branch.post_office || '',
-                                thana: branch.police_station || '',
-                                address: branch.address || '',
-                                openDays: branch.open_days || '',
-                                dailyStartTime: branch.daily_start_time || '',
-                                dailyEndTime: branch.daily_end_time || '',
-                                status: branch.status !== undefined ? branch.status : true,
-                                ncr: branch.ncr !== undefined ? branch.ncr : false,
-                                regionId: branch.region_id || '',
-                                branchCode: branch.branch_code || ''
-                            });
+                // Find country by name or ID
+                const country = this.countryList.find(c => {
+                    if (branch.country && branch.country.name) {
+                        return c.name === branch.country.name || c.id === branch.country.id;
+                    }
+                    return c.id === branch.country_id;
+                });
 
-                            // Load members for this branch
-                            this.loadBranchMembers();
+                console.log('Found country:', country, 'from branch:', branch.country, 'country_id:', branch.country_id);
 
-                            // Load states for this country, then set location values
-                            this.loadingStates = true;
-                            this.locationService.getStatesByCountry(country.id).subscribe({
-                                next: (states) => {
-                                    this.stateList = states;
-                                    this.loadingStates = false;
-                                    this.setLocationValues(branch, country.id);
-                                },
-                                error: (error) => {
-                                    console.error('Error loading states:', error);
-                                    this.loadingStates = false;
-                                    this.loadingBranch = false;
-                                }
+                if (!country) {
+                    console.error('Country not found. Available countries:', this.countryList);
+                    this.loadingBranch = false;
+                    this.messageService.add({
+                        severity: 'warn',
+                        summary: 'Warning',
+                        detail: 'Country not found for this branch. Please select manually.'
+                    });
+                    // Continue anyway - user can select manually
+                }
+
+                // Find coordinator ID
+                const coordinatorId = this.findCoordinatorId(branch.coordinator_name);
+                console.log('Coordinator lookup - Name:', branch.coordinator_name, 'Found ID:', coordinatorId, 'Available coordinators:', this.coordinatorsList.length);
+
+                // Load child branches from the new child branch API
+                this.childBranchService.getChildBranchesByParent(this.branchId).subscribe({
+                    next: (childBranches) => {
+                        if (childBranches && childBranches.length > 0) {
+                            // Clear existing child branches
+                            while (this.childBranches.length !== 0) {
+                                this.childBranches.removeAt(0);
+                            }
+                            // Add each child branch from the separate table
+                            childBranches.forEach((child: any) => {
+                                const childGroup = this.fb.group({
+                                    id: [child.id],
+                                    name: [child.name || ''], // Store name for display
+                                    contact_number: [child.contact_number || ''],
+                                    email: [child.email || ''],
+                                    address: [child.address || ''],
+                                    pincode: [child.pincode || ''],
+                                    post_office: [child.post_office || ''],
+                                    police_station: [child.police_station || ''],
+                                    country_id: [child.country_id || null],
+                                    state_id: [child.state_id || null],
+                                    district_id: [child.district_id || null],
+                                    city_id: [child.city_id || null],
+                                    established_on: [child.established_on || ''],
+                                    aashram_area: [child.aashram_area || 0],
+                                    open_days: [child.open_days || ''],
+                                    daily_start_time: [child.daily_start_time || ''],
+                                    daily_end_time: [child.daily_end_time || ''],
+                                    status: [child.status !== undefined ? child.status : true],
+                                    ncr: [child.ncr !== undefined ? child.ncr : false],
+                                    region_id: [child.region_id || null],
+                                    branch_code: [child.branch_code || '']
+                                });
+                                this.childBranches.push(childGroup);
                             });
-                        } else {
-                            this.loadingBranch = false;
+                            // Set isParentBranch to true if child branches exist
+                            this.branchForm.patchValue({ isParentBranch: true }, { emitEvent: false });
                         }
                     },
                     error: (error) => {
-                        console.error('Error loading countries:', error);
-                        this.loadingBranch = false;
+                        console.error('Error loading child branches:', error);
+                        // Continue anyway - child branches may not exist yet
                     }
                 });
+
+                // Format established date
+                let establishedDate = '';
+                if (branch.established_on) {
+                    try {
+                        const date = new Date(branch.established_on);
+                        if (!isNaN(date.getTime())) {
+                            establishedDate = date.toISOString().split('T')[0];
+                        } else {
+                            // Try parsing as is if it's already in YYYY-MM-DD format
+                            establishedDate = branch.established_on.split('T')[0];
+                        }
+                    } catch (e) {
+                        console.error('Error parsing date:', e);
+                        establishedDate = branch.established_on.split('T')[0];
+                    }
+                }
+
+                // Check if branch has child branches to determine isParentBranch
+                const hasChildBranches = this.childBranches.length > 0;
+
+                // Prepare form values object
+                const formValues: any = {
+                    coordinator: coordinatorId || '',
+                    establishedOn: establishedDate,
+                    ashramArea: branch.aashram_area || 0,
+                    pincode: branch.pincode || '',
+                    postOffice: branch.post_office || '',
+                    thana: branch.police_station || '',
+                    address: branch.address || '',
+                    openDays: branch.open_days || '',
+                    dailyStartTime: branch.daily_start_time || '',
+                    dailyEndTime: branch.daily_end_time || '',
+                    status: branch.status !== undefined ? branch.status : true,
+                    ncr: branch.ncr !== undefined ? branch.ncr : false,
+                    regionId: branch.region_id ? branch.region_id.toString() : '',
+                    branchCode: branch.branch_code || '',
+                    isParentBranch: hasChildBranches
+                };
+
+                // Only set country if we found it
+                if (country) {
+                    formValues.country = country.id;
+                }
+
+                console.log('Patching form with values:', formValues);
+
+                // Patch form with all values at once, without emitting events
+                try {
+                    this.branchForm.patchValue(formValues, { emitEvent: false });
+
+                    // Verify each control was set
+                    Object.keys(formValues).forEach(key => {
+                        const control = this.branchForm.get(key);
+                        if (control) {
+                            const value = control.value;
+                            console.log(`Control "${key}": set to "${value}", expected "${formValues[key]}"`);
+                            if (value !== formValues[key] && formValues[key] !== '') {
+                                console.warn(`Control "${key}" value mismatch!`);
+                            }
+                        } else {
+                            console.warn(`Control "${key}" not found in form!`);
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error patching form:', error);
+                }
+
+                // Verify the patch worked
+                console.log('Form values after patch:', this.branchForm.value);
+
+                // Force change detection
+                this.cdr.detectChanges();
+                this.updateCompletion();
+
+                // Load infrastructure data
+                this.loadBranchInfrastructure();
+
+                // Load members for this branch
+                this.loadBranchMembers();
+
+                // If country is found, load states and location data
+                if (country) {
+                    this.loadingStates = true;
+                    this.locationService.getStatesByCountry(country.id).subscribe({
+                        next: (states) => {
+                            this.stateList = states;
+                            this.loadingStates = false;
+                            this.setLocationValues(branch, country.id);
+                        },
+                        error: (error) => {
+                            console.error('Error loading states:', error);
+                            this.loadingStates = false;
+                            this.loadingBranch = false;
+                        }
+                    });
+                } else {
+                    // If no country, just mark loading as complete
+                    this.loadingBranch = false;
+                }
             },
             error: (error) => {
                 console.error('Error loading branch:', error);
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Error',
-                    detail: error.error?.message || 'Failed to load branch data. Please try again.'
+                    detail: error.error?.message || error.message || 'Failed to load branch data. Please try again.'
                 });
                 this.loadingBranch = false;
-                // Don't navigate away immediately - let user see the error
-                // setTimeout(() => {
-                //     this.router.navigate(['/branch']);
-                // }, 3000);
             }
         });
     }
@@ -262,47 +455,97 @@ export class EditBranchComponent implements OnInit {
      * Set location values (state, city, district) after they're loaded
      */
     setLocationValues(branch: Branch, countryId: number) {
+        console.log('Setting location values. Branch state:', branch.state, 'state_id:', branch.state_id, 'Available states:', this.stateList.length);
+
         // Find state by name or ID (branch.state is an object with name property)
-        const state = this.stateList.find(s => s.name === branch.state?.name || s.id === branch.state_id);
+        const state = this.stateList.find(s => {
+            if (branch.state && branch.state.name) {
+                return s.name === branch.state.name || s.id === branch.state.id;
+            }
+            return s.id === branch.state_id;
+        });
+
         if (state) {
-            this.branchForm.patchValue({ state: state.id });
+            console.log('Found state:', state);
+            this.branchForm.patchValue({ state: state.id }, { emitEvent: false });
+
+            let districtsLoaded = false;
+            let citiesLoaded = false;
+
+            const checkComplete = () => {
+                if (districtsLoaded && citiesLoaded) {
+                    this.loadingBranch = false;
+                    console.log('Branch data loading complete. Final form values:', JSON.stringify(this.branchForm.value, null, 2));
+                }
+            };
 
             // Load districts and cities for this state
+            this.loadingDistricts = true;
             this.locationService.getDistrictsByStateAndCountry(state.id, countryId).subscribe({
                 next: (districts) => {
                     this.districtOptions = districts;
+                    console.log('Districts loaded:', districts.length, 'Branch district:', branch.district, 'district_id:', branch.district_id);
+
                     // branch.district is an object with name property
-                    const district = districts.find(d => d.name === branch.district?.name || d.id === branch.district_id);
+                    const district = districts.find(d => {
+                        if (branch.district && branch.district.name) {
+                            return d.name === branch.district.name || d.id === branch.district.id;
+                        }
+                        return d.id === branch.district_id;
+                    });
+
                     if (district) {
-                        this.branchForm.patchValue({ districts: district.id });
+                        console.log('Found district:', district);
+                        this.branchForm.patchValue({ districts: district.id }, { emitEvent: false });
+                    } else {
+                        console.warn('District not found');
                     }
                     this.loadingDistricts = false;
+                    districtsLoaded = true;
+                    checkComplete();
                 },
                 error: (error) => {
                     console.error('Error loading districts:', error);
                     this.loadingDistricts = false;
+                    districtsLoaded = true;
+                    checkComplete();
                 }
             });
 
+            this.loadingCities = true;
             this.locationService.getCitiesByState(state.id).subscribe({
                 next: (cities) => {
                     this.cityList = cities;
+                    console.log('Cities loaded:', cities.length, 'Branch city:', branch.city, 'city_id:', branch.city_id);
+
                     // branch.city is an object with name property
-                    const city = cities.find(c => c.name === branch.city?.name || c.id === branch.city_id);
+                    const city = cities.find(c => {
+                        if (branch.city && branch.city.name) {
+                            return c.name === branch.city.name || c.id === branch.city.id;
+                        }
+                        return c.id === branch.city_id;
+                    });
+
                     if (city) {
-                        this.branchForm.patchValue({ city: city.id });
+                        console.log('Found city:', city);
+                        this.branchForm.patchValue({ city: city.id }, { emitEvent: false });
+                    } else {
+                        console.warn('City not found');
                     }
                     this.loadingCities = false;
-                    this.loadingBranch = false;
+                    citiesLoaded = true;
+                    checkComplete();
                 },
                 error: (error) => {
                     console.error('Error loading cities:', error);
                     this.loadingCities = false;
-                    this.loadingBranch = false;
+                    citiesLoaded = true;
+                    checkComplete();
                 }
             });
         } else {
             this.loadingBranch = false;
+            console.warn('State not found for branch. Available states:', this.stateList.map(s => ({ id: s.id, name: s.name })));
         }
     }
 
@@ -341,6 +584,73 @@ export class EditBranchComponent implements OnInit {
 
     get members(): FormArray {
         return this.branchForm.get('members') as FormArray;
+    }
+
+    get childBranches(): FormArray {
+        return this.branchForm.get('childBranches') as FormArray;
+    }
+
+    addChildBranch() {
+        this.childBranches.push(this.fb.group({
+            id: [null], // Will be set when branch is selected
+            name: ['', Validators.required],
+            address: ['', Validators.required]
+        }));
+
+        // Watch for name changes to update id
+        const lastIndex = this.childBranches.length - 1;
+        this.childBranches.at(lastIndex).get('name')?.valueChanges.subscribe(selectedBranchId => {
+            if (selectedBranchId) {
+                const selectedBranch = this.childBranchesList.find(b => b.id.toString() === selectedBranchId.toString());
+                if (selectedBranch) {
+                    this.childBranches.at(lastIndex).patchValue({
+                        id: selectedBranch.id,
+                        address: selectedBranch.address || ''
+                    }, { emitEvent: false });
+                }
+            }
+        });
+    }
+
+    removeChildBranch(index: number) {
+        const childControl = this.childBranches.at(index);
+        const childId = childControl.get('id')?.value;
+
+        if (childId) {
+            // Existing child branch - confirm deletion
+            this.confirmationDialog.confirmDelete({
+                title: 'Delete Child Branch',
+                text: 'Are you sure you want to delete this child branch? This action cannot be undone and will remove all associated data.',
+                successTitle: 'Child Branch Deleted',
+                successText: 'Child branch deleted successfully',
+                showSuccessMessage: false
+            }).then((result) => {
+                if (result.value) {
+                    // Delete child branch using new service
+                    this.childBranchService.deleteChildBranch(childId).subscribe({
+                        next: () => {
+                            this.childBranches.removeAt(index);
+                            this.messageService.add({
+                                severity: 'success',
+                                summary: 'Success',
+                                detail: 'Child branch deleted successfully'
+                            });
+                        },
+                        error: (error) => {
+                            console.error('Error deleting child branch:', error);
+                            this.messageService.add({
+                                severity: 'error',
+                                summary: 'Error',
+                                detail: 'Failed to delete child branch. Please try again.'
+                            });
+                        }
+                    });
+                }
+            });
+        } else {
+            // New child branch - just remove from form
+            this.childBranches.removeAt(index);
+        }
     }
 
     addMember() {
@@ -465,8 +775,9 @@ export class EditBranchComponent implements OnInit {
                 establishedOn = new Date(establishedOn).toISOString();
             }
 
-            // Prepare API payload
-            const branchData: BranchPayload = {
+            // Prepare API payload (exclude id, created_on, created_by as they cannot be updated per backend validation)
+            // The id is passed in the URL path, not in the request body
+            const branchData: any = {
                 aashram_area: parseFloat(formValue.ashramArea) || 0,
                 address: formValue.address || '',
                 city_id: city?.id || null,
@@ -478,7 +789,6 @@ export class EditBranchComponent implements OnInit {
                 district_id: district?.id || null,
                 email: this.branchEmail || '',
                 established_on: establishedOn || '',
-                id: this.branchId,
                 name: this.branchName || '',
                 open_days: formValue.openDays || '',
                 pincode: formValue.pincode || '',
@@ -493,24 +803,122 @@ export class EditBranchComponent implements OnInit {
                 updated_on: currentTimestamp
             };
 
-            // Update branch via API
+            // Explicitly remove id, created_on, and created_by if they exist (they shouldn't be in update payload)
+            delete branchData.id;
+            delete branchData.created_on;
+            delete branchData.created_by;
+
+            // Update branch via API (child branches are handled separately)
             this.locationService.updateBranch(this.branchId, branchData).subscribe({
                 next: (response) => {
                     console.log('Branch updated successfully:', response);
 
-                    // Save/update members
-                    this.saveOrUpdateMembers(() => {
-                        this.messageService.add({
-                            severity: 'success',
-                            summary: 'Success',
-                            detail: 'Branch and members updated successfully!'
+                    // Handle child branches creation/update using new ChildBranchService
+                    const coordinator = this.coordinatorsList.find(c => c.id.toString() === formValue.coordinator);
+                    const coordinatorName = coordinator?.name || formValue.coordinator || '';
+
+                    // Process child branches if parent branch is enabled
+                    if (this.branchForm.get('isParentBranch')?.value && this.childBranches.length > 0) {
+                        const childBranchOperations: any[] = [];
+
+                        this.childBranches.controls.forEach(control => {
+                            const childData = control.value;
+                            const childBranchId = childData.id ? parseInt(childData.id, 10) : null;
+
+                            // Prepare child branch payload with coordinator inherited from parent
+                            const childBranchPayload: ChildBranchPayload = {
+                                parent_branch_id: this.branchId!,
+                                name: childData.name || '',
+                                contact_number: childData.contact_number || '',
+                                coordinator_name: coordinatorName, // Inherit from parent
+                                email: childData.email || '',
+                                established_on: childData.established_on || '',
+                                aashram_area: childData.aashram_area || 0,
+                                country_id: childData.country_id || null,
+                                state_id: childData.state_id || null,
+                                district_id: childData.district_id || null,
+                                city_id: childData.city_id || null,
+                                address: childData.address || '',
+                                pincode: childData.pincode || '',
+                                post_office: childData.post_office || '',
+                                police_station: childData.police_station || '',
+                                open_days: childData.open_days || '',
+                                daily_start_time: childData.daily_start_time || '',
+                                daily_end_time: childData.daily_end_time || '',
+                                status: childData.status !== undefined ? childData.status : true,
+                                ncr: childData.ncr !== undefined ? childData.ncr : false,
+                                region_id: childData.region_id || null,
+                                branch_code: childData.branch_code || ''
+                            };
+
+                            if (childBranchId) {
+                                // Update existing child branch
+                                childBranchOperations.push(
+                                    this.childBranchService.updateChildBranch(childBranchId, childBranchPayload)
+                                );
+                            } else {
+                                // Create new child branch
+                                childBranchOperations.push(
+                                    this.childBranchService.createChildBranch(childBranchPayload)
+                                );
+                            }
                         });
-                        this.isSubmitting = false;
-                        // Navigate back to branch list
-                        setTimeout(() => {
-                            this.router.navigate(['/branch']);
-                        }, 1500);
-                    });
+
+                        // Execute all child branch operations
+                        if (childBranchOperations.length > 0) {
+                            forkJoin(childBranchOperations).subscribe({
+                                next: () => {
+                                    console.log('Child branches processed successfully');
+                                    this.saveOrUpdateMembers(() => {
+                                        this.messageService.add({
+                                            severity: 'success',
+                                            summary: 'Success',
+                                            detail: 'Branch, child branches, and members updated successfully!'
+                                        });
+                                        this.isSubmitting = false;
+                                        setTimeout(() => {
+                                            this.router.navigate(['/branch']);
+                                        }, 1500);
+                                    });
+                                },
+                                error: (error) => {
+                                    console.error('Error processing child branches:', error);
+                                    this.messageService.add({
+                                        severity: 'error',
+                                        summary: 'Error',
+                                        detail: 'Branch updated but failed to process child branches. Please try again.'
+                                    });
+                                    this.isSubmitting = false;
+                                }
+                            });
+                        } else {
+                            // No child branches to process, just save members
+                            this.saveOrUpdateMembers(() => {
+                                this.messageService.add({
+                                    severity: 'success',
+                                    summary: 'Success',
+                                    detail: 'Branch and members updated successfully!'
+                                });
+                                this.isSubmitting = false;
+                                setTimeout(() => {
+                                    this.router.navigate(['/branch']);
+                                }, 1500);
+                            });
+                        }
+                    } else {
+                        // Not a parent branch, just save members
+                        this.saveOrUpdateMembers(() => {
+                            this.messageService.add({
+                                severity: 'success',
+                                summary: 'Success',
+                                detail: 'Branch and members updated successfully!'
+                            });
+                            this.isSubmitting = false;
+                            setTimeout(() => {
+                                this.router.navigate(['/branch']);
+                            }, 1500);
+                        });
+                    }
                 },
                 error: (error) => {
                     console.error('Error updating branch:', error);
@@ -555,22 +963,6 @@ export class EditBranchComponent implements OnInit {
         }
     }
 
-    /**
-     * Load countries from API
-     */
-    loadCountries() {
-        this.loadingCountries = true;
-        this.locationService.getCountries().subscribe({
-            next: (countries) => {
-                this.countryList = countries;
-                this.loadingCountries = false;
-            },
-            error: (error) => {
-                console.error('Error loading countries:', error);
-                this.loadingCountries = false;
-            }
-        });
-    }
 
     /**
      * Load states by country ID
@@ -626,19 +1018,45 @@ export class EditBranchComponent implements OnInit {
         });
     }
 
+
     /**
-     * Load coordinators from API
+     * Load branch infrastructure from API
      */
-    loadCoordinators() {
-        this.loadingCoordinators = true;
-        this.locationService.getCoordinators().subscribe({
-            next: (coordinators) => {
-                this.coordinatorsList = coordinators;
-                this.loadingCoordinators = false;
+    loadBranchInfrastructure() {
+        if (!this.branchId) return;
+
+        this.locationService.getBranchInfraByBranchId(this.branchId).subscribe({
+            next: (infra) => {
+                // Clear existing infrastructure
+                while (this.infrastructure.length !== 0) {
+                    this.infrastructure.removeAt(0);
+                }
+
+                // Add infrastructure to form
+                if (infra && infra.length > 0) {
+                    infra.forEach((item: any) => {
+                        this.infrastructure.push(this.fb.group({
+                            roomType: [item.type || ''],
+                            number: [item.count || '']
+                        }));
+                    });
+                } else {
+                    // If no infrastructure, add one empty row
+                    this.infrastructure.push(this.fb.group({
+                        roomType: [''],
+                        number: ['']
+                    }));
+                }
             },
             error: (error) => {
-                console.error('Error loading coordinators:', error);
-                this.loadingCoordinators = false;
+                console.error('Error loading branch infrastructure:', error);
+                // On error, ensure at least one empty row exists
+                if (this.infrastructure.length === 0) {
+                    this.infrastructure.push(this.fb.group({
+                        roomType: [''],
+                        number: ['']
+                    }));
+                }
             }
         });
     }

@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, ElementRef, ViewChild, Input, OnChanges } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ElementRef, ViewChild, Input, OnChanges, OnDestroy, HostListener } from '@angular/core';
 import MetisMenu from 'metismenujs';
 import { EventService } from '../../core/services/event.service';
 import { Router, NavigationEnd } from '@angular/router';
@@ -18,7 +18,7 @@ import { TranslateService } from '@ngx-translate/core';
 /**
  * Sidebar component
  */
-export class SidebarComponent implements OnInit, AfterViewInit, OnChanges {
+export class SidebarComponent implements OnInit, AfterViewInit, OnChanges, OnDestroy {
   @ViewChild('componentRef') scrollRef;
   @Input() isCondensed = false;
   menu: any;
@@ -27,6 +27,7 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnChanges {
   menuItems: MenuItem[] = [];
 
   @ViewChild('sideMenu') sideMenu: ElementRef;
+  private resizeListener: () => void;
 
   constructor(private eventService: EventService, private router: Router, public translate: TranslateService, private http: HttpClient) {
     router.events.forEach((event) => {
@@ -35,14 +36,49 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnChanges {
         this._scrollElement();
         // Close sidebar on mobile after navigation
         if (window.innerWidth <= 992) {
-          document.body.classList.remove('sidebar-enable');
-          document.body.style.overflow = '';
-          document.body.style.position = '';
-          document.body.style.width = '';
-          document.body.style.height = '';
+          this.closeMobileSidebar();
         }
       }
     });
+
+    // Handle window resize for responsive behavior
+    this.resizeListener = () => this.handleResize();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', this.resizeListener);
+    }
+  }
+
+  /**
+   * Handle window resize - close sidebar on mobile when switching to desktop
+   */
+  @HostListener('window:resize', ['$event'])
+  handleResize() {
+    // If window is resized to desktop size, ensure sidebar is properly displayed
+    if (window.innerWidth > 992) {
+      document.body.classList.remove('sidebar-enable');
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+    }
+  }
+
+  /**
+   * Close mobile sidebar helper
+   */
+  private closeMobileSidebar() {
+    document.body.classList.remove('sidebar-enable');
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.width = '';
+    document.body.style.height = '';
+  }
+
+  ngOnDestroy() {
+    // Clean up resize listener
+    if (typeof window !== 'undefined' && this.resizeListener) {
+      window.removeEventListener('resize', this.resizeListener);
+    }
   }
 
   /**
@@ -52,11 +88,7 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnChanges {
     if (window.innerWidth <= 992) {
       // Small delay to allow navigation to start
       setTimeout(() => {
-        document.body.classList.remove('sidebar-enable');
-        document.body.style.overflow = '';
-        document.body.style.position = '';
-        document.body.style.width = '';
-        document.body.style.height = '';
+        this.closeMobileSidebar();
       }, 100);
     }
   }

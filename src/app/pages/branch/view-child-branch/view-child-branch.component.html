@@ -1,0 +1,141 @@
+<app-page-title [title]="'Child Branch Details'" [breadcrumbItems]="breadCrumbItems"></app-page-title>
+
+<div *ngIf="loading" class="text-center p-4">
+  <div class="spinner-border text-primary" role="status">
+    <span class="visually-hidden">Loading...</span>
+  </div>
+</div>
+
+<div *ngIf="!loading && childBranch" class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <!-- Actions -->
+        <div class="d-flex justify-content-end mb-3 gap-2">
+          <button class="btn btn-primary" (click)="editChildBranch()">
+            <i class="pi pi-pencil me-2"></i>Edit
+          </button>
+          <button class="btn btn-danger" (click)="deleteChildBranch()">
+            <i class="pi pi-trash me-2"></i>Delete
+          </button>
+        </div>
+
+        <!-- Parent Branch Info -->
+        <div class="card mb-4 border-primary" *ngIf="parentBranch">
+          <div class="card-body">
+            <h5 class="text-primary">
+              <i class="pi pi-sitemap me-2"></i>Parent Branch: {{ parentBranch.name }}
+            </h5>
+            <p class="mb-0"><strong>Coordinator:</strong> {{ childBranch.coordinator_name }}</p>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-3">
+          <li class="nav-item">
+            <a class="nav-link" [class.active]="activeTab === 'details'" (click)="setActiveTab('details')">Details</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" [class.active]="activeTab === 'members'" (click)="setActiveTab('members')">Members</a>
+          </li>
+        </ul>
+
+        <!-- Details Tab -->
+        <div *ngIf="activeTab === 'details'">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <strong>Branch Name:</strong>
+              <p>{{ childBranch.name }}</p>
+            </div>
+            <div class="col-md-4">
+              <strong>Email:</strong>
+              <p>{{ childBranch.email || 'N/A' }}</p>
+            </div>
+            <div class="col-md-4">
+              <strong>Contact Number:</strong>
+              <p>{{ childBranch.contact_number || 'N/A' }}</p>
+            </div>
+            <div class="col-md-4">
+              <strong>Established On:</strong>
+              <p>{{ childBranch.established_on ? (childBranch.established_on | date) : 'N/A' }}</p>
+            </div>
+            <div class="col-md-4">
+              <strong>Ashram Area:</strong>
+              <p>{{ childBranch.aashram_area ? childBranch.aashram_area + ' sq km' : 'N/A' }}</p>
+            </div>
+            <div class="col-md-4">
+              <strong>Location:</strong>
+              <p>{{ childBranch.city?.name }}, {{ childBranch.state?.name }}, {{ childBranch.country?.name }}</p>
+            </div>
+            <div class="col-md-12">
+              <strong>Address:</strong>
+              <p>{{ childBranch.address || 'N/A' }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Members Tab -->
+        <div *ngIf="activeTab === 'members'">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0">Members ({{ members.length }})</h6>
+            <button class="btn btn-primary btn-sm" (click)="addMember()">
+              <i class="pi pi-plus me-1"></i>Add Member
+            </button>
+          </div>
+
+          <div *ngIf="loadingMembers" class="text-center p-4">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+
+          <div *ngIf="!loadingMembers && members.length === 0" class="text-center p-4">
+            <i class="pi pi-users text-muted" style="font-size: 2rem"></i>
+            <p class="text-muted mt-2">No members found for this child branch.</p>
+            <button class="btn btn-outline-primary mt-2" (click)="addMember()">
+              <i class="pi pi-plus me-1"></i>Add First Member
+            </button>
+          </div>
+
+          <div *ngIf="!loadingMembers && members.length > 0" class="table-responsive">
+            <table class="table table-striped table-hover">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Member Type</th>
+                  <th>Branch Role</th>
+                  <th>Responsibility</th>
+                  <th>Age</th>
+                  <th>Qualification</th>
+                  <th>Date of Birth</th>
+                  <th>Date of Samarpan</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let member of members">
+                  <td>{{ member.name }}</td>
+                  <td>
+                    <span class="badge bg-primary">{{ member.member_type }}</span>
+                  </td>
+                  <td>{{ member.branch_role || 'N/A' }}</td>
+                  <td>{{ member.responsibility || 'N/A' }}</td>
+                  <td>{{ member.age || 'N/A' }}</td>
+                  <td>{{ member.qualification || 'N/A' }}</td>
+                  <td>{{ member.date_of_birth ? (member.date_of_birth | date) : 'N/A' }}</td>
+                  <td>{{ member.date_of_samarpan ? (member.date_of_samarpan | date) : 'N/A' }}</td>
+                  <td>
+                    <button class="btn btn-sm btn-danger" (click)="deleteMember(member.id!)" title="Delete Member">
+                      <i class="pi pi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

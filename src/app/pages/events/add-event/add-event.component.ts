@@ -292,9 +292,6 @@ export class AddEventComponent implements OnInit, OnDestroy {
   // Event ID for editing existing events/drafts
   eventId: number | null = null;
 
-  // Date pickers for duration
-  startDate: Date | null = null;
-  endDate: Date | null = null;
   isEditing: boolean = false;
   loadingEvent: boolean = false;
 
@@ -341,6 +338,14 @@ export class AddEventComponent implements OnInit, OnDestroy {
   uploadedFiles: any = {
     eventPhotos: [],
     videoCoverage: '',
+    pressRelease: [],
+    testimonials: []
+  };
+
+  // File metadata for display and draft storage
+  fileMetadata: any = {
+    eventPhotos: [],
+    videoCoverage: null,
     pressRelease: [],
     testimonials: []
   };
@@ -658,6 +663,8 @@ export class AddEventComponent implements OnInit, OnDestroy {
       scale: [''],
       theme: [''],
       language: [''],
+      startDate: [''],
+      endDate: [''],
       duration: ['', Validators.required],
       dailyStartTime: [''],
       dailyEndTime: [''],
@@ -1082,8 +1089,13 @@ export class AddEventComponent implements OnInit, OnDestroy {
             const start = new Date(startDateStr);
             const end = new Date(endDateStr);
             if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-              this.startDate = start;
-              this.endDate = end;
+              // Set form controls with date strings in YYYY-MM-DD format
+              const startDateFormatted = start.toISOString().split('T')[0];
+              const endDateFormatted = end.toISOString().split('T')[0];
+              this.generalDetailsForm.patchValue({
+                startDate: startDateFormatted,
+                endDate: endDateFormatted
+              }, { emitEvent: false });
               // Update duration string in form
               this.updateDurationString();
             }
@@ -1096,7 +1108,23 @@ export class AddEventComponent implements OnInit, OnDestroy {
 
     // Populate media promotion form
     if (draftData.mediaPromotion && Object.keys(draftData.mediaPromotion).length > 0) {
-      this.mediaPromotionForm.patchValue(draftData.mediaPromotion);
+      // Extract fileMetadata before patching form (to avoid form control issues)
+      const fileMetadata = draftData.mediaPromotion.fileMetadata;
+      const formData = { ...draftData.mediaPromotion };
+      delete formData.fileMetadata; // Remove fileMetadata from form data
+
+      this.mediaPromotionForm.patchValue(formData);
+
+      // Restore file metadata for display
+      if (fileMetadata) {
+        this.fileMetadata = {
+          eventPhotos: fileMetadata.eventPhotos || [],
+          videoCoverage: fileMetadata.videoCoverage || null,
+          pressRelease: fileMetadata.pressRelease || [],
+          testimonials: fileMetadata.testimonials || []
+        };
+      }
+
       // Load event media list if it exists
       if (draftData.mediaPromotion.eventMediaList && Array.isArray(draftData.mediaPromotion.eventMediaList)) {
         this.eventMediaList = draftData.mediaPromotion.eventMediaList;
@@ -1441,16 +1469,14 @@ export class AddEventComponent implements OnInit, OnDestroy {
   /**
    * Handle start date change
    */
-  onStartDateChange(date: Date | null): void {
-    this.startDate = date;
+  onStartDateChange(): void {
     this.updateDurationString();
   }
 
   /**
    * Handle end date change
    */
-  onEndDateChange(date: Date | null): void {
-    this.endDate = date;
+  onEndDateChange(): void {
     this.updateDurationString();
   }
 
@@ -1458,28 +1484,34 @@ export class AddEventComponent implements OnInit, OnDestroy {
    * Update duration string from start and end dates
    */
   updateDurationString(): void {
-    if (this.startDate && this.endDate) {
+    const startDateStr = this.generalDetailsForm.get('startDate')?.value;
+    const endDateStr = this.generalDetailsForm.get('endDate')?.value;
+
+    if (startDateStr && endDateStr) {
+      const startDate = new Date(startDateStr);
+      const endDate = new Date(endDateStr);
+
       // Validate that end date is after start date
-      if (this.endDate < this.startDate) {
+      if (endDate < startDate) {
         this.toastService.warning('End date must be after start date', 'Invalid Date Range');
         // Clear end date if invalid
-        this.endDate = null;
         this.generalDetailsForm.patchValue({
+          endDate: '',
           duration: ''
         }, { emitEvent: false });
         return;
       }
 
       // Format dates to "dd MMM yyyy - dd MMM yyyy" format
-      const startDateStr = this.formatDate(this.startDate);
-      const endDateStr = this.formatDate(this.endDate);
-      const durationString = `${startDateStr} - ${endDateStr}`;
+      const formattedStartDate = this.formatDate(startDate);
+      const formattedEndDate = this.formatDate(endDate);
+      const durationString = `${formattedStartDate} - ${formattedEndDate}`;
 
       // Update form control
       this.generalDetailsForm.patchValue({
         duration: durationString
       }, { emitEvent: false });
-    } else if (!this.startDate && !this.endDate) {
+    } else if (!startDateStr && !endDateStr) {
       // Clear duration if both dates are cleared
       this.generalDetailsForm.patchValue({
         duration: ''
@@ -1491,8 +1523,13 @@ export class AddEventComponent implements OnInit, OnDestroy {
    * Get duration display string
    */
   getDurationDisplay(): string {
-    if (this.startDate && this.endDate) {
-      return `${this.formatDate(this.startDate)} - ${this.formatDate(this.endDate)}`;
+    const startDateStr = this.generalDetailsForm.get('startDate')?.value;
+    const endDateStr = this.generalDetailsForm.get('endDate')?.value;
+
+    if (startDateStr && endDateStr) {
+      const startDate = new Date(startDateStr);
+      const endDate = new Date(endDateStr);
+      return `${this.formatDate(startDate)} - ${this.formatDate(endDate)}`;
     }
     return '';
   }
@@ -1710,15 +1747,68 @@ export class AddEventComponent implements OnInit, OnDestroy {
     // Store files to upload after event creation
     if (fileType === 'eventPhotos' || fileType === 'pressRelease' || fileType === 'testimonials') {
       this.uploadedFiles[fileType] = files;
+      // Store file metadata for display and draft
+      this.fileMetadata[fileType] = files.map((file: File) => ({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        lastModified: file.lastModified
+      }));
     } else {
       this.uploadedFiles[fileType] = files[0];
+      // Store file metadata for display and draft
+      this.fileMetadata[fileType] = {
+        name: files[0].name,
+        size: files[0].size,
+        type: files[0].type,
+        lastModified: files[0].lastModified
+      };
     }
+
+    // Trigger auto-save to include file metadata in draft
+    this.saveFileMetadataToDraft();
 
     // Show message
     this.toastService.info(`${files.length} file(s) selected. They will be uploaded when you save the event.`, 'Files Selected');
 
     // Reset input
     input.value = '';
+  }
+
+  // Save file metadata to draft
+  saveFileMetadataToDraft(): void {
+    const mediaPromotionData = {
+      ...this.mediaPromotionForm.value,
+      fileMetadata: this.fileMetadata
+    };
+    this.autoSave('mediaPromotion', mediaPromotionData);
+  }
+
+  // Remove file from selection
+  removeFile(fileType: string, index?: number): void {
+    if (fileType === 'videoCoverage') {
+      this.uploadedFiles[fileType] = '';
+      this.fileMetadata[fileType] = null;
+    } else {
+      if (index !== undefined) {
+        this.uploadedFiles[fileType].splice(index, 1);
+        this.fileMetadata[fileType].splice(index, 1);
+      } else {
+        this.uploadedFiles[fileType] = [];
+        this.fileMetadata[fileType] = [];
+      }
+    }
+    // Update draft
+    this.saveFileMetadataToDraft();
+  }
+
+  // Format file size for display
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   }
 
   // Legacy method for compatibility
@@ -1731,47 +1821,137 @@ export class AddEventComponent implements OnInit, OnDestroy {
     this.uploadedFiles.videoCoverage = event.target.value;
   }
 
+  // Track upload status
+  uploadInProgress: boolean = false;
+  uploadQueue: Array<{ file: File; category: string; eventId: number }> = [];
+  uploadResults: Array<{ file: File; success: boolean; error?: string }> = [];
+
   /**
    * Upload files to S3 after event creation
    * This is called after event is successfully created
    */
   uploadFilesAfterEventCreation(eventId: number): void {
-    // Upload event photos
+    // Build upload queue
+    this.uploadQueue = [];
+    this.uploadResults = [];
+    this.uploadInProgress = true;
+
+    // Add event photos to queue
     if (this.uploadedFiles.eventPhotos && Array.isArray(this.uploadedFiles.eventPhotos) && this.uploadedFiles.eventPhotos.length > 0) {
-      this.uploadFilesToS3(this.uploadedFiles.eventPhotos, 'eventPhotos', eventId, 'Event Photos');
+      this.uploadedFiles.eventPhotos.forEach((file: File) => {
+        this.uploadQueue.push({ file, category: 'Event Photos', eventId });
+      });
     }
 
-    // Upload video coverage
+    // Add video coverage to queue
     if (this.uploadedFiles.videoCoverage && this.uploadedFiles.videoCoverage instanceof File) {
-      this.uploadFilesToS3([this.uploadedFiles.videoCoverage], 'videoCoverage', eventId, 'Video Coverage');
+      this.uploadQueue.push({ file: this.uploadedFiles.videoCoverage, category: 'Video Coverage', eventId });
     }
 
-    // Upload press release
+    // Add press release to queue
     if (this.uploadedFiles.pressRelease && Array.isArray(this.uploadedFiles.pressRelease) && this.uploadedFiles.pressRelease.length > 0) {
-      this.uploadFilesToS3(this.uploadedFiles.pressRelease, 'pressRelease', eventId, 'Press Release');
+      this.uploadedFiles.pressRelease.forEach((file: File) => {
+        this.uploadQueue.push({ file, category: 'Press Release', eventId });
+      });
     }
 
-    // Upload testimonials
+    // Add testimonials to queue
     if (this.uploadedFiles.testimonials && Array.isArray(this.uploadedFiles.testimonials) && this.uploadedFiles.testimonials.length > 0) {
-      this.uploadFilesToS3(this.uploadedFiles.testimonials, 'testimonials', eventId, 'Testimonials');
+      this.uploadedFiles.testimonials.forEach((file: File) => {
+        this.uploadQueue.push({ file, category: 'Testimonials', eventId });
+      });
     }
+
+    // If no files to upload, return
+    if (this.uploadQueue.length === 0) {
+      this.uploadInProgress = false;
+      return;
+    }
+
+    // Show upload started message
+    this.toastService.info(`Uploading ${this.uploadQueue.length} file(s) to S3...`, 'Upload Started');
+
+    // Upload files sequentially to avoid overwhelming the server
+    this.uploadFilesSequentially(0);
   }
 
   /**
-   * Upload files to S3
+   * Upload files sequentially to S3
    */
-  uploadFilesToS3(files: File[], fileType: string, eventId: number, category: string): void {
-    files.forEach((file) => {
-      this.eventApiService.uploadFile(file, eventId, undefined, category).subscribe({
-        next: (response) => {
-          this.toastService.success(`${file.name} uploaded successfully`, 'Upload Success');
-        },
-        error: (error) => {
-          console.error('Upload error:', error);
-          this.toastService.error(`Failed to upload ${file.name}: ${error?.error?.error || 'Unknown error'}`, 'Upload Failed');
-        }
-      });
+  uploadFilesSequentially(index: number): void {
+    if (index >= this.uploadQueue.length) {
+      // All files processed
+      this.uploadInProgress = false;
+      this.handleUploadCompletion();
+      return;
+    }
+
+    const { file, category, eventId } = this.uploadQueue[index];
+
+    this.eventApiService.uploadFile(file, eventId, undefined, category).subscribe({
+      next: (response) => {
+        console.log(`File uploaded successfully: ${file.name}`, response);
+        this.uploadResults.push({ file, success: true });
+        this.toastService.success(`${file.name} uploaded to S3 successfully`, 'Upload Success');
+
+        // Upload next file
+        this.uploadFilesSequentially(index + 1);
+      },
+      error: (error) => {
+        console.error(`Upload error for ${file.name}:`, error);
+        const errorMessage = error?.error?.error || error?.message || 'Unknown error';
+        this.uploadResults.push({ file, success: false, error: errorMessage });
+        this.toastService.error(`Failed to upload ${file.name}: ${errorMessage}`, 'Upload Failed');
+
+        // Continue with next file even if this one failed
+        this.uploadFilesSequentially(index + 1);
+      }
     });
+  }
+
+  /**
+   * Handle upload completion
+   */
+  handleUploadCompletion(): void {
+    const successful = this.uploadResults.filter(r => r.success).length;
+    const failed = this.uploadResults.filter(r => !r.success).length;
+
+    if (failed === 0) {
+      this.toastService.success(`All ${successful} file(s) uploaded to S3 successfully!`, 'Upload Complete');
+      // Clear uploaded files after successful upload
+      this.clearUploadedFiles();
+    } else {
+      this.toastService.warning(
+        `${successful} file(s) uploaded successfully, ${failed} file(s) failed. Please try uploading failed files again.`,
+        'Upload Partially Complete'
+      );
+    }
+
+    // Log upload summary
+    console.log('Upload Summary:', {
+      total: this.uploadResults.length,
+      successful,
+      failed,
+      results: this.uploadResults
+    });
+  }
+
+  /**
+   * Clear uploaded files after successful upload
+   */
+  clearUploadedFiles(): void {
+    this.uploadedFiles = {
+      eventPhotos: [],
+      videoCoverage: '',
+      pressRelease: [],
+      testimonials: []
+    };
+    this.fileMetadata = {
+      eventPhotos: [],
+      videoCoverage: null,
+      pressRelease: [],
+      testimonials: []
+    };
   }
 
   nextStep(): void {
@@ -2016,28 +2196,14 @@ export class AddEventComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Set date pickers if we have dates
-    if (startDate && endDate) {
-      try {
-        const startDateObj = new Date(startDate);
-        const endDateObj = new Date(endDate);
-        if (!isNaN(startDateObj.getTime()) && !isNaN(endDateObj.getTime())) {
-          this.startDate = startDateObj;
-          this.endDate = endDateObj;
-          // Update duration string
-          this.updateDurationString();
-        }
-      } catch (e) {
-        // Ignore errors
-      }
-    }
-
     // Update general details form
     this.generalDetailsForm.patchValue({
       eventType: event.event_type?.name || '',
       eventCategory: event.event_category?.name || '',
       scale: event.scale || '',
       theme: event.theme || '',
+      startDate: startDate || '',
+      endDate: endDate || '',
       duration: startDate && endDate ? this.formatDateRange(startDate, endDate) : '',
       dailyStartTime: event.daily_start_time || '',
       dailyEndTime: event.daily_end_time || '',
@@ -2149,91 +2315,40 @@ export class AddEventComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Parse duration string to start_date and end_date
+    // Get start and end dates from form controls
+    const startDateValue = generalDetails.startDate || '';
+    const endDateValue = generalDetails.endDate || '';
     let startDate: string | undefined;
     let endDate: string | undefined;
     let durationString: string | undefined;
 
-    if (generalDetails.duration) {
-      const duration = String(generalDetails.duration).trim();
+    if (startDateValue && endDateValue) {
+      // Dates are already in YYYY-MM-DD format from the date input
+      startDate = startDateValue;
+      endDate = endDateValue;
 
-      // Check if duration is in the correct format (contains " - ")
-      if (duration.includes(' - ')) {
-        const dates = duration.split(' - ');
-        if (dates.length === 2) {
-          const startDateStr = dates[0].trim();
-          const endDateStr = dates[1].trim();
-
-          // Convert date format from "dd MMM yyyy" to "YYYY-MM-DD"
-          try {
-            const startDateObj = new Date(startDateStr);
-            const endDateObj = new Date(endDateStr);
-
-            if (!isNaN(startDateObj.getTime()) && !isNaN(endDateObj.getTime())) {
-              startDate = startDateObj.toISOString().split('T')[0]; // YYYY-MM-DD format
-              endDate = endDateObj.toISOString().split('T')[0]; // YYYY-MM-DD format
-              durationString = duration; // Keep original format for backend
-            } else {
-              // Invalid date format - only throw if not a draft
-              if (!isDraft && this.validationSettings.isValidationEnabled()) {
-                if (this.validationSettings.shouldShowToastErrors()) {
-                  this.toastService.validationError('Duration must be in format: "dd MMM yyyy - dd MMM yyyy" (e.g., "01 Jan 2024 - 05 Jan 2024")');
-                }
-                throw new Error('Invalid duration format');
-              }
-              // For drafts, just use the string as-is
-              durationString = duration;
-            }
-          } catch (e) {
-            // If parsing fails and not a draft, show error
-            if (!isDraft && this.validationSettings.isValidationEnabled()) {
-              if (this.validationSettings.shouldShowToastErrors()) {
-                this.toastService.validationError('Duration must be in format: "dd MMM yyyy - dd MMM yyyy" (e.g., "01 Jan 2024 - 05 Jan 2024")');
-              }
-              throw new Error('Invalid duration format');
-            }
-            // For drafts, just use the string as-is
-            durationString = duration;
-          }
+      // Format duration string for backend (dd MMM yyyy - dd MMM yyyy)
+      try {
+        const startDateObj = new Date(startDateValue);
+        const endDateObj = new Date(endDateValue);
+        if (!isNaN(startDateObj.getTime()) && !isNaN(endDateObj.getTime())) {
+          durationString = `${this.formatDate(startDateObj)} - ${this.formatDate(endDateObj)}`;
         } else {
-          if (!isDraft && this.validationSettings.isValidationEnabled()) {
-            if (this.validationSettings.shouldShowToastErrors()) {
-              this.toastService.validationError('Duration must include both start and end dates separated by " - "');
-            }
-            throw new Error('Invalid duration format');
-          }
-          // For drafts, don't send invalid duration
           durationString = '';
         }
-      } else {
-        // Duration doesn't contain " - "
-        if (!isDraft && this.validationSettings.isValidationEnabled()) {
-          if (this.validationSettings.shouldShowToastErrors()) {
-            this.toastService.validationError('Duration must be in format: "dd MMM yyyy - dd MMM yyyy" (e.g., "01 Jan 2024 - 05 Jan 2024")');
-          }
-          throw new Error('Invalid duration format');
-        }
-        // For drafts, don't send invalid duration - send empty string
+      } catch (e) {
         durationString = '';
       }
     } else {
       // Duration is required only for final submission
       if (!isDraft && this.validationSettings.isValidationEnabled()) {
         if (this.validationSettings.shouldShowToastErrors()) {
-          this.toastService.validationError('Duration is required. Please enter dates in format: "dd MMM yyyy - dd MMM yyyy" (e.g., "01 Jan 2024 - 05 Jan 2024")');
+          this.toastService.validationError('Duration is required. Please select both start and end dates.');
         }
         throw new Error('Duration is required');
       }
-      // For drafts, duration can be empty - set to empty string
+      // For drafts, duration can be empty
       durationString = '';
-    }
-
-    // Final check: if durationString is still undefined and not a draft, it's an error
-    if (!isDraft && !durationString && this.validationSettings.isValidationEnabled()) {
-      if (this.validationSettings.shouldShowToastErrors()) {
-        this.toastService.validationError('Duration is required. Please enter dates in format: "dd MMM yyyy - dd MMM yyyy" (e.g., "01 Jan 2024 - 05 Jan 2024")');
-      }
-      throw new Error('Duration is required');
     }
 
     // Return in the format expected by backend (nested structure)
@@ -2714,6 +2829,12 @@ export class AddEventComponent implements OnInit, OnDestroy {
     this.uploadedFiles = {
       eventPhotos: [],
       videoCoverage: '',
+      pressRelease: [],
+      testimonials: []
+    };
+    this.fileMetadata = {
+      eventPhotos: [],
+      videoCoverage: null,
       pressRelease: [],
       testimonials: []
     };

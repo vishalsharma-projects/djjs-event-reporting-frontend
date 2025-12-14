@@ -136,13 +136,13 @@
           <label class="form-label">Duration <span class="text-danger">*</span></label>
           <div class="row g-2">
             <div class="col-6">
-              <input type="text" class="form-control" placeholder="Start Date" [bsValue]="startDate" bsDatepicker
-                (bsValueChange)="onStartDateChange($event)" autocomplete="off"
+              <input type="date" class="form-control" placeholder="Start Date" formControlName="startDate"
+                (change)="onStartDateChange()" autocomplete="off"
                 [ngClass]="{'is-invalid': isFieldInvalid('duration')}">
             </div>
             <div class="col-6">
-              <input type="text" class="form-control" placeholder="End Date" [bsValue]="endDate" bsDatepicker
-                (bsValueChange)="onEndDateChange($event)" autocomplete="off"
+              <input type="date" class="form-control" placeholder="End Date" formControlName="endDate"
+                (change)="onEndDateChange()" autocomplete="off"
                 [ngClass]="{'is-invalid': isFieldInvalid('duration')}">
             </div>
           </div>
@@ -152,27 +152,13 @@
             Duration is required. Please select start and end dates.
           </div>
         </div>
-        <div class="col-md-4 mb-3"> <label class="form-label">Daily Start Time</label> <select class="form-select"
-            formControlName="dailyStartTime">
-            <option value="">Select Time</option>
-            <option value="06:00">6:00 AM</option>
-            <option value="07:00">7:00 AM</option>
-            <option value="08:00">8:00 AM</option>
-            <option value="17:30">5:30 PM</option>
-            <option value="18:00">6:00 PM</option>
-            <option value="19:00">7:00 PM</option>
-          </select>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Daily Start Time</label>
+          <input type="time" class="form-control" formControlName="dailyStartTime">
         </div>
-        <div class="col-md-4 mb-3"> <label class="form-label">Daily End Time</label> <select class="form-select"
-            formControlName="dailyEndTime">
-            <option value="">Select Time</option>
-            <option value="07:30">7:30 AM</option>
-            <option value="08:30">8:30 AM</option>
-            <option value="09:30">9:30 AM</option>
-            <option value="19:30">7:30 PM</option>
-            <option value="20:30">8:30 PM</option>
-            <option value="21:30">9:30 PM</option>
-          </select>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Daily End Time</label>
+          <input type="time" class="form-control" formControlName="dailyEndTime">
         </div>
       </div>
 
@@ -426,19 +412,17 @@
 <!-- Step 2: Media & Promotion -->
 <div *ngIf="currentStep === 2">
   <form [formGroup]="mediaPromotionForm">
+    <!-- Event Media Section -->
     <div class="common-stepper">
       <h5 class="mb-3">Event Media</h5>
       <div class="row g-3">
-        <!-- Media Coverage Type -->
         <div class="col-md-3">
-          <label class="form-label sub-heading">Media Coverage Type</label>
+          <label class="form-label">Media Coverage Type</label>
           <select class="form-select" formControlName="mediaCoverageType">
             <option value="">Select</option>
             <option *ngFor="let type of mediaTypes" [value]="type">{{ type }}</option>
           </select>
         </div>
-
-        <!-- Company Info -->
         <div class="col-md-3">
           <label class="form-label">Company name</label>
           <input type="text" class="form-control" formControlName="companyName" placeholder="Enter" />
@@ -452,9 +436,11 @@
           <input type="url" class="form-control" formControlName="companyWebsite" placeholder="Enter" />
         </div>
       </div>
+    </div>
 
-      <!-- Media Person Details -->
-      <h6 class="mt-4 sub-heading">Provide Details of Media Person</h6>
+    <!-- Provide Details of Media Person Section -->
+    <div class="common-stepper">
+      <h5 class="mb-3">Provide Details of Media Person</h5>
       <div class="row g-3">
         <div class="col-md-2">
           <label class="form-label">Gender</label>
@@ -487,7 +473,6 @@
           <input type="text" class="form-control" formControlName="mediaLastName" />
         </div>
       </div>
-
       <div class="row g-3 mt-2">
         <div class="col-md-4">
           <label class="form-label">Designation</label>
@@ -502,9 +487,11 @@
           <input type="email" class="form-control" formControlName="mediaEmail" placeholder="Enter email" />
         </div>
       </div>
+    </div>
 
-      <!-- Reference Person -->
-      <h6 class="mt-4 sub-heading">Provide Details of Reference Person</h6>
+    <!-- Provide Details of Reference Person Section -->
+    <div class="common-stepper">
+      <h5 class="mb-3">Provide Details of Reference Person</h5>
       <div class="row g-3">
         <div class="col-md-4">
           <label class="form-label">Reference branch ID</label>
@@ -515,12 +502,14 @@
           <input type="text" class="form-control" formControlName="referenceVolunteerId" />
         </div>
         <div class="col-md-4">
-          <label class="form-label">Reference person’s name</label>
+          <label class="form-label">Reference person's name</label>
           <input type="text" class="form-control" formControlName="referencePersonName" />
         </div>
       </div>
+    </div>
 
-      <!-- Add Event Media -->
+    <!-- Add Event Media Button and Table -->
+    <div class="common-stepper">
       <div class="mt-3">
         <button class="btn btn-warning btn-sm" type="button" (click)="addEventMedia()">+ Add Event Media</button>
       </div>
@@ -600,14 +589,65 @@
         <div class="col-md-4">
           <label class="form-label">Event photos</label>
           <input type="file" class="form-control" (change)="onFileInputChange($event, 'eventPhotos')" multiple />
+          <!-- Display selected files -->
+          <div class="mt-2" *ngIf="fileMetadata.eventPhotos && fileMetadata.eventPhotos.length > 0">
+            <div class="small text-muted mb-1">Selected files:</div>
+            <div class="d-flex flex-column gap-1">
+              <div *ngFor="let file of fileMetadata.eventPhotos; let i = index"
+                   class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
+                <div class="flex-grow-1">
+                  <div class="small fw-bold">{{ file.name }}</div>
+                  <div class="small text-muted">{{ formatFileSize(file.size) }}</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-danger ms-2"
+                        (click)="removeFile('eventPhotos', i)"
+                        title="Remove file">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="col-md-4">
           <label class="form-label">Video coverage</label>
           <input type="file" class="form-control" (change)="onFileInputChange($event, 'videoCoverage')" />
+          <!-- Display selected file -->
+          <div class="mt-2" *ngIf="fileMetadata.videoCoverage">
+            <div class="small text-muted mb-1">Selected file:</div>
+            <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
+              <div class="flex-grow-1">
+                <div class="small fw-bold">{{ fileMetadata.videoCoverage.name }}</div>
+                <div class="small text-muted">{{ formatFileSize(fileMetadata.videoCoverage.size) }}</div>
+              </div>
+              <button type="button" class="btn btn-sm btn-danger ms-2"
+                      (click)="removeFile('videoCoverage')"
+                      title="Remove file">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
         </div>
         <div class="col-md-4">
           <label class="form-label">Press release</label>
           <input type="file" class="form-control" (change)="onFileInputChange($event, 'pressRelease')" multiple />
+          <!-- Display selected files -->
+          <div class="mt-2" *ngIf="fileMetadata.pressRelease && fileMetadata.pressRelease.length > 0">
+            <div class="small text-muted mb-1">Selected files:</div>
+            <div class="d-flex flex-column gap-1">
+              <div *ngFor="let file of fileMetadata.pressRelease; let i = index"
+                   class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
+                <div class="flex-grow-1">
+                  <div class="small fw-bold">{{ file.name }}</div>
+                  <div class="small text-muted">{{ formatFileSize(file.size) }}</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-danger ms-2"
+                        (click)="removeFile('pressRelease', i)"
+                        title="Remove file">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

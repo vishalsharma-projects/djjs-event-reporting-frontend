@@ -28,6 +28,11 @@ import { BranchDetailsComponent } from './branch-details/branch-details.componen
 import { BranchMembersListComponent } from './branch-members-list/branch-members-list.component';
 import { ViewMemberComponent } from './view-member/view-member.component';
 import { AddMemberComponent } from './add-member/add-member.component';
+import { AddChildBranchComponent } from './add-child-branch/add-child-branch.component';
+import { EditChildBranchComponent } from './edit-child-branch/edit-child-branch.component';
+import { ViewChildBranchComponent } from './view-child-branch/view-child-branch.component';
+import { AddChildBranchMemberComponent } from './add-child-branch-member/add-child-branch-member.component';
+import { BranchGalleryComponent } from './gallery/branch-gallery.component';
 
 
 const DEFAULT_DROPZONE_CONFIG: DropzoneConfigInterface = {
@@ -48,7 +53,12 @@ const DEFAULT_DROPZONE_CONFIG: DropzoneConfigInterface = {
     AddMemberComponent,
     ListBranchAssistanceComponent,
     AddBranchAssistanceComponent,
-    EditBranchAssistanceComponent
+    EditBranchAssistanceComponent,
+    AddChildBranchComponent,
+    EditChildBranchComponent,
+    ViewChildBranchComponent,
+    AddChildBranchMemberComponent,
+    BranchGalleryComponent
   ],
   imports: [
     CommonModule,

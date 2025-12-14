@@ -1,10 +1,12 @@
-<app-page-title [title]="'Branches'" [breadcrumbItems]="breadCrumbItems"></app-page-title>
-
-<div class="d-flex justify-content-end mb-3">
-  <button class="btn btn-primary" (click)="addBranch()">
-    <i class="pi pi-plus me-2"></i> Add Branch
-  </button>
+<div class="page-title-box d-flex align-items-center justify-content-between">
+  <h4 class="mb-0">Branches</h4>
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary" (click)="addBranch()">
+      <i class="pi pi-plus me-2"></i> Add Branch
+    </button>
+  </div>
 </div>
+
 
 <div class="row">
   <div class="col-12">
@@ -22,7 +24,6 @@
                 type="text"
                 class="form-control"
                 placeholder="Search by Branch, Coordinator, City"
-                [value]="globalFilterValue"
                 (input)="onGlobalFilterChange($event)"
               />
             </div>
@@ -38,10 +39,12 @@
           (onRowExpand)="onRowExpand($event)"
           (onRowCollapse)="onRowCollapse($event)"
           [rowHover]="true"
-          [paginator]="false"
+          [paginator]="true"
           [rows]="rows"
           [first]="first"
+          [rowsPerPageOptions]="rowsPerPageOptions"
           [globalFilterFields]="['branchName','coordinatorName','state','city']"
+          (onPageChange)="onPageChange($event)"
           (onSort)="onSort($event)"
           [sortMode]="'single'"
           [tableStyle]="{ 'min-width': '100%' }"
@@ -125,93 +128,203 @@
                   [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
                 ></p-button>
               </td>
-              <td>
-                <a href="javascript:void(0)" (click)="viewBranch(branch.id)" class="text-primary text-decoration-none">
-                  {{ branch.branchName }}
-                </a>
-              </td>
+              <td>{{ branch.branchName }}</td>
               <td>{{ branch.coordinatorName }}</td>
               <td>{{ branch.state }}</td>
               <td>{{ branch.city }}</td>
               <td>{{ branch.establishedOn | date: 'mediumDate' }}</td>
               <td>{{ branch.ashramArea }}</td>
               <td>
-                <div class="d-flex gap-1">
-                  <p-button
+                <div class="action-menu-container" (click)="$event.stopPropagation()">
+                  <button
+                    class="btn btn-link p-0 action-menu-btn"
                     type="button"
-                    icon="pi pi-pencil"
-                    size="small"
-                    severity="secondary"
-                    (onClick)="editBranch(branch.id)"
-                    pTooltip="Edit Branch"
-                    tooltipPosition="top"
-                  ></p-button>
-                  <p-button
-                    type="button"
-                    icon="pi pi-trash"
-                    size="small"
-                    severity="danger"
-                    (onClick)="deleteBranch(branch.id)"
-                    pTooltip="Delete Branch"
-                    tooltipPosition="top"
-                  ></p-button>
+                    (click)="toggleActionMenu(branch.id)">
+                    <i class="pi pi-ellipsis-v"></i>
+                  </button>
+                  <div class="action-menu-dropdown" [class.show]="isActionMenuOpen(branch.id)">
+                    <a class="dropdown-item" href="#"
+                      (click)="editBranch(branch.id); closeActionMenu(); $event.preventDefault()"
+                      title="Edit Branch">
+                      <i class="pi pi-pencil"></i>
+                    </a>
+                    <a class="dropdown-item" href="#"
+                      (click)="addBranchMember(branch.id); closeActionMenu(); $event.preventDefault()"
+                      title="Add Member">
+                      <i class="pi pi-user-plus"></i>
+                    </a>
+                    <a class="dropdown-item" href="#"
+                      (click)="downloadBranch(branch.id, false); closeActionMenu(); $event.preventDefault()"
+                      title="Download Details">
+                      <i class="pi pi-download"></i>
+                    </a>
+                    <a class="dropdown-item" href="#"
+                      (click)="openBranchGallery(branch.id, false); closeActionMenu(); $event.preventDefault()"
+                      title="View Gallery">
+                      <i class="pi pi-images"></i>
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item text-danger" href="#"
+                      (click)="deleteBranch(branch.id); closeActionMenu(); $event.preventDefault()"
+                      title="Delete Branch">
+                      <i class="pi pi-trash"></i>
+                    </a>
+                  </div>
                 </div>
               </td>
             </tr>
           </ng-template>
 
-          <!-- Expanded Row: Members -->
+          <!-- Expanded Row: Child Branches and Members -->
           <ng-template pTemplate="rowexpansion" let-branch>
             <tr>
               <td colspan="8">
                 <div class="p-4 expanded-content">
-                  <h5>Members of {{ branch.branchName }}</h5>
-
-                  <!-- Loading State -->
-                  <div *ngIf="loadingMembers[branch.id]" class="text-center p-4">
-                    <div class="spinner-border text-primary" role="status">
-                      <span class="visually-hidden">Loading...</span>
+                  <!-- Child Branches Section -->
+                  <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                      <h5 class="mb-0">Child Branches of {{ branch.branchName }}</h5>
+                      <button class="btn btn-primary btn-sm" (click)="addChildBranch(branch.id)">
+                        <i class="pi pi-plus me-2"></i> Add Child Branch
+                      </button>
                     </div>
-                    <p class="text-muted mt-2">Loading members...</p>
+
+                    <!-- Loading State for Child Branches -->
+                    <div *ngIf="loadingMembers['children_' + branch.id]" class="text-center p-4">
+                      <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                      </div>
+                      <p class="text-muted mt-2">Loading child branches...</p>
+                    </div>
+
+                    <!-- Child Branches Table -->
+                    <p-table
+                      *ngIf="!loadingMembers['children_' + branch.id]"
+                      [value]="branch.children || []"
+                      dataKey="id"
+                      [paginator]="true"
+                      [rows]="5"
+                      [loading]="loadingMembers['children_' + branch.id]">
+                      <ng-template pTemplate="header">
+                        <tr>
+                          <th>Branch Name</th>
+                          <th>Coordinator</th>
+                          <th>State</th>
+                          <th>City</th>
+                          <th>Established On</th>
+                          <th>Ashram Area</th>
+                          <th>Actions</th>
+                        </tr>
+                      </ng-template>
+                      <ng-template pTemplate="body" let-childBranch>
+                        <tr>
+                          <td>{{ childBranch.branchName }}</td>
+                          <td>{{ childBranch.coordinatorName }}</td>
+                          <td>{{ childBranch.state }}</td>
+                          <td>{{ childBranch.city }}</td>
+                          <td>{{ childBranch.establishedOn | date: 'mediumDate' }}</td>
+                          <td>{{ childBranch.ashramArea }}</td>
+                          <td>
+                            <div class="action-menu-container" (click)="$event.stopPropagation()">
+                              <button
+                                class="btn btn-link p-0 action-menu-btn"
+                                type="button"
+                                (click)="toggleActionMenu('child_' + childBranch.id)">
+                                <i class="pi pi-ellipsis-v"></i>
+                              </button>
+                              <div class="action-menu-dropdown" [class.show]="isActionMenuOpen('child_' + childBranch.id)">
+                                <a class="dropdown-item" href="#"
+                                  (click)="editBranch(childBranch.id); closeActionMenu(); $event.preventDefault()"
+                                  title="Edit Branch">
+                                  <i class="pi pi-pencil"></i>
+                                </a>
+                                <a class="dropdown-item" href="#"
+                                  (click)="addChildBranchMember(childBranch.id); closeActionMenu(); $event.preventDefault()"
+                                  title="Add Member">
+                                  <i class="pi pi-user-plus"></i>
+                                </a>
+                                <a class="dropdown-item" href="#"
+                                  (click)="downloadBranch(childBranch.id, true); closeActionMenu(); $event.preventDefault()"
+                                  title="Download Details">
+                                  <i class="pi pi-download"></i>
+                                </a>
+                                <a class="dropdown-item" href="#"
+                                  (click)="openBranchGallery(childBranch.id, true); closeActionMenu(); $event.preventDefault()"
+                                  title="View Gallery">
+                                  <i class="pi pi-images"></i>
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-danger" href="#"
+                                  (click)="deleteBranch(childBranch.id); closeActionMenu(); $event.preventDefault()"
+                                  title="Delete Branch">
+                                  <i class="pi pi-trash"></i>
+                                </a>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      </ng-template>
+                      <ng-template pTemplate="emptymessage">
+                        <tr>
+                          <td colspan="7" class="text-center p-4">
+                            <i class="pi pi-inbox text-muted" style="font-size: 2rem"></i>
+                            <p class="text-muted mt-2">No child branches found for this branch.</p>
+                          </td>
+                        </tr>
+                      </ng-template>
+                    </p-table>
                   </div>
 
-                  <!-- Members Table -->
-                  <p-table
-                    *ngIf="!loadingMembers[branch.id]"
-                    [value]="branch.members"
-                    dataKey="name"
-                    [paginator]="true"
-                    [rows]="5"
-                    [loading]="loadingMembers[branch.id]">
-                    <ng-template pTemplate="header">
-                      <tr>
-                        <th>Name</th>
-                        <th>Role</th>
-                        <th>Responsibility</th>
-                        <th>Age</th>
-                        <th>Date of Samarpan</th>
-                        <th>Qualification</th>
-                      </tr>
-                    </ng-template>
-                    <ng-template pTemplate="body" let-member>
-                      <tr>
-                        <td>{{ member.name }}</td>
-                        <td>{{ member.role }}</td>
-                        <td>{{ member.responsibility }}</td>
-                        <td>{{ member.age }}</td>
-                        <td>{{ member.dateOfSamarpan }}</td>
-                        <td>{{ member.qualification }}</td>
-                      </tr>
-                    </ng-template>
-                    <ng-template pTemplate="emptymessage">
-                      <tr>
-                        <td colspan="6" class="text-center p-4">
-                          <i class="pi pi-inbox text-muted" style="font-size: 2rem"></i>
-                          <p class="text-muted mt-2">No members found for this branch.</p>
-                        </td>
-                      </tr>
-                    </ng-template>
-                  </p-table>
+                  <!-- Members Section -->
+                  <div>
+                    <h5>Members of {{ branch.branchName }}</h5>
+
+                    <!-- Loading State -->
+                    <div *ngIf="loadingMembers[branch.id]" class="text-center p-4">
+                      <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                      </div>
+                      <p class="text-muted mt-2">Loading members...</p>
+                    </div>
+
+                    <!-- Members Table -->
+                    <p-table
+                      *ngIf="!loadingMembers[branch.id]"
+                      [value]="branch.members"
+                      dataKey="name"
+                      [paginator]="true"
+                      [rows]="5"
+                      [loading]="loadingMembers[branch.id]">
+                      <ng-template pTemplate="header">
+                        <tr>
+                          <th>Name</th>
+                          <th>Role</th>
+                          <th>Responsibility</th>
+                          <th>Age</th>
+                          <th>Date of Samarpan</th>
+                          <th>Qualification</th>
+                        </tr>
+                      </ng-template>
+                      <ng-template pTemplate="body" let-member>
+                        <tr>
+                          <td>{{ member.name }}</td>
+                          <td>{{ member.role }}</td>
+                          <td>{{ member.responsibility }}</td>
+                          <td>{{ member.age }}</td>
+                          <td>{{ member.dateOfSamarpan }}</td>
+                          <td>{{ member.qualification }}</td>
+                        </tr>
+                      </ng-template>
+                      <ng-template pTemplate="emptymessage">
+                        <tr>
+                          <td colspan="6" class="text-center p-4">
+                            <i class="pi pi-inbox text-muted" style="font-size: 2rem"></i>
+                            <p class="text-muted mt-2">No members found for this branch.</p>
+                          </td>
+                        </tr>
+                      </ng-template>
+                    </p-table>
+                  </div>
                 </div>
               </td>
             </tr>
@@ -227,14 +340,6 @@
             </tr>
           </ng-template>
         </p-table>
-
-        <!-- Custom Pagination Component -->
-        <app-pagination
-          [first]="first"
-          [rows]="rows"
-          [totalRecords]="totalRecords"
-          (pageChange)="onPageChange($event)">
-        </app-pagination>
       </div>
     </div>
   </div>
