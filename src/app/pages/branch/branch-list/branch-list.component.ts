@@ -584,22 +584,27 @@ export class BranchListComponent implements OnInit, OnDestroy {
   }
 
   // View branch - check if it's a child branch or parent branch
-  viewBranch(branchId: string) {
-    // Check if it's a child branch
-    let isChildBranch = false;
+  viewBranch(branchId: string, isChildBranch: boolean = false) {
+    // If isChildBranch is explicitly provided, use it; otherwise check
+    if (!isChildBranch) {
     for (const branch of this.branches) {
       if (branch.children) {
         const childBranch = branch.children.find(c => c.id === branchId);
         if (childBranch) {
           isChildBranch = true;
-          // Navigate to child branch view
-          this.router.navigate(['/branch/child-branch/view', branchId]);
-          return;
+            break;
+          }
         }
       }
     }
+
+    if (isChildBranch) {
+      // Navigate to child branch view
+      this.router.navigate(['/branch/child-branch/view', branchId]);
+    } else {
     // If not a child branch, navigate to regular branch view
     this.router.navigate(['/branch/view', branchId]);
+    }
   }
 
   // Edit branch - check if it's a child branch or parent branch

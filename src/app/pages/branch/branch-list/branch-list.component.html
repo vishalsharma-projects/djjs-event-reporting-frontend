@@ -128,7 +128,11 @@
                   [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
                 ></p-button>
               </td>
-              <td>{{ branch.branchName }}</td>
+              <td>
+                <a href="#" class="text-primary text-decoration-none" (click)="viewBranch(branch.id, false); $event.preventDefault()">
+                  {{ branch.branchName }}
+                </a>
+              </td>
               <td>{{ branch.coordinatorName }}</td>
               <td>{{ branch.state }}</td>
               <td>{{ branch.city }}</td>
@@ -218,7 +222,11 @@
                       </ng-template>
                       <ng-template pTemplate="body" let-childBranch>
                         <tr>
-                          <td>{{ childBranch.branchName }}</td>
+                          <td>
+                            <a href="#" class="text-primary text-decoration-none" (click)="viewBranch(childBranch.id, true); $event.preventDefault()">
+                              {{ childBranch.branchName }}
+                            </a>
+                          </td>
                           <td>{{ childBranch.coordinatorName }}</td>
                           <td>{{ childBranch.state }}</td>
                           <td>{{ childBranch.city }}</td>
