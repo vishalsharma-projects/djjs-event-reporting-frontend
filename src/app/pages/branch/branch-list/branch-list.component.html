@@ -175,7 +175,7 @@
             </tr>
           </ng-template>
 
-          <!-- Expanded Row: Child Branches and Members -->
+          <!-- Expanded Row: Child Branches -->
           <ng-template pTemplate="rowexpansion" let-branch>
             <tr>
               <td colspan="8">
@@ -183,7 +183,7 @@
                   <!-- Child Branches Section -->
                   <div class="mb-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                      <h5 class="mb-0">Child Branches of {{ branch.branchName }}</h5>
+                      <h5 class="mb-0">Child Branches of {{ branch.branchName }} ({{ (branch.children || []).length }})</h5>
                       <button class="btn btn-primary btn-sm" (click)="addChildBranch(branch.id)">
                         <i class="pi pi-plus me-2"></i> Add Child Branch
                       </button>
@@ -269,57 +269,6 @@
                           <td colspan="7" class="text-center p-4">
                             <i class="pi pi-inbox text-muted" style="font-size: 2rem"></i>
                             <p class="text-muted mt-2">No child branches found for this branch.</p>
-                          </td>
-                        </tr>
-                      </ng-template>
-                    </p-table>
-                  </div>
-
-                  <!-- Members Section -->
-                  <div>
-                    <h5>Members of {{ branch.branchName }}</h5>
-
-                    <!-- Loading State -->
-                    <div *ngIf="loadingMembers[branch.id]" class="text-center p-4">
-                      <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                      </div>
-                      <p class="text-muted mt-2">Loading members...</p>
-                    </div>
-
-                    <!-- Members Table -->
-                    <p-table
-                      *ngIf="!loadingMembers[branch.id]"
-                      [value]="branch.members"
-                      dataKey="name"
-                      [paginator]="true"
-                      [rows]="5"
-                      [loading]="loadingMembers[branch.id]">
-                      <ng-template pTemplate="header">
-                        <tr>
-                          <th>Name</th>
-                          <th>Role</th>
-                          <th>Responsibility</th>
-                          <th>Age</th>
-                          <th>Date of Samarpan</th>
-                          <th>Qualification</th>
-                        </tr>
-                      </ng-template>
-                      <ng-template pTemplate="body" let-member>
-                        <tr>
-                          <td>{{ member.name }}</td>
-                          <td>{{ member.role }}</td>
-                          <td>{{ member.responsibility }}</td>
-                          <td>{{ member.age }}</td>
-                          <td>{{ member.dateOfSamarpan }}</td>
-                          <td>{{ member.qualification }}</td>
-                        </tr>
-                      </ng-template>
-                      <ng-template pTemplate="emptymessage">
-                        <tr>
-                          <td colspan="6" class="text-center p-4">
-                            <i class="pi pi-inbox text-muted" style="font-size: 2rem"></i>
-                            <p class="text-muted mt-2">No members found for this branch.</p>
                           </td>
                         </tr>
                       </ng-template>
