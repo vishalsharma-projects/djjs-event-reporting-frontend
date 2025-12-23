@@ -106,9 +106,10 @@ export class LoginComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Trim whitespace from email and password to prevent login issues
     const credentials = {
-      email: this.f['email'].value,
-      password: this.f['password'].value
+      email: (this.f['email'].value || '').trim(),
+      password: (this.f['password'].value || '').trim()
     };
 
     // Call authentication service

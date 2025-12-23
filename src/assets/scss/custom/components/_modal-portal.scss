@@ -1,0 +1,292 @@
+//
+// Modal Portal Styles
+// Ensures modals render at body level and are never clipped
+//
+
+// Modal Portal Container
+// Rendered at <body> level, outside all layout containers
+// CRITICAL: Must be above navbar (10000) and sidebar (9999)
+.modal-portal-container {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: $zindex-modal-portal !important; // 11000 - above navbar (10000)
+  pointer-events: none;
+  // Ensure it's not affected by any parent transforms or overflow
+  transform: none !important;
+  overflow: visible !important;
+  // Ensure no stacking context issues
+  isolation: isolate;
+}
+
+// Backdrop
+.modal-portal-container .modal-backdrop {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: $zindex-modal-backdrop !important;
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  pointer-events: auto !important;
+  opacity: 1 !important;
+  transition: opacity 0.15s linear;
+  
+  &.fade {
+    opacity: 0;
+  }
+  
+  &.show {
+    opacity: 1;
+  }
+}
+
+// Modal Base
+// CRITICAL: Modal must overlay navbar - z-index 11000 > navbar 10000
+.modal-portal-container .modal {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: $zindex-modal-portal !important; // 11000 - above navbar
+  pointer-events: auto !important;
+  overflow-y: auto !important; // Allow scrolling if modal is tall
+  overflow-x: hidden !important;
+  // Ensure modal is not clipped by any parent
+  transform: none !important;
+  display: none;
+  // Ensure no stacking context issues
+  isolation: isolate;
+  
+  &.show {
+    display: block !important; // Block display, dialog uses margin-top for positioning
+  }
+  
+  &.fade {
+    opacity: 0;
+    transition: opacity 0.15s linear;
+  }
+  
+  &.fade.show {
+    opacity: 1;
+  }
+}
+
+// Modal Dialog
+// CRITICAL: Modal overlays navbar (z-index 11000 > 10000), but dialog must start BELOW navbar
+.modal-portal-container .modal-dialog {
+  position: relative;
+  width: auto;
+  margin: 0 auto;
+  pointer-events: none;
+  // CRITICAL: Use top margin instead of flexbox centering to ensure modal starts below navbar
+  // Desktop: $header-height is 55px, add extra spacing
+  margin-top: calc(#{$header-height} + 1.5rem) !important; // Navbar height + spacing
+  margin-bottom: 1.5rem !important;
+  // Remove flexbox centering that causes clipping
+  display: block;
+  max-height: calc(100vh - #{$header-height} - 3rem); // Viewport - navbar - margins
+  
+  @media (min-width: 576px) {
+    max-width: 500px;
+    margin-top: calc(#{$header-height} + 1.75rem) !important;
+    margin-bottom: 1.75rem !important;
+    max-height: calc(100vh - #{$header-height} - 3.5rem);
+  }
+  
+  // Centered variant - still needs top margin
+  &.modal-dialog-centered {
+    margin-top: calc(#{$header-height} + 1.5rem) !important;
+    margin-bottom: 1.5rem !important;
+    max-height: calc(100vh - #{$header-height} - 3rem);
+    
+    @media (min-width: 576px) {
+      margin-top: calc(#{$header-height} + 1.75rem) !important;
+      margin-bottom: 1.75rem !important;
+      max-height: calc(100vh - #{$header-height} - 3.5rem);
+    }
+  }
+  
+  // Scrollable variant
+  &.modal-dialog-scrollable {
+    height: calc(100% - 1rem);
+    
+    .modal-content {
+      max-height: 100%;
+      overflow: hidden;
+    }
+    
+    .modal-body {
+      overflow-y: auto;
+    }
+  }
+  
+  // Size variants
+  &.modal-sm {
+    @media (min-width: 576px) {
+      max-width: 300px;
+    }
+  }
+  
+  &.modal-lg {
+    @media (min-width: 992px) {
+      max-width: 800px;
+    }
+  }
+  
+  &.modal-xl {
+    @media (min-width: 1200px) {
+      max-width: 1140px;
+    }
+  }
+  
+  // Fullscreen variant
+  &.modal-fullscreen {
+    width: 100vw;
+    max-width: none;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    
+    .modal-content {
+      height: 100%;
+      border: 0;
+      border-radius: 0;
+    }
+  }
+}
+
+// Modal Content
+.modal-portal-container .modal-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  pointer-events: auto;
+  background-color: var(--#{$prefix}modal-content-bg, #fff);
+  background-clip: padding-box;
+  border: 1px solid var(--#{$prefix}modal-content-border-color, rgba(0, 0, 0, 0.2));
+  border-radius: 0.5rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  outline: 0;
+  // CRITICAL: Account for navbar height in max-height calculation
+  // Desktop: $header-height is 55px
+  max-height: calc(100vh - #{$header-height} - 2rem); // Viewport - navbar - padding
+  
+  @media (min-width: 576px) {
+    max-height: calc(100vh - #{$header-height} - 3.5rem); // Viewport - navbar - padding
+  }
+  
+  @media (max-width: 575.98px) {
+    max-height: calc(100vh - 60px - 2rem); // Mobile: 60px navbar (different from desktop)
+  }
+}
+
+// Modal Header
+.modal-portal-container .modal-header {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1rem;
+  border-bottom: 1px solid var(--#{$prefix}modal-header-border-color, #dee2e6);
+  border-top-left-radius: calc(0.5rem - 1px);
+  border-top-right-radius: calc(0.5rem - 1px);
+  
+  .modal-title {
+    margin-bottom: 0;
+    line-height: 1.5;
+  }
+  
+  .btn-close {
+    padding: 0.5rem 0.5rem;
+    margin: -0.5rem -0.5rem -0.5rem auto;
+  }
+}
+
+// Modal Body
+.modal-portal-container .modal-body {
+  position: relative;
+  flex: 1 1 auto;
+  padding: 1rem;
+  overflow-y: auto;
+  
+  &.modal-body-scrollable {
+    overflow-y: auto;
+    max-height: calc(100vh - 200px);
+    
+    @media (max-width: 575.98px) {
+      max-height: calc(100vh - 150px);
+    }
+  }
+}
+
+// Modal Footer
+.modal-portal-container .modal-footer {
+  display: flex;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0.75rem;
+  border-top: 1px solid var(--#{$prefix}modal-footer-border-color, #dee2e6);
+  border-bottom-right-radius: calc(0.5rem - 1px);
+  border-bottom-left-radius: calc(0.5rem - 1px);
+  
+  > * {
+    margin: 0.25rem;
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 575.98px) {
+  .modal-portal-container .modal-dialog {
+    width: 100%;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding: 0.5rem;
+    // margin-top already set above for mobile
+  }
+  
+  .modal-portal-container .modal-content {
+    border-radius: 0;
+    max-height: calc(100vh - 60px - 2rem); // Account for mobile navbar
+  }
+  
+  .modal-portal-container .modal-body {
+    padding: 0.75rem;
+  }
+}
+
+// Account for fixed navbar height on mobile
+// Mobile header is 60px (different from desktop $header-height which is 55px)
+@media (max-width: 575.98px) {
+  .modal-portal-container .modal-dialog {
+    margin-top: calc(60px + 1rem) !important; // Mobile header height (60px) + spacing
+    margin-bottom: 1rem !important;
+    max-height: calc(100vh - 60px - 2rem); // Viewport - navbar - margins
+  }
+}
+
+// Ensure modals work with sidebar open on mobile
+body.sidebar-enable {
+  .modal-portal-container {
+    z-index: calc(#{$zindex-modal-portal} + 1) !important;
+  }
+}
+
+// Remove old modal styles that might conflict
+// These are handled by the portal now
+.main-content {
+  // Remove the old overflow toggle workaround
+  // body.modal-open & {
+  //   overflow: visible !important;
+  // }
+  
+  // Ensure main-content doesn't interfere with modals
+  // Modals are now at body level, so this is not needed
+}
+

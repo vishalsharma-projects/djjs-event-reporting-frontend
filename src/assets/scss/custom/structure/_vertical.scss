@@ -97,10 +97,8 @@
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
 
-    // Allow modals to escape overflow
-    body.modal-open & {
-        overflow: visible !important;
-    }
+    // Modals are now rendered at body level via ModalPortalComponent
+    // No need for overflow toggle workaround
 
     .content {
         padding: 0 15px 10px 15px;

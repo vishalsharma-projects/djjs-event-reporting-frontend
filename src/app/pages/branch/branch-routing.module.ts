@@ -14,6 +14,7 @@ import { EditChildBranchComponent } from './edit-child-branch/edit-child-branch.
 import { ViewChildBranchComponent } from './view-child-branch/view-child-branch.component';
 import { AddChildBranchMemberComponent } from './add-child-branch-member/add-child-branch-member.component';
 import { BranchGalleryComponent } from './gallery/branch-gallery.component';
+import { AllMembersComponent } from './all-members/all-members.component';
 
 
 const routes: Routes = [
@@ -25,6 +26,7 @@ const routes: Routes = [
   { path: "child-branch/edit/:id", component: EditChildBranchComponent },
   { path: "child-branch/view/:id", component: ViewChildBranchComponent },
   { path: "child-branch/:childBranchId/members/add", component: AddChildBranchMemberComponent },
+  { path: "members", component: AllMembersComponent },
   { path: ":branchId/members/add", component: AddMemberComponent },
   { path: ":branchId/members/:memberId", component: ViewMemberComponent },
   { path: "gallery", component: BranchGalleryComponent },

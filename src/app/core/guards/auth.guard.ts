@@ -43,8 +43,7 @@ export class AuthGuard implements CanActivate {
   }
 
   /**
-   * Basic token validation - checks if token exists and has valid format
-   * In a production app, you might want to check expiration time as well
+   * Token validation - checks if token exists, has valid format, and is not expired
    */
   private isTokenValid(token: string): boolean {
     if (!token) return false;
@@ -54,10 +53,27 @@ export class AuthGuard implements CanActivate {
       const parts = token.split('.');
       if (parts.length !== 3) return false;
       
-      // Optional: Check if token is expired (if it has expiration)
-      // This is a basic check - you might want to implement proper JWT validation
+      // Decode the payload (second part)
+      const payload = parts[1];
+      // Add padding if needed for base64 decoding
+      const paddedPayload = payload + '='.repeat((4 - payload.length % 4) % 4);
+      const decodedPayload = atob(paddedPayload);
+      const payloadObj = JSON.parse(decodedPayload);
+      
+      // Check if token has expiration claim
+      if (payloadObj.exp) {
+        const expirationTime = payloadObj.exp * 1000; // Convert to milliseconds
+        const currentTime = Date.now();
+        
+        // Token is expired
+        if (currentTime >= expirationTime) {
+          return false;
+        }
+      }
+      
       return true;
     } catch (error) {
+      // If decoding fails, token is invalid
       return false;
     }
   }

@@ -321,6 +321,11 @@ export class AddEventComponent implements OnInit, OnDestroy {
   volunteers: any[] = [];
   eventMediaList: any[] = [];
 
+  // Volunteer search suggestions
+  volunteerSuggestions: Volunteer[] = [];
+  showVolunteerSuggestions: boolean = false;
+  searchingVolunteers: boolean = false;
+
   // Getters for template compatibility
   get specialGuestList(): any[] {
     return this.specialGuests;
@@ -836,6 +841,20 @@ export class AddEventComponent implements OnInit, OnDestroy {
         this.autoSave('volunteers', data);
       });
     this.subscriptions.push(volunteersSub);
+
+    // Subscribe to volunteer search member field changes
+    this.volunteersForm.get('volSearchMember')?.valueChanges
+      .pipe(
+        debounceTime(300)
+      )
+      .subscribe(searchTerm => {
+        if (searchTerm && searchTerm.trim().length >= 2) {
+          this.searchVolunteers(searchTerm.trim());
+        } else {
+          this.volunteerSuggestions = [];
+          this.showVolunteerSuggestions = false;
+        }
+      });
   }
 
   /**
@@ -1682,6 +1701,50 @@ export class AddEventComponent implements OnInit, OnDestroy {
       ...this.volunteersForm.value,
       volunteersList: this.volunteers
     });
+  }
+
+  // Search volunteers for suggestions
+  searchVolunteers(searchTerm: string): void {
+    if (!searchTerm || searchTerm.length < 2) {
+      this.volunteerSuggestions = [];
+      this.showVolunteerSuggestions = false;
+      return;
+    }
+
+    this.searchingVolunteers = true;
+    this.eventApiService.searchVolunteers(searchTerm).subscribe({
+      next: (volunteers) => {
+        this.volunteerSuggestions = volunteers;
+        this.showVolunteerSuggestions = volunteers.length > 0;
+        this.searchingVolunteers = false;
+      },
+      error: (error) => {
+        console.error('Error searching volunteers:', error);
+        this.volunteerSuggestions = [];
+        this.showVolunteerSuggestions = false;
+        this.searchingVolunteers = false;
+      }
+    });
+  }
+
+  // Select a volunteer from suggestions
+  selectVolunteer(volunteer: Volunteer): void {
+    const volunteerName = volunteer.volunteer_name || volunteer.name || '';
+    this.volunteersForm.patchValue({
+      volSearchMember: volunteerName,
+      volName: volunteerName,
+      volContact: volunteer.contact || '',
+      volBranchId: volunteer.branch_id || ''
+    });
+    this.showVolunteerSuggestions = false;
+    this.volunteerSuggestions = [];
+  }
+
+  // Hide suggestions when clicking outside
+  hideVolunteerSuggestions(): void {
+    setTimeout(() => {
+      this.showVolunteerSuggestions = false;
+    }, 200);
   }
 
   // Add event media functionality

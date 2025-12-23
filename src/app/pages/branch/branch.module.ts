@@ -33,6 +33,7 @@ import { EditChildBranchComponent } from './edit-child-branch/edit-child-branch.
 import { ViewChildBranchComponent } from './view-child-branch/view-child-branch.component';
 import { AddChildBranchMemberComponent } from './add-child-branch-member/add-child-branch-member.component';
 import { BranchGalleryComponent } from './gallery/branch-gallery.component';
+import { AllMembersComponent } from './all-members/all-members.component';
 
 
 const DEFAULT_DROPZONE_CONFIG: DropzoneConfigInterface = {
@@ -58,7 +59,8 @@ const DEFAULT_DROPZONE_CONFIG: DropzoneConfigInterface = {
     EditChildBranchComponent,
     ViewChildBranchComponent,
     AddChildBranchMemberComponent,
-    BranchGalleryComponent
+    BranchGalleryComponent,
+    AllMembersComponent
   ],
   imports: [
     CommonModule,

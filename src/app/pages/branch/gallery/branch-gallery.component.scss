@@ -319,7 +319,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1050;
+  z-index: 11000 !important; // Modal - above navbar (10000)
   /* Above content but within main content area - sidebar and navbar remain visible */
   overflow: hidden;
   /* Smooth transition when sidebar collapses/expands */

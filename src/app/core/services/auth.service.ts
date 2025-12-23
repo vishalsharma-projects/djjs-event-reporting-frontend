@@ -31,18 +31,29 @@ export class AuthenticationService {
    * @param credentials LoginRequest object containing email and password
    */
   login(credentials: LoginRequest): Observable<LoginResponse> {
+    // Ensure credentials are trimmed (extra safety check)
+    const trimmedCredentials: LoginRequest = {
+      email: (credentials.email || '').trim(),
+      password: (credentials.password || '').trim()
+    };
+
     // Dispatch login action
-    this.store.dispatch(login({ credentials }));
+    this.store.dispatch(login({ credentials: trimmedCredentials }));
 
     const url = `${this.apiUrl}/api/login`;
 
-    return this.http.post<LoginResponse>(url, credentials).pipe(
+    // Debug: Log the request (without password for security)
+    console.log('Login request to:', url);
+    console.log('Email:', trimmedCredentials.email);
+    console.log('Password length:', trimmedCredentials.password.length);
+
+    return this.http.post<LoginResponse>(url, trimmedCredentials).pipe(
       tap(response => {
         // Store token in localStorage
         this.storeToken(response.token);
 
         // Dispatch success action with email from credentials
-        this.store.dispatch(loginSuccess({ response, email: credentials.email }));
+        this.store.dispatch(loginSuccess({ response, email: trimmedCredentials.email }));
 
         console.log('Login successful:', response);
       }),
@@ -145,9 +156,17 @@ export class AuthenticationService {
   private handleError(error: any): string {
     let errorMessage = 'An error occurred during login';
 
+    // Log the full error for debugging
+    console.error('Login error:', error);
+
     if (error.error) {
-      if (error.error.message) {
+      // Backend returns errors in format: {"error": "message"}
+      if (error.error.error) {
+        errorMessage = error.error.error;
+      } else if (error.error.message) {
         errorMessage = error.error.message;
+      } else if (error.error.details) {
+        errorMessage = error.error.details;
       } else if (typeof error.error === 'string') {
         errorMessage = error.error;
       }
@@ -156,19 +175,22 @@ export class AuthenticationService {
     } else if (error.status) {
       switch (error.status) {
         case 400:
-          errorMessage = 'Invalid credentials';
+          errorMessage = 'Invalid request. Please check your credentials.';
           break;
         case 401:
-          errorMessage = 'Unauthorized access';
+          errorMessage = 'Invalid email or password';
           break;
         case 404:
-          errorMessage = 'Login endpoint not found';
+          errorMessage = 'Login endpoint not found. Please contact support.';
           break;
         case 500:
-          errorMessage = 'Server error occurred';
+          errorMessage = 'Server error occurred. Please try again later.';
+          break;
+        case 0:
+          errorMessage = 'Network error. Please check your connection.';
           break;
         default:
-          errorMessage = `HTTP error ${error.status}`;
+          errorMessage = `HTTP error ${error.status}. Please try again.`;
       }
     }
 

@@ -36,6 +36,10 @@ export class BranchGalleryComponent implements OnInit, OnDestroy {
   imageErrors: { [key: number]: boolean } = {};
   videoErrors: { [key: number]: boolean } = {};
   audioErrors: { [key: number]: boolean } = {};
+  imageRetryCount: { [key: number]: number } = {}; // Track retry attempts for images
+  videoRetryCount: { [key: number]: number } = {}; // Track retry attempts for videos
+  audioRetryCount: { [key: number]: number } = {}; // Track retry attempts for audio
+  private readonly MAX_RETRIES = 1; // Maximum number of retry attempts
 
   items: GalleryItem[] = [];
 
@@ -79,6 +83,9 @@ export class BranchGalleryComponent implements OnInit, OnDestroy {
             if (this.imageErrors[media.id]) delete this.imageErrors[media.id];
             if (this.videoErrors[media.id]) delete this.videoErrors[media.id];
             if (this.audioErrors[media.id]) delete this.audioErrors[media.id];
+            if (this.imageRetryCount[media.id]) delete this.imageRetryCount[media.id];
+            if (this.videoRetryCount[media.id]) delete this.videoRetryCount[media.id];
+            if (this.audioRetryCount[media.id]) delete this.audioRetryCount[media.id];
           }
 
           let fileType: 'image' | 'video' | 'audio' | 'file' = 'file';
@@ -297,58 +304,156 @@ export class BranchGalleryComponent implements OnInit, OnDestroy {
     this.selectedItem = null;
   }
 
+  /**
+   * Check if URL is already a presigned URL
+   */
+  private isPresignedUrl(url: string): boolean {
+    if (!url) return false;
+    return url.includes('Signature=') || url.includes('X-Amz-Signature=') || url.includes('X-Amz-Algorithm=');
+  }
+
+  /**
+   * Handle successful image load - clear error state
+   */
+  onImageLoad(event: any, item: GalleryItem): void {
+    if (item.id && this.imageErrors[item.id]) {
+      delete this.imageErrors[item.id];
+      if (this.imageRetryCount[item.id]) {
+        delete this.imageRetryCount[item.id];
+      }
+    }
+  }
+
+  /**
+   * Handle successful video load - clear error state
+   */
+  onVideoLoad(event: any, item: GalleryItem): void {
+    if (item.id && this.videoErrors[item.id]) {
+      delete this.videoErrors[item.id];
+      if (this.videoRetryCount[item.id]) {
+        delete this.videoRetryCount[item.id];
+      }
+    }
+  }
+
+  /**
+   * Handle successful audio load - clear error state
+   */
+  onAudioLoad(event: any, item: GalleryItem): void {
+    if (item.id && this.audioErrors[item.id]) {
+      delete this.audioErrors[item.id];
+      if (this.audioRetryCount[item.id]) {
+        delete this.audioRetryCount[item.id];
+      }
+    }
+  }
+
   onImageError(event: any, item: GalleryItem): void {
-    if (item.id) {
+    if (!item.id) {
+      return;
+    }
+
+    // Check if URL is already a presigned URL
+    const isAlreadyPresigned = this.isPresignedUrl(item.url);
+    
+    // Check retry count
+    const retryCount = this.imageRetryCount[item.id] || 0;
+    
+    if (isAlreadyPresigned || retryCount >= this.MAX_RETRIES) {
+      // Already tried presigned URL or exceeded retries - stop retrying
       this.imageErrors[item.id] = true;
-      this.branchGalleryService.getDownloadUrl(item.id).subscribe({
-        next: (response: any) => {
-          const presignedUrl = response.download_url || response.data?.download_url;
-          if (presignedUrl) {
-            const imgElement = event.target as HTMLImageElement;
+      return;
+    }
+
+    this.imageErrors[item.id] = true;
+    this.imageRetryCount[item.id] = retryCount + 1;
+
+    this.branchGalleryService.getDownloadUrl(item.id).subscribe({
+      next: (response: any) => {
+        const presignedUrl = response.download_url || response.data?.download_url;
+        if (presignedUrl) {
+          const imgElement = event.target as HTMLImageElement;
+          // Prevent infinite loop by checking if this is a different URL
+          if (imgElement.src !== presignedUrl) {
             imgElement.src = presignedUrl;
             item.url = presignedUrl;
-            delete this.imageErrors[item.id];
           }
-        },
-        error: () => {}
-      });
-    }
+        }
+      },
+      error: () => {}
+    });
   }
 
   onVideoError(event: any, item: GalleryItem): void {
-    if (item.id) {
+    if (!item.id) {
+      return;
+    }
+
+    // Check if URL is already a presigned URL
+    const isAlreadyPresigned = this.isPresignedUrl(item.url);
+    
+    // Check retry count
+    const retryCount = this.videoRetryCount[item.id] || 0;
+    
+    if (isAlreadyPresigned || retryCount >= this.MAX_RETRIES) {
+      // Already tried presigned URL or exceeded retries - stop retrying
       this.videoErrors[item.id] = true;
-      this.branchGalleryService.getDownloadUrl(item.id).subscribe({
-        next: (response: any) => {
-          const presignedUrl = response.download_url || response.data?.download_url;
-          if (presignedUrl) {
-            const videoElement = event.target as HTMLVideoElement;
+      return;
+    }
+
+    this.videoErrors[item.id] = true;
+    this.videoRetryCount[item.id] = retryCount + 1;
+
+    this.branchGalleryService.getDownloadUrl(item.id).subscribe({
+      next: (response: any) => {
+        const presignedUrl = response.download_url || response.data?.download_url;
+        if (presignedUrl) {
+          const videoElement = event.target as HTMLVideoElement;
+          // Prevent infinite loop by checking if this is a different URL
+          if (videoElement.src !== presignedUrl) {
             videoElement.src = presignedUrl;
             item.url = presignedUrl;
-            delete this.videoErrors[item.id];
           }
-        },
-        error: () => {}
-      });
-    }
+        }
+      },
+      error: () => {}
+    });
   }
 
   onAudioError(event: any, item: GalleryItem): void {
-    if (item.id) {
+    if (!item.id) {
+      return;
+    }
+
+    // Check if URL is already a presigned URL
+    const isAlreadyPresigned = this.isPresignedUrl(item.url);
+    
+    // Check retry count
+    const retryCount = this.audioRetryCount[item.id] || 0;
+    
+    if (isAlreadyPresigned || retryCount >= this.MAX_RETRIES) {
+      // Already tried presigned URL or exceeded retries - stop retrying
       this.audioErrors[item.id] = true;
-      this.branchGalleryService.getDownloadUrl(item.id).subscribe({
-        next: (response: any) => {
-          const presignedUrl = response.download_url || response.data?.download_url;
-          if (presignedUrl) {
-            const audioElement = event.target as HTMLAudioElement;
+      return;
+    }
+
+    this.audioErrors[item.id] = true;
+    this.audioRetryCount[item.id] = retryCount + 1;
+
+    this.branchGalleryService.getDownloadUrl(item.id).subscribe({
+      next: (response: any) => {
+        const presignedUrl = response.download_url || response.data?.download_url;
+        if (presignedUrl) {
+          const audioElement = event.target as HTMLAudioElement;
+          // Prevent infinite loop by checking if this is a different URL
+          if (audioElement.src !== presignedUrl) {
             audioElement.src = presignedUrl;
             item.url = presignedUrl;
-            delete this.audioErrors[item.id];
           }
-        },
-        error: () => {}
-      });
-    }
+        }
+      },
+      error: () => {}
+    });
   }
 
   onFileSelected(event: any): void {

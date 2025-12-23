@@ -1,0 +1,225 @@
+import { Injectable, ComponentRef, ViewContainerRef, TemplateRef, Type, Injector } from '@angular/core';
+import { Subject, Observable } from 'rxjs';
+import { ScrollLockService } from './scroll-lock.service';
+
+export interface ModalConfig {
+  id?: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'fullscreen';
+  centered?: boolean;
+  backdrop?: boolean | 'static';
+  keyboard?: boolean;
+  scrollable?: boolean;
+  data?: any;
+  header?: string | TemplateRef<any>;
+  footer?: TemplateRef<any>;
+  showCloseButton?: boolean;
+  closeOnBackdropClick?: boolean;
+  class?: string;
+}
+
+export interface ModalInstance {
+  id: string;
+  componentRef?: ComponentRef<any>;
+  templateRef?: TemplateRef<any>;
+  config: ModalConfig;
+  close: () => void;
+}
+
+/**
+ * Centralized modal portal service.
+ * Manages all modals at the body level, ensuring they escape layout containers.
+ */
+@Injectable({ providedIn: 'root' })
+export class ModalPortalService {
+  private modalContainer?: ViewContainerRef;
+  private activeModals: Map<string, ModalInstance> = new Map();
+  private modalClosed$ = new Subject<string>();
+
+  constructor(private scrollLockService: ScrollLockService) {}
+
+  /**
+   * Set the modal container (called by ModalPortalComponent)
+   */
+  setContainer(container: ViewContainerRef): void {
+    this.modalContainer = container;
+  }
+
+  /**
+   * Open a modal from a template
+   */
+  openTemplate(
+    template: TemplateRef<any>,
+    config: ModalConfig = {}
+  ): ModalInstance {
+    if (!this.modalContainer) {
+      throw new Error('Modal container not initialized. Ensure ModalPortalComponent is in AppComponent.');
+    }
+
+    const modalId = config.id || `modal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    if (this.activeModals.has(modalId)) {
+      console.warn(`Modal with id ${modalId} is already open. Closing existing modal.`);
+      this.close(modalId);
+    }
+
+    const modalInstance: ModalInstance = {
+      id: modalId,
+      templateRef: template,
+      config: {
+        size: 'md',
+        centered: true,
+        backdrop: true,
+        keyboard: true,
+        scrollable: true,
+        showCloseButton: true,
+        closeOnBackdropClick: true,
+        ...config
+      },
+      close: () => this.close(modalId)
+    };
+
+    this.activeModals.set(modalId, modalInstance);
+
+    // Lock scroll when first modal opens
+    if (this.activeModals.size === 1) {
+      this.scrollLockService.lockScroll();
+    }
+
+    // Notify container to render modal
+    this.notifyContainer();
+
+    return modalInstance;
+  }
+
+  /**
+   * Open a modal from a component
+   */
+  openComponent<T extends object>(
+    component: Type<T>,
+    config: ModalConfig = {},
+    injector?: Injector
+  ): ModalInstance {
+    if (!this.modalContainer) {
+      throw new Error('Modal container not initialized. Ensure ModalPortalComponent is in AppComponent.');
+    }
+
+    const modalId = config.id || `modal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    if (this.activeModals.has(modalId)) {
+      console.warn(`Modal with id ${modalId} is already open. Closing existing modal.`);
+      this.close(modalId);
+    }
+
+    const componentRef = this.modalContainer.createComponent(component, {
+      injector: injector
+    });
+
+    // Pass config data to component if it has an input
+    if (config.data && componentRef.instance && 'data' in componentRef.instance) {
+      (componentRef.instance as any).data = config.data;
+    }
+
+    const modalInstance: ModalInstance = {
+      id: modalId,
+      componentRef,
+      config: {
+        size: 'md',
+        centered: true,
+        backdrop: true,
+        keyboard: true,
+        scrollable: true,
+        showCloseButton: true,
+        closeOnBackdropClick: true,
+        ...config
+      },
+      close: () => this.close(modalId)
+    };
+
+    this.activeModals.set(modalId, modalInstance);
+
+    // Lock scroll when first modal opens
+    if (this.activeModals.size === 1) {
+      this.scrollLockService.lockScroll();
+    }
+
+    return modalInstance;
+  }
+
+  /**
+   * Close a modal by ID
+   */
+  close(modalId: string): void {
+    const modal = this.activeModals.get(modalId);
+    if (!modal) {
+      return;
+    }
+
+    // Destroy component if it exists
+    if (modal.componentRef) {
+      modal.componentRef.destroy();
+    }
+
+    this.activeModals.delete(modalId);
+    this.modalClosed$.next(modalId);
+
+    // Unlock scroll when last modal closes
+    if (this.activeModals.size === 0) {
+      this.scrollLockService.unlockScroll();
+    }
+
+    // Notify container to update
+    this.notifyContainer();
+  }
+
+  /**
+   * Close all modals
+   */
+  closeAll(): void {
+    const modalIds = Array.from(this.activeModals.keys());
+    modalIds.forEach(id => this.close(id));
+  }
+
+  /**
+   * Get active modal by ID
+   */
+  getModal(modalId: string): ModalInstance | undefined {
+    return this.activeModals.get(modalId);
+  }
+
+  /**
+   * Get all active modals
+   */
+  getActiveModals(): ModalInstance[] {
+    return Array.from(this.activeModals.values());
+  }
+
+  /**
+   * Check if a modal is open
+   */
+  isOpen(modalId: string): boolean {
+    return this.activeModals.has(modalId);
+  }
+
+  /**
+   * Observable for modal close events
+   */
+  onModalClosed(): Observable<string> {
+    return this.modalClosed$.asObservable();
+  }
+
+  /**
+   * Notify container component to update (internal)
+   */
+  private notifyContainer(): void {
+    // This will be handled by the ModalPortalComponent
+    // We use a custom event or the component will check activeModals
+  }
+
+  /**
+   * Get modals for rendering (used by ModalPortalComponent)
+   */
+  getModalsForRendering(): ModalInstance[] {
+    return this.getActiveModals();
+  }
+}
+

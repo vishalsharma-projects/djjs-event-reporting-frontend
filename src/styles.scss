@@ -178,9 +178,16 @@ dropzone>.dropzone.dz-wrapper {
   font-size: 12px !important;
 }
 
+// Override Bootstrap default modal styles - handled by modal portal
 .modal-dialog {
   top: auto !important;
   bottom: auto !important;
+}
+
+// CRITICAL: Ensure modal portal styles take precedence over Bootstrap defaults
+.modal-portal-container .modal-dialog {
+  // All styles handled in _modal-portal.scss
+  // This ensures Bootstrap defaults don't override our custom positioning
 }
 
 .slick-dots {
@@ -364,9 +371,29 @@ textarea,
   }
 }
 
-// Modal dialog animations
+// CRITICAL: Global modal styles - ensure ALL modals (portal and Bootstrap) start below navbar
+// This applies to both new portal modals and old Bootstrap modals
 .modal {
   transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  
+  // CRITICAL: Ensure modal has correct z-index to be above navbar (10000)
+  &.show {
+    z-index: 11000 !important; // Above navbar (10000) and sidebar (9999)
+    
+    .modal-dialog {
+      // CRITICAL: Account for navbar height - desktop: 55px, mobile: 60px
+      // Use margin-top instead of flexbox centering to prevent top clipping
+      margin-top: calc(55px + 1.5rem) !important; // Navbar (55px) + spacing
+      margin-bottom: 1.5rem !important;
+      max-height: calc(100vh - 55px - 3rem) !important; // Viewport - navbar - margins
+      
+      @media (max-width: 575.98px) {
+        margin-top: calc(60px + 1rem) !important; // Mobile navbar (60px) + spacing
+        margin-bottom: 1rem !important;
+        max-height: calc(100vh - 60px - 2rem) !important;
+      }
+    }
+  }
 
   &.fade {
     opacity: 0;
@@ -386,13 +413,21 @@ textarea,
       transform: translate(0, 0) scale(1);
       opacity: 1;
     }
+
+    // Modal header, body, footer transitions when shown
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+      opacity: 1;
+      transition-delay: 0.1s;
+    }
   }
 
   // Modal content smooth transitions
   .modal-content {
     transition: box-shadow 0.3s ease, transform 0.3s ease;
     border: none;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   }
 
   // Modal header, body, footer transitions
@@ -401,13 +436,6 @@ textarea,
   .modal-footer {
     transition: opacity 0.3s ease;
     opacity: 0;
-  }
-
-  &.show .modal-header,
-  &.show .modal-body,
-  &.show .modal-footer {
-    opacity: 1;
-    transition-delay: 0.1s;
   }
 
   // Close button smooth transition
@@ -421,6 +449,11 @@ textarea,
   }
 }
 
+// CRITICAL: Ensure modal backdrop is also above navbar
+.modal-backdrop {
+  z-index: 10990 !important; // Below modal (11000) but above navbar (10000)
+}
+
 // Modal sizes with smooth scaling
 .modal-sm .modal-dialog,
 .modal-lg .modal-dialog,
@@ -431,6 +464,15 @@ textarea,
 // Centered modal animation
 .modal-dialog-centered {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  
+  // CRITICAL: Centered modals also need top margin to account for navbar
+  // Override Bootstrap's flexbox centering that causes top clipping
+  display: block !important;
+  margin-top: calc(55px + 1.5rem) !important; // Navbar (55px) + spacing
+  
+  @media (max-width: 575.98px) {
+    margin-top: calc(60px + 1rem) !important; // Mobile navbar (60px) + spacing
+  }
 }
 
 // Smooth sidebar transitions

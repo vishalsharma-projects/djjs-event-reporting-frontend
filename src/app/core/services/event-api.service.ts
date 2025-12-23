@@ -72,11 +72,16 @@ export interface Volunteer {
   branch_id?: number;
   search_member?: string;
   name?: string;
+  volunteer_name?: string; // Backend field name
   contact?: string;
   days?: number;
   seva?: string;
   mention_seva?: string;
   event_id?: number;
+  branch?: {
+    id?: number;
+    name?: string;
+  };
 }
 
 export interface EventMedia {
@@ -273,6 +278,15 @@ export class EventApiService {
       params = params.set('event_id', eventId.toString());
     }
     return this.http.delete(`${this.apiBaseUrl}/api/files/${mediaId}`, { params });
+  }
+
+  /**
+   * Search volunteers by name or contact
+   * @param searchTerm Search term (name or contact number)
+   */
+  searchVolunteers(searchTerm: string): Observable<Volunteer[]> {
+    const params = new HttpParams().set('search', searchTerm);
+    return this.http.get<Volunteer[]>(`${this.apiBaseUrl}/api/volunteers/search`, { params });
   }
 }
 

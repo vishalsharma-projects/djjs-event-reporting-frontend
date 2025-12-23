@@ -42,7 +42,11 @@ export const MENU: MenuItem[] = [
         icon: 'bx-user',
         link: '/branch/branchAssistance',
     },
-
-    
+    {
+        id: 8,
+        label: 'Members',
+        icon: 'bx-group',
+        link: '/branch/members',
+    },
 ];
 

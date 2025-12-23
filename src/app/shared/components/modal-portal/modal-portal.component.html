@@ -1,0 +1,69 @@
+<div class="modal-portal-container" *ngIf="hasActiveModals()">
+  <!-- Backdrop -->
+  <div 
+    class="modal-backdrop fade show" 
+    *ngIf="hasActiveModals()"
+    (click)="onBackdropClick()"
+    [attr.aria-hidden]="!hasActiveModals()">
+  </div>
+
+  <!-- Modals -->
+  <ng-container *ngFor="let modal of activeModals">
+    <div 
+      class="modal fade show d-block" 
+      [attr.id]="modal.id"
+      [attr.data-modal-id]="modal.id"
+      [attr.aria-modal]="true"
+      [attr.aria-labelledby]="modal.id + '-title'"
+      role="dialog"
+      tabindex="-1"
+      (click)="onModalClick($event, modal)"
+      (keydown.escape)="onEscapeKey(modal)">
+      
+      <div 
+        class="modal-dialog"
+        [ngClass]="getModalDialogClasses(modal.config)"
+        [attr.role]="'document'">
+        
+        <div class="modal-content">
+          <!-- Header -->
+          <div class="modal-header" *ngIf="modal.config.header || modal.config.showCloseButton !== false">
+            <h5 class="modal-title" [attr.id]="modal.id + '-title'">
+              <ng-container *ngIf="!isTemplate(modal.config.header)">
+                {{ modal.config.header }}
+              </ng-container>
+              <ng-container *ngIf="isTemplate(modal.config.header)">
+                <ng-container *ngTemplateOutlet="$any(modal.config.header)"></ng-container>
+              </ng-container>
+            </h5>
+            <button 
+              type="button" 
+              class="btn-close" 
+              *ngIf="modal.config.showCloseButton !== false"
+              (click)="closeModal(modal.id)"
+              aria-label="Close">
+            </button>
+          </div>
+
+          <!-- Body -->
+          <div 
+            class="modal-body"
+            [class.modal-body-scrollable]="modal.config.scrollable !== false">
+            <ng-container *ngIf="modal.templateRef">
+              <ng-container *ngTemplateOutlet="modal.templateRef"></ng-container>
+            </ng-container>
+            <ng-container *ngIf="modal.componentRef">
+              <ng-container *ngComponentOutlet="modal.componentRef?.componentType"></ng-container>
+            </ng-container>
+          </div>
+
+          <!-- Footer -->
+          <div class="modal-footer" *ngIf="modal.config.footer">
+            <ng-container *ngTemplateOutlet="modal.config.footer"></ng-container>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>
+

@@ -1,0 +1,18 @@
+.modal-portal-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: var(--zindex-modal-portal, 11000);
+  pointer-events: none;
+}
+
+.modal-portal-container .modal {
+  pointer-events: auto;
+}
+
+.modal-portal-container .modal-backdrop {
+  pointer-events: auto;
+}
+

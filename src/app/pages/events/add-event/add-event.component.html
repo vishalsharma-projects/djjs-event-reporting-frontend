@@ -856,8 +856,32 @@
         <!-- Search Member -->
         <div class="col-md-4">
           <label class="form-label">Search Member</label>
-          <input type="text" class="form-control" formControlName="volSearchMember"
-            placeholder="Search by name, email or mobile no." />
+          <div class="position-relative">
+            <input type="text" class="form-control" formControlName="volSearchMember"
+              placeholder="Search by name or mobile no." 
+              (focus)="showVolunteerSuggestions = volunteerSuggestions.length > 0"
+              (blur)="hideVolunteerSuggestions()" />
+            <!-- Volunteer Suggestions Dropdown -->
+            <div class="dropdown-menu show" *ngIf="showVolunteerSuggestions && volunteerSuggestions.length > 0" 
+              style="position: absolute; top: 100%; left: 0; right: 0; z-index: 1000; max-height: 300px; overflow-y: auto; display: block;">
+              <div *ngFor="let volunteer of volunteerSuggestions" 
+                class="dropdown-item" 
+                style="cursor: pointer; padding: 0.5rem 1rem;"
+                (mousedown)="selectVolunteer(volunteer)">
+                <div class="d-flex flex-column">
+                  <strong>{{ volunteer.volunteer_name || volunteer.name || 'N/A' }}</strong>
+                  <small class="text-muted" *ngIf="volunteer.contact">Contact: {{ volunteer.contact }}</small>
+                  <small class="text-muted" *ngIf="volunteer.branch?.name">Branch: {{ volunteer.branch.name }}</small>
+                </div>
+              </div>
+              <div class="dropdown-item text-muted" *ngIf="volunteerSuggestions.length === 0 && !searchingVolunteers">
+                No volunteers found
+              </div>
+            </div>
+            <div class="position-absolute top-0 end-0 p-2" *ngIf="searchingVolunteers">
+              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            </div>
+          </div>
         </div>
 
         <!-- Volunteer's Name -->

@@ -38,6 +38,10 @@ export class GalleryComponent implements OnInit, OnDestroy {
   imageErrors: { [key: number]: boolean } = {}; // Track image load errors
   videoErrors: { [key: number]: boolean } = {}; // Track video load errors
   audioErrors: { [key: number]: boolean } = {}; // Track audio load errors
+  imageRetryCount: { [key: number]: number } = {}; // Track retry attempts for images
+  videoRetryCount: { [key: number]: number } = {}; // Track retry attempts for videos
+  audioRetryCount: { [key: number]: number } = {}; // Track retry attempts for audio
+  private readonly MAX_RETRIES = 1; // Maximum number of retry attempts
 
   // Data with dates - will be loaded from backend
   items: GalleryItem[] = [];
@@ -83,11 +87,14 @@ export class GalleryComponent implements OnInit, OnDestroy {
 
         // Map backend EventMedia to GalleryItem format
         this.items = mediaList.map((media: any) => {
-          // Reset errors for reloaded items
+          // Reset errors and retry counts for reloaded items
           if (media.id) {
             if (this.imageErrors[media.id]) delete this.imageErrors[media.id];
             if (this.videoErrors[media.id]) delete this.videoErrors[media.id];
             if (this.audioErrors[media.id]) delete this.audioErrors[media.id];
+            if (this.imageRetryCount[media.id]) delete this.imageRetryCount[media.id];
+            if (this.videoRetryCount[media.id]) delete this.videoRetryCount[media.id];
+            if (this.audioRetryCount[media.id]) delete this.audioRetryCount[media.id];
           }
           // Use file_type from backend if available, otherwise infer from media coverage type
           let fileType: 'image' | 'video' | 'audio' | 'file' = 'file';
@@ -428,99 +435,209 @@ export class GalleryComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Check if URL is already a presigned URL
+   */
+  private isPresignedUrl(url: string): boolean {
+    if (!url) return false;
+    return url.includes('Signature=') || url.includes('X-Amz-Signature=') || url.includes('X-Amz-Algorithm=');
+  }
+
+  /**
+   * Handle successful image load - clear error state
+   */
+  onImageLoad(event: any, item: GalleryItem): void {
+    if (item.id && this.imageErrors[item.id]) {
+      delete this.imageErrors[item.id];
+      // Reset retry count on successful load
+      if (this.imageRetryCount[item.id]) {
+        delete this.imageRetryCount[item.id];
+      }
+    }
+  }
+
+  /**
+   * Handle successful video load - clear error state
+   */
+  onVideoLoad(event: any, item: GalleryItem): void {
+    if (item.id && this.videoErrors[item.id]) {
+      delete this.videoErrors[item.id];
+      // Reset retry count on successful load
+      if (this.videoRetryCount[item.id]) {
+        delete this.videoRetryCount[item.id];
+      }
+    }
+  }
+
+  /**
+   * Handle successful audio load - clear error state
+   */
+  onAudioLoad(event: any, item: GalleryItem): void {
+    if (item.id && this.audioErrors[item.id]) {
+      delete this.audioErrors[item.id];
+      // Reset retry count on successful load
+      if (this.audioRetryCount[item.id]) {
+        delete this.audioRetryCount[item.id];
+      }
+    }
+  }
+
+  /**
    * Handle image load errors - try to get presigned URL
    */
   onImageError(event: any, item: GalleryItem): void {
-    console.error('Image load error for item:', item.id, 'URL:', item.url);
+    if (!item.id) {
+      console.error('Cannot retry image load: item ID is missing');
+      return;
+    }
 
-    if (item.id) {
+    // Check if URL is already a presigned URL
+    const isAlreadyPresigned = this.isPresignedUrl(item.url);
+    
+    // Check retry count
+    const retryCount = this.imageRetryCount[item.id] || 0;
+    
+    if (isAlreadyPresigned || retryCount >= this.MAX_RETRIES) {
+      // Already tried presigned URL or exceeded retries - stop retrying
       this.imageErrors[item.id] = true;
+      if (isAlreadyPresigned) {
+        console.error('Image load error for item:', item.id, 'URL is already presigned, stopping retries');
+      } else {
+        console.error('Image load error for item:', item.id, 'Max retries reached, stopping retries');
+      }
+      return;
+    }
 
-      // Try to get presigned URL if direct URL fails
-      this.eventApiService.getDownloadUrl(item.id).subscribe({
-        next: (response: any) => {
-          const presignedUrl = response.download_url || response.data?.download_url;
-          if (presignedUrl) {
-            // Update the item URL with presigned URL and reload image
-            const imgElement = event.target as HTMLImageElement;
+    console.error('Image load error for item:', item.id, 'URL:', item.url);
+    this.imageErrors[item.id] = true;
+    this.imageRetryCount[item.id] = retryCount + 1;
+
+    // Try to get presigned URL if direct URL fails
+    this.eventApiService.getDownloadUrl(item.id).subscribe({
+      next: (response: any) => {
+        const presignedUrl = response.download_url || response.data?.download_url;
+        if (presignedUrl) {
+          // Update the item URL with presigned URL and reload image
+          const imgElement = event.target as HTMLImageElement;
+          // Prevent infinite loop by checking if this is a different URL
+          if (imgElement.src !== presignedUrl) {
             imgElement.src = presignedUrl;
             item.url = presignedUrl;
-            delete this.imageErrors[item.id];
+            // Don't delete error state yet - wait to see if it loads successfully
             console.log('Updated image URL to presigned URL for item:', item.id);
           }
-        },
-        error: (error) => {
-          console.error('Failed to get presigned URL for image:', error);
-          // Keep error state so placeholder shows
         }
-      });
-    } else {
-      console.error('Cannot retry image load: item ID is missing');
-    }
+      },
+      error: (error) => {
+        console.error('Failed to get presigned URL for image:', error);
+        // Keep error state so placeholder shows
+      }
+    });
   }
 
   /**
    * Handle video load errors - try to get presigned URL
    */
   onVideoError(event: any, item: GalleryItem): void {
-    console.error('Video load error for item:', item.id, 'URL:', item.url);
+    if (!item.id) {
+      console.error('Cannot retry video load: item ID is missing');
+      return;
+    }
 
-    if (item.id) {
+    // Check if URL is already a presigned URL
+    const isAlreadyPresigned = this.isPresignedUrl(item.url);
+    
+    // Check retry count
+    const retryCount = this.videoRetryCount[item.id] || 0;
+    
+    if (isAlreadyPresigned || retryCount >= this.MAX_RETRIES) {
+      // Already tried presigned URL or exceeded retries - stop retrying
       this.videoErrors[item.id] = true;
+      if (isAlreadyPresigned) {
+        console.error('Video load error for item:', item.id, 'URL is already presigned, stopping retries');
+      } else {
+        console.error('Video load error for item:', item.id, 'Max retries reached, stopping retries');
+      }
+      return;
+    }
 
-      // Try to get presigned URL if direct URL fails
-      this.eventApiService.getDownloadUrl(item.id).subscribe({
-        next: (response: any) => {
-          const presignedUrl = response.download_url || response.data?.download_url;
-          if (presignedUrl) {
-            // Update the item URL with presigned URL and reload video
-            const videoElement = event.target as HTMLVideoElement;
+    console.error('Video load error for item:', item.id, 'URL:', item.url);
+    this.videoErrors[item.id] = true;
+    this.videoRetryCount[item.id] = retryCount + 1;
+
+    // Try to get presigned URL if direct URL fails
+    this.eventApiService.getDownloadUrl(item.id).subscribe({
+      next: (response: any) => {
+        const presignedUrl = response.download_url || response.data?.download_url;
+        if (presignedUrl) {
+          // Update the item URL with presigned URL and reload video
+          const videoElement = event.target as HTMLVideoElement;
+          // Prevent infinite loop by checking if this is a different URL
+          if (videoElement.src !== presignedUrl) {
             videoElement.src = presignedUrl;
             item.url = presignedUrl;
-            delete this.videoErrors[item.id];
+            // Don't delete error state yet - wait to see if it loads successfully
             console.log('Updated video URL to presigned URL for item:', item.id);
           }
-        },
-        error: (error) => {
-          console.error('Failed to get presigned URL for video:', error);
-          // Keep error state so placeholder shows
         }
-      });
-    } else {
-      console.error('Cannot retry video load: item ID is missing');
-    }
+      },
+      error: (error) => {
+        console.error('Failed to get presigned URL for video:', error);
+        // Keep error state so placeholder shows
+      }
+    });
   }
 
   /**
    * Handle audio load errors - try to get presigned URL
    */
   onAudioError(event: any, item: GalleryItem): void {
-    console.error('Audio load error for item:', item.id, 'URL:', item.url);
+    if (!item.id) {
+      console.error('Cannot retry audio load: item ID is missing');
+      return;
+    }
 
-    if (item.id) {
+    // Check if URL is already a presigned URL
+    const isAlreadyPresigned = this.isPresignedUrl(item.url);
+    
+    // Check retry count
+    const retryCount = this.audioRetryCount[item.id] || 0;
+    
+    if (isAlreadyPresigned || retryCount >= this.MAX_RETRIES) {
+      // Already tried presigned URL or exceeded retries - stop retrying
       this.audioErrors[item.id] = true;
+      if (isAlreadyPresigned) {
+        console.error('Audio load error for item:', item.id, 'URL is already presigned, stopping retries');
+      } else {
+        console.error('Audio load error for item:', item.id, 'Max retries reached, stopping retries');
+      }
+      return;
+    }
 
-      // Try to get presigned URL if direct URL fails
-      this.eventApiService.getDownloadUrl(item.id).subscribe({
-        next: (response: any) => {
-          const presignedUrl = response.download_url || response.data?.download_url;
-          if (presignedUrl) {
-            // Update the item URL with presigned URL and reload audio
-            const audioElement = event.target as HTMLAudioElement;
+    console.error('Audio load error for item:', item.id, 'URL:', item.url);
+    this.audioErrors[item.id] = true;
+    this.audioRetryCount[item.id] = retryCount + 1;
+
+    // Try to get presigned URL if direct URL fails
+    this.eventApiService.getDownloadUrl(item.id).subscribe({
+      next: (response: any) => {
+        const presignedUrl = response.download_url || response.data?.download_url;
+        if (presignedUrl) {
+          // Update the item URL with presigned URL and reload audio
+          const audioElement = event.target as HTMLAudioElement;
+          // Prevent infinite loop by checking if this is a different URL
+          if (audioElement.src !== presignedUrl) {
             audioElement.src = presignedUrl;
             item.url = presignedUrl;
-            delete this.audioErrors[item.id];
+            // Don't delete error state yet - wait to see if it loads successfully
             console.log('Updated audio URL to presigned URL for item:', item.id);
           }
-        },
-        error: (error) => {
-          console.error('Failed to get presigned URL for audio:', error);
-          // Keep error state so placeholder shows
         }
-      });
-    } else {
-      console.error('Cannot retry audio load: item ID is missing');
-    }
+      },
+      error: (error) => {
+        console.error('Failed to get presigned URL for audio:', error);
+        // Keep error state so placeholder shows
+      }
+    });
   }
 
   /**

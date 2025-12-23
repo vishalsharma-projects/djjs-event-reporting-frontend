@@ -26,6 +26,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { initFirebaseBackend } from './authUtils';
 import { CyptolandingComponent } from './cyptolanding/cyptolanding.component';
+import { ModalPortalComponent } from './shared/components/modal-portal/modal-portal.component';
 import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 
@@ -67,6 +68,7 @@ export function createTranslateLoader(http: HttpClient): any {
 @NgModule({ declarations: [
         AppComponent,
         CyptolandingComponent,
+        ModalPortalComponent,
     ],
     bootstrap: [AppComponent], imports: [BrowserModule,
         BrowserAnimationsModule,

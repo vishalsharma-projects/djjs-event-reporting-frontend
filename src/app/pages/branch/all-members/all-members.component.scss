@@ -1,0 +1,92 @@
+// All Members Component Styles
+
+.table {
+  th {
+    font-weight: 600;
+    background-color: #f8f9fa;
+  }
+
+  tbody tr {
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: #f1f3f5;
+    }
+  }
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 0.35em 0.65em;
+}
+
+.btn-group {
+  .btn {
+    transition: all 0.2s ease;
+  }
+}
+
+.input-group {
+  .input-group-text {
+    background-color: #f8f9fa;
+    border-right: none;
+  }
+
+  .form-control {
+    border-left: none;
+
+    &:focus {
+      border-color: #ced4da;
+      box-shadow: none;
+    }
+  }
+}
+
+// Modal Styles
+.modal {
+  &.show {
+    display: block !important;
+  }
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 10990 !important; // Modal backdrop - above navbar (10000)
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-dialog {
+  z-index: 11000 !important; // Modal - above navbar (10000) and sidebar (9999)
+}
+
+.invalid-feedback {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  font-size: 0.875em;
+  color: #dc3545;
+}
+
+.btn-check:checked + .btn-outline-primary {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: #fff;
+}
+
+// Actions column - ensure horizontal layout
+td {
+  .d-flex {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+  }
+
+  .btn {
+    white-space: nowrap;
+  }
+}
+
