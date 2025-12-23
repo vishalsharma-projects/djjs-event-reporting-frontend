@@ -17,9 +17,16 @@ export class JwtInterceptor implements HttpInterceptor {
         request: HttpRequest<any>,
         next: HttpHandler
     ): Observable<HttpEvent<any>> {
+        // Skip for new auth system - AuthInterceptor handles token attachment
+        // This interceptor is kept for backward compatibility with old auth flows
+        if (environment.defaultauth === 'jwt') {
+            // New auth system uses AuthInterceptor, skip this
+            return next.handle(request);
+        }
+        
         if (environment.defaultauth === 'firebase') {
             // add authorization header with jwt token if available
-            let currentUser = this.authenticationService.currentUser();
+            let currentUser = this.authenticationService.getCurrentUserValue();
             if (currentUser && currentUser.token) {
                 request = request.clone({
                     setHeaders: {

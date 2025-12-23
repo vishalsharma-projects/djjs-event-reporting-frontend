@@ -43,6 +43,7 @@ export class DashboardComponent implements OnInit {
   events: EventDetails[] = [];
   volunteers: Volunteer[] = [];
   
+  
   // Statistics
   totalBranches: number = 0;
   totalPreachers: number = 0; // We'll calculate this from volunteers or branch members
@@ -332,6 +333,10 @@ export class DashboardComponent implements OnInit {
   }
 
   ngOnInit() {
+    // Initialize all data properties to prevent undefined errors
+    this.branches = [];
+    this.events = [];
+    this.volunteers = [];
     this.loadDashboardData();
   }
 
@@ -358,24 +363,54 @@ export class DashboardComponent implements OnInit {
     this.loading = true;
     
     const requests: Observable<any>[] = [
-      this.locationService.getAllBranches().pipe(catchError(() => of([]))),
-      this.eventApiService.getEvents().pipe(catchError(() => of([]))),
-      this.http.get<Volunteer[]>(`${this.apiBaseUrl}/api/volunteers`).pipe(catchError(() => of([]))),
-      this.http.get<Donation[]>(`${this.apiBaseUrl}/api/donations`).pipe(catchError(() => of([])))
+      this.locationService.getAllBranches().pipe(catchError((err) => {
+        console.error('Error loading branches:', err);
+        return of([]);
+      })),
+      this.eventApiService.getEvents().pipe(catchError((err) => {
+        console.error('Error loading events:', err);
+        return of([]);
+      })),
+      this.http.get<Volunteer[]>(`${this.apiBaseUrl}/api/volunteers`).pipe(catchError((err) => {
+        console.error('Error loading volunteers:', err);
+        return of([]);
+      })),
+      this.http.get<Donation[]>(`${this.apiBaseUrl}/api/donations`).pipe(catchError((err) => {
+        console.error('Error loading donations:', err);
+        return of([]);
+      }))
     ];
 
     forkJoin(requests).subscribe({
       next: ([branches, events, volunteers, donations]) => {
-        this.branches = branches || [];
-        this.events = this.filterEventsByTime(events || []);
-        this.volunteers = volunteers || [];
-        
-        this.calculateStatistics();
-        this.updateCharts();
-        this.loading = false;
+        try {
+          // Ensure all data is properly initialized
+          this.branches = Array.isArray(branches) ? branches : [];
+          this.events = Array.isArray(events) ? this.filterEventsByTime(events) : [];
+          this.volunteers = Array.isArray(volunteers) ? volunteers : [];
+          
+          this.calculateStatistics();
+          this.updateCharts();
+        } catch (error) {
+          console.error('Error processing dashboard data:', error);
+          // Initialize with empty data to prevent further errors
+          this.branches = [];
+          this.events = [];
+          this.volunteers = [];
+          this.calculateStatistics();
+          this.updateCharts();
+        } finally {
+          this.loading = false;
+        }
       },
       error: (error) => {
         console.error('Error loading dashboard data:', error);
+        // Initialize with empty data to prevent further errors
+        this.branches = [];
+        this.events = [];
+        this.volunteers = [];
+        this.calculateStatistics();
+        this.updateCharts();
         this.loading = false;
       }
     });
@@ -423,43 +458,81 @@ export class DashboardComponent implements OnInit {
 
   // Calculate statistics from real data
   calculateStatistics() {
-    // Total branches
-    this.totalBranches = this.branches.length;
-    
-    // Total events
-    this.totalEvents = this.events.length;
-    
-    // Events by type
-    this.eventsByType = {};
-    this.events.forEach(event => {
-      const eventTypeName = event.event_type?.name || 'Unknown';
-      this.eventsByType[eventTypeName] = (this.eventsByType[eventTypeName] || 0) + 1;
-    });
-    
-    // Sort event types by count and prepare chart data
-    const sortedTypes = Object.entries(this.eventsByType)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 4); // Top 4 types
-    
-    this.eventsByTypeLabels = sortedTypes.map(([name]) => name);
-    this.eventsByTypeSeries = sortedTypes.map(([, count]) => count);
-    
-    // Update events chart
-    this.updateEventsChart();
-    
-    // Initiation statistics
-    this.initiationMen = this.events.reduce((sum, event) => sum + (event.initiation_men || 0), 0);
-    this.initiationWomen = this.events.reduce((sum, event) => sum + (event.initiation_women || 0), 0);
-    this.initiationKids = this.events.reduce((sum, event) => sum + (event.initiation_child || 0), 0);
-    this.totalInitiation = this.initiationMen + this.initiationWomen + this.initiationKids;
-    
-    // Update initiation chart
-    this.updateInitiationChart();
-    
-    // Calculate preachers (approximate from volunteers or use branch members count)
-    // For now, we'll use unique volunteers count as an approximation
-    const uniqueVolunteers = new Set(this.volunteers.map(v => v.volunteer_name).filter(Boolean));
-    this.totalPreachers = uniqueVolunteers.size;
+    try {
+      // Ensure arrays are initialized
+      if (!Array.isArray(this.branches)) {
+        this.branches = [];
+      }
+      if (!Array.isArray(this.events)) {
+        this.events = [];
+      }
+      if (!Array.isArray(this.volunteers)) {
+        this.volunteers = [];
+      }
+
+      // Total branches
+      this.totalBranches = this.branches.length;
+      
+      // Total events
+      this.totalEvents = this.events.length;
+      
+      // Events by type
+      this.eventsByType = {};
+      this.events.forEach(event => {
+        if (event && event.event_type) {
+          const eventTypeName = event.event_type?.name || 'Unknown';
+          this.eventsByType[eventTypeName] = (this.eventsByType[eventTypeName] || 0) + 1;
+        }
+      });
+      
+      // Sort event types by count and prepare chart data
+      const sortedTypes = Object.entries(this.eventsByType)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 4); // Top 4 types
+      
+      this.eventsByTypeLabels = sortedTypes.map(([name]) => name);
+      this.eventsByTypeSeries = sortedTypes.map(([, count]) => count);
+      
+      // Update events chart
+      this.updateEventsChart();
+      
+      // Initiation statistics
+      this.initiationMen = this.events.reduce((sum, event) => {
+        return sum + (event?.initiation_men || 0);
+      }, 0);
+      this.initiationWomen = this.events.reduce((sum, event) => {
+        return sum + (event?.initiation_women || 0);
+      }, 0);
+      this.initiationKids = this.events.reduce((sum, event) => {
+        return sum + (event?.initiation_child || 0);
+      }, 0);
+      this.totalInitiation = this.initiationMen + this.initiationWomen + this.initiationKids;
+      
+      // Update initiation chart
+      this.updateInitiationChart();
+      
+      // Calculate preachers (approximate from volunteers or use branch members count)
+      // For now, we'll use unique volunteers count as an approximation
+      const uniqueVolunteers = new Set(
+        this.volunteers
+          .filter(v => v && v.volunteer_name)
+          .map(v => v.volunteer_name)
+      );
+      this.totalPreachers = uniqueVolunteers.size;
+    } catch (error) {
+      console.error('Error calculating statistics:', error);
+      // Set default values to prevent further errors
+      this.totalBranches = 0;
+      this.totalEvents = 0;
+      this.totalPreachers = 0;
+      this.eventsByType = {};
+      this.eventsByTypeLabels = [];
+      this.eventsByTypeSeries = [];
+      this.initiationMen = 0;
+      this.initiationWomen = 0;
+      this.initiationKids = 0;
+      this.totalInitiation = 0;
+    }
   }
 
   // Update events donut chart

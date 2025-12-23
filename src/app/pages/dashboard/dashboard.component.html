@@ -48,7 +48,8 @@
           class="form-select" 
           style="width: auto"
           [ngModel]="selectedYear"
-          (ngModelChange)="onYearChange($event)">
+          (ngModelChange)="onYearChange($event)"
+          *ngIf="availableYears && availableYears.length > 0">
           <option *ngFor="let year of availableYears" [ngValue]="year">
             {{ year }}
           </option>
@@ -62,10 +63,11 @@
         class="form-select" 
         style="width: auto"
         [ngModel]="selectedBranch"
-        (ngModelChange)="onBranchChange($event)">
+        (ngModelChange)="onBranchChange($event)"
+        *ngIf="branches !== undefined">
         <option value="All branches">All branches</option>
-        <option *ngFor="let branch of branches" [ngValue]="branch.name">
-          {{ branch.name }}
+        <option *ngFor="let branch of branches" [ngValue]="branch?.name">
+          {{ branch?.name }}
         </option>
       </select>
     </div>

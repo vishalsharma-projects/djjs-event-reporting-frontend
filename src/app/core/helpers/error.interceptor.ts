@@ -11,11 +11,10 @@ export class ErrorInterceptor implements HttpInterceptor {
 
     intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
         return next.handle(request).pipe(catchError(err => {
-            if (err.status === 401) {
-                // auto logout if 401 response returned from api
-                this.authenticationService.logout();
-                location.reload();
-            }
+            // Note: 401 errors are handled by AuthInterceptor (token refresh)
+            // Don't logout here, let AuthInterceptor handle it
+            // Only handle other errors if needed
+            
             // Preserve the full error object so components can access err.error.error
             // Backend returns errors in format: {"error": "message"}
             return throwError(() => err);

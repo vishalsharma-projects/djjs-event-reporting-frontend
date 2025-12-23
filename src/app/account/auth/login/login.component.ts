@@ -62,7 +62,7 @@ export class LoginComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Subscribe to auth state changes
+    // Subscribe to auth state changes for loading and error display
     this.authenticationService.getAuthState()
       .pipe(takeUntil(this.destroy$))
       .subscribe(authState => {
@@ -73,10 +73,8 @@ export class LoginComponent implements OnInit, OnDestroy {
           this.error = authState.error;
         }
 
-        // If login successful, redirect
-        if (authState.isLoggedIn && authState.token) {
-          this.router.navigate([this.returnUrl]);
-        }
+        // Note: Redirect is handled in the login() subscribe callback
+        // to ensure token is properly stored before navigation
       });
 
     // Initialize form validation
@@ -115,12 +113,29 @@ export class LoginComponent implements OnInit, OnDestroy {
     // Call authentication service
     this.authenticationService.login(credentials).subscribe({
       next: (response) => {
-        console.log('Login successful:', response);
-        // Navigation will be handled by the auth state subscription
+        // Token is stored synchronously in the service's map() operator
+        // Use setTimeout to ensure the token is available to the guard
+        setTimeout(() => {
+          if (this.authenticationService.isAuthenticated()) {
+            // Navigate to return URL or dashboard
+            this.router.navigate([this.returnUrl]).catch(err => {
+              console.error('Navigation error:', err);
+            });
+          } else {
+            // Token should be stored, but if not, show error
+            this.error = 'Login successful but authentication failed. Please try again.';
+          }
+        }, 0); // Use setTimeout with 0ms to ensure execution after current call stack
       },
       error: (error) => {
-        console.error('Login error:', error);
-        // Error handling is done by the auth state subscription
+        // Extract error message
+        if (error.error && error.error.error) {
+          this.error = error.error.error;
+        } else if (error.message) {
+          this.error = error.message;
+        } else {
+          this.error = 'Login failed. Please check your credentials and try again.';
+        }
       }
     });
   }

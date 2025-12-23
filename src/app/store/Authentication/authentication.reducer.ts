@@ -60,15 +60,19 @@ export const authenticationReducer = createReducer(
           return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
         }).join(''));
         userInfo = JSON.parse(jsonPayload);
+        console.log('Decoded token payload:', userInfo);
       } catch (error) {
         console.error('Error decoding token:', error);
       }
 
+      // New backend uses 'sub' claim with user ID as string, and 'sid' for session ID
+      const userId = userInfo.sub || userInfo.user_id || userInfo.userId || '';
+      
       const user: User = {
-        userId: userInfo.user_id?.toString() || userInfo.userId?.toString() || '',
+        userId: userId.toString(),
         email: email,
         token: response.token,
-        type: userInfo.role_id?.toString() || ''
+        type: userInfo.role_id?.toString() || userInfo.roleId?.toString() || ''
       };
       
       return { 

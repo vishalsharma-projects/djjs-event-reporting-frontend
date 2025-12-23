@@ -18,63 +18,21 @@ export class AuthGuard implements CanActivate {
     state: RouterStateSnapshot
   ): Observable<boolean> | Promise<boolean> | boolean {
     
-    // Check if user is authenticated
+    // Use isAuthenticated() which checks both token existence and validity
     if (this.authService.isAuthenticated()) {
-      // Additional check: verify token is still valid
-      const token = this.authService.getToken();
-      if (token && this.isTokenValid(token)) {
-        return true;
-      } else {
-        // Token is expired or invalid, logout and redirect
-        this.authService.logout();
-        this.router.navigate(['/auth/login'], {
-          queryParams: { returnUrl: state.url, reason: 'expired' }
-        });
-        return false;
-      }
+      // User is authenticated, allow access
+      return true;
     }
-
-    // If not authenticated, redirect to login with return URL
-    this.router.navigate(['/auth/login'], {
-      queryParams: { returnUrl: state.url }
-    });
+    
+    // Not authenticated, redirect to login
+    // Check if we're already on login page to avoid redirect loop
+    if (!state.url.includes('/auth/login')) {
+      this.router.navigate(['/auth/login'], {
+        queryParams: { returnUrl: state.url }
+      });
+    }
     
     return false;
   }
 
-  /**
-   * Token validation - checks if token exists, has valid format, and is not expired
-   */
-  private isTokenValid(token: string): boolean {
-    if (!token) return false;
-    
-    try {
-      // Basic JWT format validation (3 parts separated by dots)
-      const parts = token.split('.');
-      if (parts.length !== 3) return false;
-      
-      // Decode the payload (second part)
-      const payload = parts[1];
-      // Add padding if needed for base64 decoding
-      const paddedPayload = payload + '='.repeat((4 - payload.length % 4) % 4);
-      const decodedPayload = atob(paddedPayload);
-      const payloadObj = JSON.parse(decodedPayload);
-      
-      // Check if token has expiration claim
-      if (payloadObj.exp) {
-        const expirationTime = payloadObj.exp * 1000; // Convert to milliseconds
-        const currentTime = Date.now();
-        
-        // Token is expired
-        if (currentTime >= expirationTime) {
-          return false;
-        }
-      }
-      
-      return true;
-    } catch (error) {
-      // If decoding fails, token is invalid
-      return false;
-    }
-  }
 }
