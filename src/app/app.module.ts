@@ -12,7 +12,6 @@ import { TooltipModule } from 'ngx-bootstrap/tooltip';
 import { AccordionModule } from 'ngx-bootstrap/accordion';
 import { ToastrModule } from 'ngx-toastr';
 import { ScrollToModule } from '@nicky-lenaers/ngx-scroll-to';
-import { SharedModule } from './cyptolanding/shared/shared.module';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 
@@ -26,7 +25,6 @@ import { LayoutsModule } from './layouts/layouts.module';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { initFirebaseBackend } from './authUtils';
-import { CyptolandingComponent } from './cyptolanding/cyptolanding.component';
 import { ModalPortalComponent } from './shared/components/modal-portal/modal-portal.component';
 import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
@@ -64,7 +62,6 @@ export function createTranslateLoader(http: HttpClient): any {
 
 @NgModule({ declarations: [
         AppComponent,
-        CyptolandingComponent,
         ModalPortalComponent,
     ],
     bootstrap: [AppComponent], imports: [BrowserModule,
@@ -85,7 +82,6 @@ export function createTranslateLoader(http: HttpClient): any {
         AccordionModule.forRoot(),
         TabsModule.forRoot(),
         TooltipModule.forRoot(),
-        SharedModule,
         ScrollToModule.forRoot(),
         SlickCarouselModule,
         ToastrModule.forRoot(),

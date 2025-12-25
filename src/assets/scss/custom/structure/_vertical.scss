@@ -103,6 +103,15 @@
     .content {
         padding: 0 15px 10px 15px;
         margin-top: $header-height;
+
+        // Mobile responsive padding
+        @media (max-width: 768px) {
+            padding: 0 15px 10px 15px;
+        }
+
+        @media (max-width: 576px) {
+            padding: 0 12px 10px 12px;
+        }
     }
 
     // On small screens, remove margin to eliminate gap
@@ -794,7 +803,6 @@
                 visibility: visible !important;
                 opacity: 1 !important;
                 box-sizing: border-box;
-                vertical-align: middle;
                 padding: 0 !important;
                 position: relative;
                 z-index: 1;

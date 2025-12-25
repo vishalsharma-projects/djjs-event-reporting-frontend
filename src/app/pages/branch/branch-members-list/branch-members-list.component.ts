@@ -72,15 +72,6 @@ export class BranchMembersListComponent implements OnInit {
         this.loading = false;
         
         console.log('Members loaded:', this.members);
-
-        if (this.members.length === 0) {
-          this.messageService.add({
-            severity: 'info',
-            summary: 'Info',
-            detail: 'No members found for this branch.',
-            life: 3000
-          });
-        }
       },
       error: (error) => {
         console.error('Error loading members:', error);

@@ -376,6 +376,15 @@ body:not(.vertical-collpsed) {
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
+
+    // Mobile responsive padding
+    @media (max-width: 768px) {
+        padding: calc(60px + 15px) 15px 15px 15px;
+    }
+
+    @media (max-width: 576px) {
+        padding: calc(60px + 12px) 12px 12px 12px;
+    }
 }
 
 .header-item {

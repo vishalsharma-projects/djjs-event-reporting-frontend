@@ -498,17 +498,6 @@
                   [value]="event.status === 'complete' ? 'Complete' : 'Draft'"
                   [severity]="event.status === 'complete' ? 'success' : 'warning'">
                 </p-tag>
-                <button
-                  class="btn btn-sm btn-link p-0"
-                  (click)="toggleEventStatus(event.id)"
-                  [title]="event.status === 'complete' ? 'Mark as Draft' : 'Mark as Complete'">
-                  <i class="pi"
-                    [class.pi-check-circle]="event.status !== 'complete'"
-                    [class.pi-times-circle]="event.status === 'complete'"
-                    [class.text-success]="event.status !== 'complete'"
-                    [class.text-warning]="event.status === 'complete'">
-                  </i>
-                </button>
               </div>
             </td>
             <td [class.pinned-column]="isColumnPinned('eventType')">

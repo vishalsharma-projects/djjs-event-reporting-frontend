@@ -1,0 +1,136 @@
+<div class="modal-header">
+  <h5 class="modal-title">Volunteers</h5>
+  <button type="button" class="btn-close" (click)="onClose()" aria-label="Close"></button>
+</div>
+<div class="modal-body">
+  <form [formGroup]="volunteersForm">
+    <div class="common-stepper">
+      <h5 class="mb-3">Add Volunteer</h5>
+      <div class="row g-3">
+        <!-- Branch Code -->
+        <div class="col-md-4">
+          <label class="form-label">Branch Code</label>
+          <input type="text" class="form-control" formControlName="volBranchId" placeholder="Enter" />
+        </div>
+
+        <!-- Search Volunteers -->
+        <div class="col-md-4">
+          <label class="form-label">Search Volunteers</label>
+          <div class="position-relative">
+            <input type="text" class="form-control" formControlName="volSearchMember"
+              placeholder="Search by name, mobile no., or email" 
+              (focus)="showVolunteerSuggestions = volunteerSuggestions.length > 0 || searchingVolunteers"
+              (blur)="onHideVolunteerSuggestions()"
+              (input)="onSearchVolunteers($any($event.target).value)" />
+            <!-- Volunteer Suggestions Dropdown -->
+            <div class="dropdown-menu show" *ngIf="showVolunteerSuggestions" 
+              style="position: absolute; top: 100%; left: 0; right: 0; z-index: 1000; max-height: 300px; overflow-y: auto; display: block;">
+              <!-- Loading state -->
+              <div class="dropdown-item text-muted" *ngIf="searchingVolunteers">
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Searching...
+              </div>
+              <!-- Results -->
+              <div *ngFor="let volunteer of volunteerSuggestions" 
+                class="dropdown-item" 
+                style="cursor: pointer; padding: 0.5rem 1rem;"
+                (mousedown)="onSelectVolunteer(volunteer); $event.preventDefault()"
+                (click)="onSelectVolunteer(volunteer); $event.preventDefault()">
+                <div class="d-flex flex-column">
+                  <strong>{{ volunteer.volunteer_name || volunteer.name || 'N/A' }}</strong>
+                  <small class="text-muted" *ngIf="volunteer.contact">Contact: {{ volunteer.contact }}</small>
+                  <small class="text-muted" *ngIf="volunteer.email">Email: {{ volunteer.email }}</small>
+                  <small class="text-muted" *ngIf="volunteer.branch?.name">Branch: {{ volunteer.branch.name }}</small>
+                </div>
+              </div>
+              <!-- No results message -->
+              <div class="dropdown-item text-muted" *ngIf="!searchingVolunteers && volunteerSuggestions.length === 0">
+                No volunteers found
+              </div>
+            </div>
+            <div class="position-absolute top-0 end-0 p-2" *ngIf="searchingVolunteers">
+              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Volunteer's Name -->
+        <div class="col-md-4">
+          <label class="form-label">Volunteer's name</label>
+          <input type="text" class="form-control" formControlName="volName" placeholder="Enter" />
+        </div>
+      </div>
+
+      <div class="row g-3 mt-2">
+        <!-- Contact Number -->
+        <div class="col-md-4">
+          <label class="form-label">Contact Number</label>
+          <input type="tel" class="form-control" formControlName="volContact" placeholder="Enter contact number"
+            pattern="[0-9]*" maxlength="15" />
+        </div>
+
+        <!-- No. of Days -->
+        <div class="col-md-4">
+          <label class="form-label">No. of Days</label>
+          <input type="number" class="form-control" formControlName="volDays" placeholder="Enter number" />
+        </div>
+
+        <!-- Seva Involved -->
+        <div class="col-md-4">
+          <label class="form-label">Seva involved</label>
+          <select class="form-select" formControlName="volSeva">
+            <option value="">Select</option>
+            <option>Others</option>
+            <option>Media</option>
+            <option>Decoration</option>
+            <option>Logistics</option>
+            <option>Hospitality</option>
+          </select>
+        </div>
+      </div>
+      <div class="row g-3 mt-2">
+        <!-- Mention Seva -->
+        <div class="col-md-4">
+          <label class="form-label">Mention seva</label>
+          <input type="text" class="form-control" formControlName="volMentionSeva" placeholder="Enter" />
+        </div>
+      </div>
+
+      <!-- Add Volunteer Button -->
+      <div class="mt-3">
+        <button class="btn btn-warning btn-sm" type="button" (click)="onAddVolunteer()">+ Add Volunteer</button>
+      </div>
+
+      <!-- Volunteer List Table -->
+      <div class="table-responsive mt-3">
+        <table class="table table-bordered align-middle">
+          <thead>
+            <tr>
+              <th>Action</th>
+              <th>Name</th>
+              <th>Contact no.</th>
+              <th>No. of Days</th>
+              <th>Seva involved</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let vol of volunteers; let i = index">
+              <td>
+                <button class="btn btn-danger btn-sm" (click)="onRemoveVolunteer(i)">Remove</button>
+              </td>
+              <td>{{ vol.name }}</td>
+              <td>{{ vol.contact }}</td>
+              <td>{{ vol.days }}</td>
+              <td>{{ vol.seva }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </form>
+</div>
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" (click)="onClose()">Close</button>
+</div>
+
+

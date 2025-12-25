@@ -1,0 +1,363 @@
+// Special Guests Modal Styles - Enhanced UI
+
+// Position modal backdrop to avoid sidebar
+::ng-deep .modal-backdrop {
+  position: fixed !important;
+  top: 70px !important;
+  left: 250px !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: calc(100vw - 250px) !important;
+  height: calc(100vh - 70px) !important;
+  background-color: rgba(0, 0, 0, 0.65) !important;
+  z-index: 1040 !important;
+  transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  backdrop-filter: blur(2px);
+}
+
+::ng-deep body.vertical-collpsed .modal-backdrop,
+::ng-deep body[class*="vertical-collpsed"] .modal-backdrop {
+  left: 70px !important;
+  width: calc(100vw - 70px) !important;
+}
+
+::ng-deep body[data-sidebar-size="small"] .modal-backdrop {
+  left: 160px !important;
+  width: calc(100vw - 160px) !important;
+}
+
+::ng-deep .modal.show {
+  display: block !important;
+  position: fixed !important;
+  top: 70px !important;
+  left: 250px !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: calc(100vw - 250px) !important;
+  height: calc(100vh - 70px) !important;
+  z-index: 1050 !important;
+  background-color: transparent !important;
+  padding: 0 !important;
+  transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+::ng-deep body.vertical-collpsed .modal.show,
+::ng-deep body[class*="vertical-collpsed"] .modal.show {
+  left: 70px !important;
+  width: calc(100vw - 70px) !important;
+}
+
+::ng-deep body[data-sidebar-size="small"] .modal.show {
+  left: 160px !important;
+  width: calc(100vw - 160px) !important;
+}
+
+::ng-deep .modal-dialog-centered {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: calc(100vh - 70px) !important;
+  margin: 0 auto !important;
+  padding: 1rem !important;
+}
+
+::ng-deep .modal-dialog {
+  max-width: calc(100vw - 250px - 2rem) !important;
+  width: calc(100vw - 250px - 2rem) !important;
+  margin: 0 auto !important;
+  position: relative !important;
+  z-index: 1051 !important;
+}
+
+::ng-deep body.vertical-collpsed .modal-dialog,
+::ng-deep body[class*="vertical-collpsed"] .modal-dialog {
+  max-width: calc(100vw - 70px - 2rem) !important;
+  width: calc(100vw - 70px - 2rem) !important;
+}
+
+::ng-deep body[data-sidebar-size="small"] .modal-dialog {
+  max-width: calc(100vw - 160px - 2rem) !important;
+  width: calc(100vw - 160px - 2rem) !important;
+}
+
+::ng-deep .modal-content {
+  border-radius: 16px !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+  max-height: calc(100vh - 100px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border: none !important;
+  overflow: hidden !important;
+  animation: modalSlideIn 0.3s ease-out !important;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+::ng-deep .modal-header {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+  color: white !important;
+  padding: 1.25rem 1.75rem !important;
+  border-bottom: none !important;
+  border-radius: 16px 16px 0 0 !important;
+
+  .modal-title {
+    font-size: 1.5rem !important;
+    font-weight: 600 !important;
+    margin: 0 !important;
+    color: white !important;
+  }
+
+  .btn-close {
+    filter: brightness(0) invert(1) !important;
+    opacity: 0.9 !important;
+    transition: opacity 0.2s ease !important;
+
+    &:hover {
+      opacity: 1 !important;
+      transform: scale(1.1) !important;
+    }
+  }
+}
+
+.modal-body {
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(100vh - 280px) !important;
+  padding: 2rem !important;
+  background-color: #f8f9fa !important;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+
+    &:hover {
+      background: #a8a8a8;
+    }
+  }
+}
+
+form {
+  .common-stepper {
+    background: white !important;
+    padding: 1.75rem !important;
+    margin-bottom: 1.5rem !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    transition: box-shadow 0.3s ease !important;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+    }
+
+    h5 {
+      color: #495057 !important;
+      font-weight: 600 !important;
+      font-size: 1.25rem !important;
+      margin-bottom: 1.5rem !important;
+      padding-bottom: 0.75rem !important;
+      border-bottom: 2px solid #e9ecef !important;
+    }
+  }
+
+  .form-label {
+    font-weight: 500 !important;
+    color: #495057 !important;
+    margin-bottom: 0.5rem !important;
+    font-size: 0.9375rem !important;
+  }
+
+  .form-control,
+  .form-select {
+    border: 1.5px solid #dee2e6 !important;
+    border-radius: 8px !important;
+    padding: 0.625rem 0.875rem !important;
+    font-size: 0.9375rem !important;
+    transition: all 0.3s ease !important;
+    background-color: white !important;
+
+    &:focus {
+      border-color: #f5576c !important;
+      box-shadow: 0 0 0 0.2rem rgba(245, 87, 108, 0.15) !important;
+      outline: none !important;
+    }
+
+    &:hover:not(:disabled) {
+      border-color: #adb5bd !important;
+    }
+  }
+
+  .form-select {
+    cursor: pointer !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 0.75rem center !important;
+    background-size: 16px 12px !important;
+    padding-right: 2.5rem !important;
+  }
+}
+
+.btn {
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+  padding: 0.625rem 1.25rem !important;
+  transition: all 0.3s ease !important;
+  border: none !important;
+
+  &.btn-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%) !important;
+    color: #212529 !important;
+    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3) !important;
+
+    &:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4) !important;
+    }
+  }
+
+  &.btn-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3) !important;
+
+    &:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4) !important;
+    }
+  }
+
+  &.btn-sm {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+  }
+}
+
+::ng-deep .modal-footer {
+  background-color: #f8f9fa !important;
+  border-top: 1px solid #dee2e6 !important;
+  padding: 1.25rem 1.75rem !important;
+  border-radius: 0 0 16px 16px !important;
+
+  .btn-secondary {
+    background: #6c757d !important;
+    color: white !important;
+    padding: 0.625rem 1.5rem !important;
+
+    &:hover {
+      background: #5a6268 !important;
+      transform: translateY(-2px) !important;
+      box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3) !important;
+    }
+  }
+}
+
+@media (max-width: 1400px) {
+  ::ng-deep .modal-dialog {
+    max-width: calc(100vw - 250px - 1rem) !important;
+    width: calc(100vw - 250px - 1rem) !important;
+  }
+}
+
+@media (max-width: 1200px) {
+  ::ng-deep .modal-dialog {
+    max-width: calc(100vw - 250px - 1rem) !important;
+    width: calc(100vw - 250px - 1rem) !important;
+  }
+
+  .modal-body {
+    padding: 1.5rem !important;
+  }
+}
+
+@media (max-width: 992px) {
+  ::ng-deep .modal-backdrop {
+    left: 0 !important;
+    top: 70px !important;
+    width: 100vw !important;
+    height: calc(100vh - 70px) !important;
+  }
+
+  ::ng-deep .modal.show {
+    left: 0 !important;
+    width: 100vw !important;
+    height: calc(100vh - 70px) !important;
+  }
+
+  ::ng-deep .modal-dialog {
+    max-width: calc(100vw - 2rem) !important;
+    width: calc(100vw - 2rem) !important;
+    margin: 0.5rem !important;
+  }
+
+  .modal-body {
+    max-height: calc(100vh - 200px) !important;
+    padding: 1.25rem !important;
+  }
+
+  form .common-stepper {
+    padding: 1.25rem !important;
+  }
+}
+
+@media (max-width: 768px) {
+  ::ng-deep .modal-dialog {
+    max-width: calc(100vw - 1rem) !important;
+    width: calc(100vw - 1rem) !important;
+    margin: 0.5rem !important;
+  }
+
+  ::ng-deep .modal-header {
+    padding: 1rem 1.25rem !important;
+
+    .modal-title {
+      font-size: 1.25rem !important;
+    }
+  }
+
+  .modal-body {
+    max-height: calc(100vh - 180px) !important;
+    padding: 1rem !important;
+  }
+
+  form .common-stepper {
+    padding: 1rem !important;
+
+    h5 {
+      font-size: 1.125rem !important;
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  ::ng-deep .modal-dialog {
+    max-width: calc(100vw - 0.5rem) !important;
+    width: calc(100vw - 0.5rem) !important;
+    margin: 0.25rem !important;
+  }
+
+  .modal-body {
+    padding: 0.75rem !important;
+    max-height: calc(100vh - 160px) !important;
+  }
+
+  form .common-stepper {
+    padding: 0.75rem !important;
+  }
+}

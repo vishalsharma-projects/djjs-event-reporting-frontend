@@ -5,6 +5,15 @@
 .card {
   margin-bottom: $grid-gutter-width;
   box-shadow: $box-shadow;
+
+  // Mobile responsive
+  @media (max-width: 768px) {
+    margin-bottom: 1rem;
+  }
+
+  @media (max-width: 576px) {
+    border-radius: 0.5rem;
+  }
 }
 
 .card-drop {
@@ -16,9 +25,19 @@
   margin: 0 0 7px 0;
   font-weight: $font-weight-semibold;
   color: var(--#{$prefix}emphasis-color);
+
+  @media (max-width: 576px) {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
 }
 
 .card-title-desc {
   color: var(--#{$prefix}secondary-color);
   margin-bottom: 24px;
+
+  @media (max-width: 576px) {
+    font-size: 0.8125rem;
+    margin-bottom: 1rem;
+  }
 }
