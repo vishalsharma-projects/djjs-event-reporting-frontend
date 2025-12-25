@@ -417,22 +417,24 @@
     <div class="common-stepper">
       <h5 class="mb-3">Event Media</h5>
       <div class="row g-3">
-        <div class="col-md-3">
+        <div class="col-md-4">
           <label class="form-label">Media Coverage Type</label>
           <select class="form-select" formControlName="mediaCoverageType">
             <option value="">Select</option>
             <option *ngFor="let type of mediaTypes" [value]="type">{{ type }}</option>
           </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
           <label class="form-label">Company name</label>
           <input type="text" class="form-control" formControlName="companyName" placeholder="Enter" />
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
           <label class="form-label">Company email</label>
           <input type="email" class="form-control" formControlName="companyEmail" placeholder="Enter" />
         </div>
-        <div class="col-md-3">
+      </div>
+      <div class="row g-3 mt-2">
+        <div class="col-md-4">
           <label class="form-label">Company website</label>
           <input type="url" class="form-control" formControlName="companyWebsite" placeholder="Enter" />
         </div>
@@ -443,7 +445,7 @@
     <div class="common-stepper">
       <h5 class="mb-3">Provide Details of Media Person</h5>
       <div class="row g-3">
-        <div class="col-md-2">
+        <div class="col-md-4">
           <label class="form-label">Gender</label>
           <select class="form-select" formControlName="mediaGender">
             <option value="">Select</option>
@@ -452,7 +454,7 @@
             <option>Other</option>
           </select>
         </div>
-        <div class="col-md-2">
+        <div class="col-md-4">
           <label class="form-label">Prefix</label>
           <select class="form-select" formControlName="mediaPrefix">
             <option value="">Select</option>
@@ -461,15 +463,17 @@
             <option>Ms.</option>
           </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
           <label class="form-label">First name</label>
           <input type="text" class="form-control" formControlName="mediaFirstName" />
         </div>
-        <div class="col-md-2">
+      </div>
+      <div class="row g-3 mt-2">
+        <div class="col-md-4">
           <label class="form-label">Middle name</label>
           <input type="text" class="form-control" formControlName="mediaMiddleName" />
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
           <label class="form-label">Last name</label>
           <input type="text" class="form-control" formControlName="mediaLastName" />
         </div>
@@ -553,37 +557,41 @@
       <h5 class=" mb-3">Promotional Material Used</h5>
       
       <!-- Dynamic Material Type Entries -->
-      <div *ngFor="let material of materialTypes; let i = index" class="row g-3 mb-3">
-        <div class="col-md-3">
-          <label class="form-label">Material type</label>
-          <select class="form-select" [(ngModel)]="material.materialType" [ngModelOptions]="{standalone: true}" [disabled]="loadingMaterialTypes">
-            <option value="">Select</option>
-            <option *ngFor="let materialOption of materialTypeOptions" [value]="materialOption">{{ materialOption }}</option>
-          </select>
-          <small *ngIf="loadingMaterialTypes" class="text-muted">Loading material types...</small>
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">Quantity</label>
-          <input type="text" class="form-control" [(ngModel)]="material.quantity" [ngModelOptions]="{standalone: true}" />
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">Size</label>
-          <input type="text" class="form-control" [(ngModel)]="material.size" [ngModelOptions]="{standalone: true}" />
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Custom dimension</label>
-          <div class="input-group">
-            <input type="number" class="form-control" placeholder="Height" [(ngModel)]="material.customHeight" [ngModelOptions]="{standalone: true}" />
-            <span class="input-group-text">x</span>
-            <input type="number" class="form-control" placeholder="Width" [(ngModel)]="material.customWidth" [ngModelOptions]="{standalone: true}" />
-            <span class="input-group-text">inch</span>
+      <div *ngFor="let material of materialTypes; let i = index" class="mb-3">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Material type</label>
+            <select class="form-select" [(ngModel)]="material.materialType" [ngModelOptions]="{standalone: true}" [disabled]="loadingMaterialTypes">
+              <option value="">Select</option>
+              <option *ngFor="let materialOption of materialTypeOptions" [value]="materialOption">{{ materialOption }}</option>
+            </select>
+            <small *ngIf="loadingMaterialTypes" class="text-muted">Loading material types...</small>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Quantity</label>
+            <input type="text" class="form-control" [(ngModel)]="material.quantity" [ngModelOptions]="{standalone: true}" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Size</label>
+            <input type="text" class="form-control" [(ngModel)]="material.size" [ngModelOptions]="{standalone: true}" />
           </div>
         </div>
-        <div class="col-md-1 d-flex align-items-end">
-          <button type="button" class="btn btn-warning btn-xs" (click)="removeMaterialType(i)"
-            [disabled]="materialTypes.length === 1">
-            <i class="fas fa-trash"></i>
-          </button>
+        <div class="row g-3 mt-2">
+          <div class="col-md-4">
+            <label class="form-label">Custom dimension</label>
+            <div class="input-group">
+              <input type="number" class="form-control" placeholder="Height" [(ngModel)]="material.customHeight" [ngModelOptions]="{standalone: true}" />
+              <span class="input-group-text">x</span>
+              <input type="number" class="form-control" placeholder="Width" [(ngModel)]="material.customWidth" [ngModelOptions]="{standalone: true}" />
+              <span class="input-group-text">inch</span>
+            </div>
+          </div>
+          <div class="col-md-4 d-flex align-items-end">
+            <button type="button" class="btn btn-warning btn-xs" (click)="removeMaterialType(i)"
+              [disabled]="materialTypes.length === 1">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -681,7 +689,7 @@
       <h5 class="mb-3">Add Special Guests</h5>
       <div class="row g-3">
         <!-- Gender -->
-        <div class="col-md-2">
+        <div class="col-md-4">
           <label class="form-label">Gender</label>
           <select class="form-select" formControlName="guestGender">
             <option value="">Select</option>
@@ -692,7 +700,7 @@
         </div>
 
         <!-- Prefix -->
-        <div class="col-md-2">
+        <div class="col-md-4">
           <label class="form-label">Prefix</label>
           <select class="form-select" formControlName="guestPrefix">
             <option value="">Select</option>
@@ -703,15 +711,17 @@
         </div>
 
         <!-- Names -->
-        <div class="col-md-3">
+        <div class="col-md-4">
           <label class="form-label">First name</label>
           <input type="text" class="form-control" formControlName="guestFirstName" />
         </div>
-        <div class="col-md-2">
+      </div>
+      <div class="row g-3 mt-2">
+        <div class="col-md-4">
           <label class="form-label">Middle name</label>
           <input type="text" class="form-control" formControlName="guestMiddleName" />
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
           <label class="form-label">Last name</label>
           <input type="text" class="form-control" formControlName="guestLastName" />
         </div>
@@ -740,7 +750,7 @@
 
       <div class="row g-3 mt-2">
         <!-- City -->
-        <div class="col-md-2">
+        <div class="col-md-4">
           <label class="form-label">City</label>
           <select class="form-select" formControlName="guestCity" [disabled]="filteredCities.length === 0">
             <option value="">{{ filteredCities.length === 0 ? 'Select State first' : 'Select' }}</option>
@@ -749,7 +759,7 @@
         </div>
 
         <!-- State -->
-        <div class="col-md-2">
+        <div class="col-md-4">
           <label class="form-label">State</label>
           <select class="form-select" formControlName="guestState">
             <option value="">Select</option>
@@ -762,6 +772,8 @@
           <label class="form-label">Personal number</label>
           <input type="text" class="form-control" formControlName="guestPersonalNumber" placeholder="Enter number" />
         </div>
+      </div>
+      <div class="row g-3 mt-2">
         <div class="col-md-4">
           <label class="form-label">Contact person</label>
           <input type="text" class="form-control" formControlName="guestContactPerson" />
@@ -770,25 +782,25 @@
 
       <div class="row g-3 mt-2">
         <!-- Contact Person -->
-
-
-        <div class="col-md-3">
-          <label class="form-label">Contact person’s number</label>
+        <div class="col-md-4">
+          <label class="form-label">Contact person's number</label>
           <input type="text" class="form-control" formControlName="guestContactPersonNumber" />
         </div>
 
         <!-- Reference Branch -->
-        <div class="col-md-3">
+        <div class="col-md-4">
           <label class="form-label">Reference branch ID</label>
           <input type="text" class="form-control" formControlName="guestReferenceBranchId" />
         </div>
 
         <!-- Reference Volunteer -->
-        <div class="col-md-3">
+        <div class="col-md-4">
           <label class="form-label">Reference volunteer ID</label>
           <input type="text" class="form-control" formControlName="guestReferenceVolunteerId" />
         </div>
-        <div class="col-md-3">
+      </div>
+      <div class="row g-3 mt-2">
+        <div class="col-md-4">
           <label class="form-label">Reference person name</label>
           <input type="text" class="form-control" formControlName="guestReferencePersonName" />
         </div>
@@ -857,7 +869,7 @@
       <h5 class="mb-3">Add Volunteer</h5>
       <div class="row g-3">
         <!-- Branch Code -->
-        <div class="col-md-3">
+        <div class="col-md-4">
           <label class="form-label">Branch Code</label>
           <input type="text" class="form-control" formControlName="volBranchId" placeholder="Enter" />
         </div>
@@ -903,7 +915,7 @@
         </div>
 
         <!-- Volunteer's Name -->
-        <div class="col-md-5">
+        <div class="col-md-4">
           <label class="form-label">Volunteer's name</label>
           <input type="text" class="form-control" formControlName="volName" placeholder="Enter" />
         </div>
@@ -911,20 +923,20 @@
 
       <div class="row g-3 mt-2">
         <!-- Contact Number -->
-        <div class="col-md-3">
+        <div class="col-md-4">
           <label class="form-label">Contact Number</label>
           <input type="tel" class="form-control" formControlName="volContact" placeholder="Enter contact number"
             pattern="[0-9]*" maxlength="15" />
         </div>
 
         <!-- No. of Days -->
-        <div class="col-md-2">
+        <div class="col-md-4">
           <label class="form-label">No. of Days</label>
           <input type="number" class="form-control" formControlName="volDays" placeholder="Enter number" />
         </div>
 
         <!-- Seva Involved -->
-        <div class="col-md-3">
+        <div class="col-md-4">
           <label class="form-label">Seva involved</label>
           <select class="form-select" formControlName="volSeva">
             <option value="">Select</option>
@@ -935,7 +947,8 @@
             <option>Hospitality</option>
           </select>
         </div>
-
+      </div>
+      <div class="row g-3 mt-2">
         <!-- Mention Seva -->
         <div class="col-md-4">
           <label class="form-label">Mention seva</label>

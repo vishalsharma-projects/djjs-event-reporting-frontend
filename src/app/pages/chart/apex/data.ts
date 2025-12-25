@@ -11,7 +11,7 @@ const linewithDataChart: ChartType = {
             show: false
         }
     },
-    colors: ['#556ee6', '#34c38f'],
+    colors: ['#ff9800', '#34c38f'],
     dataLabels: {
         enabled: true,
     },
@@ -100,7 +100,7 @@ const basicColumChart: ChartType = {
         width: 2,
         colors: ['transparent']
     },
-    colors: ['#34c38f', '#556ee6', '#f46a6a'],
+    colors: ['#34c38f', '#ff9800', '#f46a6a'],
     series: [{
         name: 'Net Profit',
         data: [46, 57, 59, 54, 62, 58, 64, 60, 66]
@@ -145,7 +145,7 @@ const dashedLineChart: ChartType = {
             show: false,
         }
     },
-    colors: ['#556ee6', '#f46a6a', '#34c38f'],
+    colors: ['#ff9800', '#f46a6a', '#34c38f'],
     dataLabels: {
         enabled: false
     },
@@ -217,7 +217,7 @@ const columnlabelChart: ChartType = {
             show: false
         }
     },
-    colors: ['#556ee6'],
+    colors: ['#ff9800'],
     plotOptions: {
         bar: {
             dataLabels: {
@@ -353,7 +353,7 @@ const lineColumAreaChart: ChartType = {
             columnWidth: '50%'
         }
     },
-    colors: ['#f46a6a', '#556ee6', '#34c38f'],
+    colors: ['#f46a6a', '#ff9800', '#34c38f'],
     series: [{
         name: 'Team A',
         type: 'column',
@@ -418,7 +418,7 @@ const simplePieChart: ChartType = {
     },
     series: [44, 55, 41, 17, 15],
     labels: ['Series 1', 'Series 2', 'Series 3', 'Series 4', 'Series 5'],
-    colors: ['#34c38f', '#556ee6', '#f46a6a', '#50a5f1', '#f1b44c'],
+    colors: ['#34c38f', '#ff9800', '#f46a6a', '#50a5f1', '#f1b44c'],
     legend: {
         show: true,
         position: 'bottom',
@@ -461,7 +461,7 @@ const splineAreaChart: ChartType = {
         name: 'series2',
         data: [32, 60, 34, 46, 34, 52, 41]
     }],
-    colors: ['#556ee6', '#34c38f'],
+    colors: ['#ff9800', '#34c38f'],
     xaxis: {
         type: 'datetime',
         // tslint:disable-next-line: max-line-length
@@ -494,7 +494,7 @@ const donutChart: ChartType = {
         offsetY: -10
     },
     labels: ['Series 1', 'Series 2', 'Series 3', 'Series 4', 'Series 5'],
-    colors: ['#34c38f', '#556ee6', '#f46a6a', '#50a5f1', '#f1b44c'],
+    colors: ['#34c38f', '#ff9800', '#f46a6a', '#50a5f1', '#f1b44c'],
     responsive: [{
         breakpoint: 600,
         options: {
@@ -535,7 +535,7 @@ const basicRadialBarChart: ChartType = {
             }
         }
     },
-    colors: ['#556ee6', '#34c38f', '#f46a6a', '#f1b44c'],
+    colors: ['#ff9800', '#34c38f', '#f46a6a', '#f1b44c'],
     series: [44, 55, 67, 83],
     labels: ['Computer', 'Tablet', 'Laptop', 'Mobile'],
 };
@@ -582,12 +582,12 @@ const dumbbellTimelineCharts: ChartType = {
             enabled: false
         }
     },
-    colors: ['#556ee6','#34c38f'],
+    colors: ['#ff9800','#34c38f'],
     plotOptions: {
         bar: {
             horizontal: true,
             isDumbbell: true,
-            dumbbellColors:  ['#556ee6','#34c38f']
+            dumbbellColors:  ['#ff9800','#34c38f']
         }
     },
     title: {
@@ -650,7 +650,7 @@ const funnelCharts: ChartType = {
             enabled: true,
         },
     },
-    colors: ['#556ee6'],
+    colors: ['#ff9800'],
     title: {
         text: 'Recruitment Funnel',
         align: 'middle',
@@ -714,12 +714,12 @@ const dumbbellcolumnCharts: ChartType = {
             enabled: false
         }
     },
-    colors: ['#556ee6','#34c38f'],
+    colors: ['#ff9800','#34c38f'],
     plotOptions: {
         bar: {
             isDumbbell: true,
             columnWidth: 3,
-            dumbbellColors: ['#556ee6','#34c38f'],
+            dumbbellColors: ['#ff9800','#34c38f'],
         }
     },
     legend: {
@@ -815,7 +815,7 @@ const rangeareaChart: ChartType = {
         height: 350,
         type: 'rangeArea'
     },
-    colors: ['#556ee6'],
+    colors: ['#ff9800'],
     stroke: {
         curve: 'straight'
     },

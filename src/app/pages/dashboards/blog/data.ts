@@ -15,7 +15,7 @@ var visitorsOptions: ChartType = {
             show: false
         },
     },
-    colors: ['#556ee6', '#f1b44c'],
+    colors: ['#ff9800', '#f1b44c'],
     dataLabels: {
         enabled: false
     },

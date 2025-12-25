@@ -2471,7 +2471,7 @@ export class AddEventComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Update general details form
+    // Update general details form (except location fields which need sequential loading)
     this.generalDetailsForm.patchValue({
       eventType: event.event_type?.name || '',
       eventCategory: event.event_category?.name || '',
@@ -2483,14 +2483,66 @@ export class AddEventComponent implements OnInit, OnDestroy {
       dailyStartTime: event.daily_start_time || '',
       dailyEndTime: event.daily_end_time || '',
       spiritualOrator: event.spiritual_orator || '',
-      country: event.country || '',
-      state: event.state || '',
-      district: event.district || '',
-      city: event.city || '',
       pincode: event.pincode || '',
       postOffice: event.post_office || '',
       address: event.address || ''
     });
+
+    // Load location dropdowns sequentially before setting values
+    if (event.country) {
+      // Find country by name and set it
+      const countryObj = this.countries.find(c => c.name === event.country);
+      if (countryObj) {
+        this.generalDetailsForm.patchValue({ country: event.country }, { emitEvent: false });
+        // Load states and districts for this country
+        this.loadStatesByCountry(countryObj.id);
+        this.loadDistrictsByCountry(countryObj.id);
+        
+        // Wait for states to load, then set state and load cities
+        setTimeout(() => {
+          if (event.state) {
+            const stateObj = this.filteredStates.find(s => s.name === event.state);
+            if (stateObj) {
+              this.generalDetailsForm.patchValue({ state: event.state }, { emitEvent: false });
+              // Load districts by state and cities
+              this.loadDistrictsByStateAndCountry(stateObj.id, countryObj.id);
+              this.loadCitiesByState(stateObj.id);
+              
+              // Wait for districts and cities to load, then set their values
+              setTimeout(() => {
+                if (event.district) {
+                  const districtExists = this.filteredDistricts.find(d => d.name === event.district);
+                  if (districtExists) {
+                    this.generalDetailsForm.patchValue({ district: event.district }, { emitEvent: false });
+                  }
+                }
+                if (event.city) {
+                  const cityExists = this.filteredCities.find(c => c.name === event.city);
+                  if (cityExists) {
+                    this.generalDetailsForm.patchValue({ city: event.city }, { emitEvent: false });
+                  }
+                }
+              }, 500);
+            } else {
+              // State not found, just set the value
+              this.generalDetailsForm.patchValue({ state: event.state }, { emitEvent: false });
+            }
+          }
+        }, 500);
+      } else {
+        // Country not found in list, just set the value
+        this.generalDetailsForm.patchValue({ country: event.country }, { emitEvent: false });
+        if (event.state) {
+          this.generalDetailsForm.patchValue({ state: event.state }, { emitEvent: false });
+        }
+        if (event.district) {
+          this.generalDetailsForm.patchValue({ district: event.district }, { emitEvent: false });
+        }
+        if (event.city) {
+          this.generalDetailsForm.patchValue({ city: event.city }, { emitEvent: false });
+        }
+      }
+    }
 
     // Update involved participants form
     this.involvedParticipantsForm.patchValue({

@@ -272,7 +272,7 @@ const emailSentBarChart: ChartType = {
     dataLabels: {
         enabled: false
     },
-    colors: ['#556ee6', '#34c38f', '#f1b44c', '#50a5f1'],
+    colors: ['#ff9800', '#34c38f', '#f1b44c', '#50a5f1'],
     markers: {
         size: 0
     },
@@ -360,7 +360,7 @@ const receivedTimeChart: ChartType = {
     dataLabels: {
         enabled: false
     },
-    colors: ['#556ee6', '#34c38f', '#f1b44c', '#50a5f1'],
+    colors: ['#ff9800', '#34c38f', '#f1b44c', '#50a5f1'],
     markers: {
         hover: {
             sizeOffset: 4

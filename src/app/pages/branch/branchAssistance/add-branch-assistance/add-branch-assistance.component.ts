@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { UserService } from 'src/app/core/services/branch-assistance.service'; // Adjust path
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
@@ -29,10 +29,28 @@ export class AddBranchAssistanceComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    // Custom validator for name - no numeric characters
+    const namePattern = /^[a-zA-Z\s]+$/;
+    const nameValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+      if (control.value && !namePattern.test(control.value)) {
+        return { numericNotAllowed: true };
+      }
+      return null;
+    };
+
+    // Custom validator for contact number - 10 digits or +91XXXXXXXXXX format
+    const contactPattern = /^(\+91[0-9]{10}|[0-9]{10})$/;
+    const contactValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+      if (control.value && !contactPattern.test(control.value)) {
+        return { invalidFormat: true };
+      }
+      return null;
+    };
+
     this.userForm = this.fb.group({
-      name: ['', [Validators.required]],
+      name: ['', [Validators.required, nameValidator]],
       email: ['', [Validators.required, Validators.email]],
-      contact_number: ['', [Validators.required]],
+      contact_number: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(13), contactValidator]],
       role_id: ['', [Validators.required]]
     });
 

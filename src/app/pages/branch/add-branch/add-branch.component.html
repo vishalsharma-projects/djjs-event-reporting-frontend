@@ -1,47 +1,6 @@
 <app-page-title [title]="'Add Branch'" [breadcrumbItems]="breadCrumbItems"></app-page-title>
 
 <form [formGroup]="branchForm" (ngSubmit)="onSubmit()" class="branch-form">
-<div class="card profile-completion-card">
-  <div class="card-body d-flex align-items-center">
-
-    <!-- Circular Progress -->
-    <div class="completion-circle me-4">
-      <svg class="progress-ring" width="100" height="100">
-        <circle
-          class="progress-ring__background"
-          stroke="#e9ecef"
-          stroke-width="8"
-          fill="transparent"
-          r="45"
-          cx="50"
-          cy="50"
-        />
-        <circle
-          class="progress-ring__progress"
-          stroke="#ff6b35"
-          stroke-width="8"
-          fill="transparent"
-          r="45"
-          cx="50"
-          cy="50"
-          [attr.stroke-dasharray]="circumference"
-          [attr.stroke-dashoffset]="circumference - (completion / 100) * circumference"
-        />
-      </svg>
-      <div class="completion-text">
-        {{ completion }}%
-      </div>
-    </div>
-
-    <!-- Branch Details -->
-    <div class="branch-details">
-      <h5 class="mb-1">{{ branchForm.get('name')?.value || 'New Branch' }}</h5>
-      <p class="mb-1"><strong>Email:</strong> {{ branchForm.get('email')?.value || 'Not set' }}</p>
-      <p class="mb-0"><strong>Coordinator:</strong> {{ getCoordinatorName() || 'Not selected' }}</p>
-    </div>
-
-  </div>
-</div>
   <!-- Branch Details Content -->
   <div class="p-3">
       <!-- Branch details -->
@@ -71,6 +30,10 @@
                 Contact number is required
               </div>
             </div>
+            <div class="col-md-4">
+              <label class="form-label">Branch Code</label>
+              <input class="form-control" formControlName="branchCode" placeholder="Enter branch code" maxlength="50" />
+            </div>
           </div>
           <div class="row g-3 mt-1">
             <div class="col-md-4">
@@ -97,11 +60,17 @@
             </div>
           </div>
           <div class="row g-3 mt-1">
-            <div class="form-check form-switch">
-              <input class="form-check-input orange-switch" type="checkbox" id="toggleParent" checked>
-              <label class="form-check-label" for="toggleSwitch">
-                is a Parent Branch
-              </label>
+            <div class="col-md-4">
+              <label class="form-label">Open days</label>
+              <input class="form-control" formControlName="openDays" placeholder="Enter days" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Daily start time</label>
+              <input type="time" class="form-control" formControlName="dailyStartTime" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Daily end time</label>
+              <input type="time" class="form-control" formControlName="dailyEndTime" />
             </div>
           </div>
 
@@ -234,55 +203,7 @@
         </div>
       </section>
 
-      <!-- Daily operation -->
-      <section class="card mb-4">
-        <div class="card-body">
-          <h5 class="mb-3">Daily operation</h5>
-          <div class="row g-3">
-            <div class="col-md-4">
-              <label class="form-label">Open days</label>
-              <input class="form-control" formControlName="openDays" placeholder="Enter days" />
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Daily start time</label>
-              <input type="time" class="form-control" formControlName="dailyStartTime" />
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Daily end time</label>
-              <input type="time" class="form-control" formControlName="dailyEndTime" />
-            </div>
-          </div>
-        </div>
-      </section>
 
-      <!-- Additional Branch Information -->
-      <section class="card mb-4">
-        <div class="card-body">
-          <h5 class="mb-3">Additional Information</h5>
-          <div class="row g-3">
-            <div class="col-md-3">
-              <label class="form-label">Branch Code</label>
-              <input class="form-control" formControlName="branchCode" placeholder="Enter branch code" maxlength="50" />
-            </div>
-            <div class="col-md-3">
-              <label class="form-label">Region ID</label>
-              <input type="number" class="form-control" formControlName="regionId" placeholder="Enter region ID" />
-            </div>
-            <div class="col-md-3">
-              <div class="form-check form-switch mt-4">
-                <input class="form-check-input orange-switch" type="checkbox" formControlName="status" id="statusSwitch">
-                <label class="form-check-label" for="statusSwitch">Status (Active)</label>
-              </div>
-            </div>
-            <div class="col-md-3">
-              <div class="form-check form-switch mt-4">
-                <input class="form-check-input orange-switch" type="checkbox" formControlName="ncr" id="ncrSwitch">
-                <label class="form-check-label" for="ncrSwitch">NCR</label>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
   </div>
   <!-- Actions -->

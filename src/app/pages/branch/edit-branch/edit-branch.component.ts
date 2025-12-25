@@ -85,7 +85,6 @@ export class EditBranchComponent implements OnInit {
             address: ['', Validators.required],
             districts: ['', Validators.required],
             areaCovered: [''],
-            isParentBranch: [false], // Toggle for parent branch
             childBranches: this.fb.array([]), // FormArray for child branches
             infrastructure: this.fb.array([
                 this.fb.group({
@@ -338,8 +337,6 @@ export class EditBranchComponent implements OnInit {
                                 });
                                 this.childBranches.push(childGroup);
                             });
-                            // Set isParentBranch to true if child branches exist
-                            this.branchForm.patchValue({ isParentBranch: true }, { emitEvent: false });
                         }
                     },
                     error: (error) => {
@@ -365,9 +362,6 @@ export class EditBranchComponent implements OnInit {
                     }
                 }
 
-                // Check if branch has child branches to determine isParentBranch
-                const hasChildBranches = this.childBranches.length > 0;
-
                 // Prepare form values object
                 const formValues: any = {
                     coordinator: coordinatorId || '',
@@ -383,8 +377,7 @@ export class EditBranchComponent implements OnInit {
                     status: branch.status !== undefined ? branch.status : true,
                     ncr: branch.ncr !== undefined ? branch.ncr : false,
                     regionId: branch.region_id ? branch.region_id.toString() : '',
-                    branchCode: branch.branch_code || '',
-                    isParentBranch: hasChildBranches
+                    branchCode: branch.branch_code || ''
                 };
 
                 // Only set country if we found it
@@ -858,8 +851,8 @@ export class EditBranchComponent implements OnInit {
                     const coordinator = this.coordinatorsList.find(c => c.id.toString() === formValue.coordinator);
                     const coordinatorName = coordinator?.name || formValue.coordinator || '';
 
-                    // Process child branches if parent branch is enabled
-                    if (this.branchForm.get('isParentBranch')?.value && this.childBranches.length > 0) {
+                    // Process child branches if any exist
+                    if (this.childBranches.length > 0) {
                         const childBranchOperations: any[] = [];
 
                         this.childBranches.controls.forEach(control => {

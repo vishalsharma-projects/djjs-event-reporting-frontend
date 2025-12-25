@@ -106,7 +106,7 @@ const pieChart: EChartsOption = {
             ],
         }
     ],
-    color: ['#556ee6', '#f1b44c', '#f46a6a', '#50a5f1', '#34c38f'],
+    color: ['#ff9800', '#f1b44c', '#f46a6a', '#50a5f1', '#34c38f'],
 };
 
 const customPieChart: EChartsOption = {
@@ -171,7 +171,7 @@ const lineBarChart: EChartsOption = {
             saveAsImage: { title: "Download Image" }
         }
     },
-    color: ['#34c38f', '#556ee6', '#f46a6a'],
+    color: ['#34c38f', '#ff9800', '#f46a6a'],
     legend: {
         data: ['Evaporation', 'Precipitation', 'Average Temperature'],
         textStyle: { color: '#8791af' }
@@ -257,7 +257,7 @@ const donughnutChart: EChartsOption = {
         trigger: 'item',
         formatter: "{a} <br/>{b}: {c} ({d}%)"
     },
-    color: ['#556ee6', '#f1b44c', '#f46a6a', '#50a5f1', '#34c38f'],
+    color: ['#ff9800', '#f1b44c', '#f46a6a', '#50a5f1', '#34c38f'],
     legend: {
         orient: 'vertical',
         left: 'left',
@@ -336,7 +336,7 @@ const bubbleChart: EChartsOption = {
             shadowBlur: 10,
             shadowColor: 'rgba(85, 110, 230, 0.5)',
             shadowOffsetY: 5,
-            color: '#556ee6'
+            color: '#ff9800'
         }
     }, {
         name: '2019',
@@ -485,7 +485,7 @@ const CandleStickChart: EChartsOption = {
         top: '2%',
         containLabel: true
     },
-    color: ['#556ee6', '#34c38f'],
+    color: ['#ff9800', '#34c38f'],
     xAxis: {
         data: ['2017-10-24', '2017-10-25', '2017-10-26', '2017-10-27'],
         axisLine: {

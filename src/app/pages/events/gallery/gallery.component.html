@@ -14,30 +14,16 @@
   <!-- Right: Types + Gallery -->
   <div class="gallery-right">
 
-    <!-- Event Info & Upload Section -->
-    <div class="event-gallery-header mb-3">
-      <div class="alert alert-info mb-2" *ngIf="eventId">
-        <div class="d-flex justify-content-between align-items-center">
-          <div>
-            <i class="pi pi-images me-2"></i>
-            <strong>Event Gallery</strong> - Event ID: {{ eventId }}
-            <span class="badge bg-primary ms-2">{{ items.length }} file(s)</span>
-          </div>
-          <!-- <button class="btn btn-sm btn-outline-secondary" (click)="eventId = null; loadGalleryItems()">
-            <i class="pi pi-times me-1"></i> Show All Events
-          </button> -->
-        </div>
-      </div>
-
-      <!-- Upload Section - Only show when event ID is present -->
-      <div class="upload-section" *ngIf="eventId">
+    <!-- Header with Upload Button -->
+    <div class="gallery-header-section mb-3">
+      <!-- Upload Button - Top Right -->
+      <div class="upload-button-container" *ngIf="eventId">
         <input type="file" #fileInput (change)="onFileSelected($event)" multiple
           accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" style="display: none;">
         <button class="btn btn-primary" (click)="fileInput.click()" [disabled]="uploading || loading">
           <i class="pi pi-upload me-2"></i>
-          {{ uploading ? 'Uploading...' : 'Upload Files to This Event' }}
+          {{ uploading ? 'Uploading...' : 'Upload File' }}
         </button>
-        <small class="text-muted ms-2">Upload images, videos, audio, or documents</small>
         <div class="upload-progress mt-2" *ngIf="uploading">
           <div class="progress" style="height: 20px;">
             <div class="progress-bar progress-bar-striped progress-bar-animated" [style.width.%]="uploadProgress"
@@ -51,19 +37,12 @@
           </small>
         </div>
       </div>
-
-      <!-- No Event Selected Message -->
-      <div class="alert alert-warning" *ngIf="!eventId">
-        <i class="pi pi-exclamation-triangle me-2"></i>
-        <strong>No Event Selected</strong> - Please select an event from the events list to view and upload files.
-      </div>
     </div>
 
-    <!-- Horizontal Type Tabs -->
-    <div class="tabs">
-      <button *ngFor="let type of types" (click)="selectType(type)" [class.active]="type === selectedType">
-        {{ type | titlecase }}
-      </button>
+    <!-- No Event Selected Message -->
+    <div class="alert alert-warning mb-3" *ngIf="!eventId">
+      <i class="pi pi-exclamation-triangle me-2"></i>
+      <strong>No Event Selected</strong> - Please select an event from the events list to view and upload files.
     </div>
 
     <!-- Empty State -->

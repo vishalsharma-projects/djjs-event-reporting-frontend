@@ -201,7 +201,7 @@ export class SaasComponent implements OnInit, AfterViewInit {
                 name: "Product E",
                 text: "Quis autem iure",
                 sales: 14,
-                chartVariant: "#556ee6"
+                chartVariant: "#ff9800"
               },
               {
                 name: "Product F",
@@ -224,7 +224,7 @@ export class SaasComponent implements OnInit, AfterViewInit {
                 name: "Product A",
                 text: "Neque quis est",
                 sales: 37,
-                chartVariant: "#556ee6"
+                chartVariant: "#ff9800"
               },
               {
                 name: "Product B",
@@ -259,7 +259,7 @@ export class SaasComponent implements OnInit, AfterViewInit {
                 name: "Product H",
                 text: "Quis autem iure",
                 sales: 42,
-                chartVariant: "#556ee6"
+                chartVariant: "#ff9800"
               },
               {
                 name: "Product I",
@@ -288,7 +288,7 @@ export class SaasComponent implements OnInit, AfterViewInit {
                 name: "Product B",
                 text: "Quis autem iure",
                 sales: 72,
-                chartVariant: "#556ee6"
+                chartVariant: "#ff9800"
               },
               {
                 name: "Product C",
@@ -311,7 +311,7 @@ export class SaasComponent implements OnInit, AfterViewInit {
                 name: "Product A",
                 text: "Neque quis est",
                 sales: 37,
-                chartVariant: "#556ee6"
+                chartVariant: "#ff9800"
               },
               {
                 name: "Product B",

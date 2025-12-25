@@ -39,7 +39,7 @@ export class FilemanagerComponent implements OnInit {
           enabled: true
         }
       },
-      colors: ['#556ee6'],
+      colors: ['#ff9800'],
       plotOptions: {
         radialBar: {
           startAngle: -90,

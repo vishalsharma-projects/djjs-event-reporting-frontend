@@ -39,7 +39,7 @@ const revenueBarChart: ChartType = {
         opacity: 1
 
     },
-    colors: ['#556ee6'],
+    colors: ['#ff9800'],
 };
 
 const statData = [

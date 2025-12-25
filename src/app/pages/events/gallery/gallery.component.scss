@@ -55,19 +55,30 @@
   padding: 10px;
 }
 
+/* Header section with upload button */
+.gallery-header-section {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  width: 100%;
+}
+
 /* Horizontal type tabs */
 .tabs {
   display: flex;
   gap: 10px;
-  margin-bottom: 15px;
+  flex: 1;
 }
 
 .tabs button {
-  border-radius: 6px;
+  border-radius: 8px;
   font-weight: 500;
   border: none;
-  padding: 8px 14px;
+  padding: 8px 16px;
   transition: all 0.3s ease;
+  background-color: #f5f5f5;
+  color: #333;
+  cursor: pointer;
 }
 
 .tabs button.active {
@@ -75,9 +86,18 @@
   color: white;
 }
 
-.tabs button:hover {
-  background-color: #fb8c00;
-  color: white;
+.tabs button:not(.active):hover {
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+/* Upload button container */
+.upload-button-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: fit-content;
+  margin-left: auto;
 }
 
 /* Thumbnail with overlay */

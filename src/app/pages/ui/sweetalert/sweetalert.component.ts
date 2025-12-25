@@ -63,7 +63,7 @@ export class SweetalertComponent implements OnInit {
       text: 'Modal with a custom image.',
       imageUrl: 'assets/images/logo-dark.png',
       imageHeight: 20,
-      confirmButtonColor: '#556ee6'
+      confirmButtonColor: '#ff9800'
     });
   }
   timer() {
@@ -117,7 +117,7 @@ export class SweetalertComponent implements OnInit {
       title: 'Custom width, padding, background.',
       width: 600,
       padding: 100,
-      confirmButtonColor: '#556ee6',
+      confirmButtonColor: '#ff9800',
       background:
         '#fff url(//subtlepatterns2015.subtlepatterns.netdna-cdn.com/patterns/geometry.png)'
     });
@@ -129,7 +129,7 @@ export class SweetalertComponent implements OnInit {
       showCancelButton: true,
       confirmButtonText: 'Submit',
       showLoaderOnConfirm: true,
-      confirmButtonColor: '#556ee6',
+      confirmButtonColor: '#ff9800',
       cancelButtonColor: '#f46a6a',
       preConfirm: email => {
         // eslint-disable-next-line no-unused-vars
@@ -160,7 +160,7 @@ export class SweetalertComponent implements OnInit {
 
     const { value: ipAddress } = await Swal.fire({
       title: 'Your public IP',
-      confirmButtonColor: "#556ee6",
+      confirmButtonColor: "#ff9800",
       confirmButtonText: 'Show my public IP',
       text: 'Your public IP will be received ' +
         'via AJAX request',

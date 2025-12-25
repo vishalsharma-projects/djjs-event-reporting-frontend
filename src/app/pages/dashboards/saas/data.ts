@@ -21,7 +21,7 @@ const earningLineChart: ChartType = {
     dataLabels: {
         enabled: false
     },
-    colors: ['#556ee6'],
+    colors: ['#ff9800'],
     stroke: {
         curve: 'smooth',
         width: 3,
@@ -35,7 +35,7 @@ const salesAnalyticsDonutChart: ChartType = {
         height: 240,
     },
     labels: ['Series A', 'Series B', 'Series C'],
-    colors: ['#556ee6', '#34c38f', '#f46a6a'],
+    colors: ['#ff9800', '#34c38f', '#f46a6a'],
     legend: {
         show: false,
     },

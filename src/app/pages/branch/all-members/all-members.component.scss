@@ -105,3 +105,12 @@ td {
   }
 }
 
+// Ensure p-toast appears above modals
+::ng-deep .p-toast {
+  z-index: 12000 !important;
+  
+  .p-toast-message {
+    z-index: 12001 !important;
+  }
+}
+

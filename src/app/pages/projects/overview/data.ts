@@ -35,7 +35,7 @@ const overviewBarChart: ChartType = {
             text: 'Week',
         }
     },
-    colors: ['#556ee6'],
+    colors: ['#ff9800'],
 };
 
 export { overviewBarChart };

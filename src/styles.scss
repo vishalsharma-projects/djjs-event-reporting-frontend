@@ -196,13 +196,13 @@ dropzone>.dropzone.dz-wrapper {
 
 
   li.slick-active button:before {
-    color: #556ee6 !important;
+    color: #ff9800 !important;
     font-size: x-small !important;
   }
 }
 
 .slick-dots li button:before {
-  color: #556ee6;
+  color: #ff9800;
   font-size: x-small !important;
 }
 
@@ -218,7 +218,7 @@ dropzone>.dropzone.dz-wrapper {
 }
 
 .ngx-slider .ngx-slider-tick.ngx-slider-selected {
-  background-color: #556ee6 !important;
+  background-color: #ff9800 !important;
 }
 
 // ==========================================
@@ -316,7 +316,7 @@ textarea,
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 
   &:focus {
-    border-color: #556ee6;
+    border-color: #ff9800;
     box-shadow: 0 0 0 0.2rem rgba(85, 110, 230, 0.15);
     transform: translateZ(0);
   }
@@ -750,7 +750,7 @@ form {
       left: 0;
       width: 0;
       height: 2px;
-      background-color: #556ee6;
+      background-color: #ff9800;
       transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 

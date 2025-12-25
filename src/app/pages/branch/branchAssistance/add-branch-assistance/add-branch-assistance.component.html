@@ -34,10 +34,13 @@
                 formControlName="name" 
                 placeholder="Enter Name" 
                 required 
+                pattern="[a-zA-Z\s]*"
+                title="Name cannot contain numbers"
               />
               <!-- Error Message for Name -->
               <div *ngIf="userForm.get('name')?.touched && userForm.get('name')?.invalid" class="text-danger">
                 <small *ngIf="userForm.get('name')?.hasError('required')">Name is required.</small>
+                <small *ngIf="userForm.get('name')?.hasError('numericNotAllowed')">Name cannot contain numeric characters.</small>
               </div>
             </div>
 
@@ -62,16 +65,23 @@
             <div class="col-md-4">
               <label for="contact_number" class="form-label">Contact Number</label>
               <input 
-                type="text" 
+                type="tel" 
                 class="form-control" 
                 formControlName="contact_number" 
                 placeholder="Enter Contact Number (10 digits or +91XXXXXXXXXX)" 
                 required 
+                minlength="10"
+                maxlength="13"
+                pattern="(\+91[0-9]{10}|[0-9]{10})"
+                title="Enter 10 digits or +91 followed by 10 digits"
               />
               <small class="form-text text-muted">Format: 10 digits (e.g., 9876543210) or +91XXXXXXXXXX</small>
               <!-- Error Message for Contact Number -->
               <div *ngIf="userForm.get('contact_number')?.touched && userForm.get('contact_number')?.invalid" class="text-danger">
                 <small *ngIf="userForm.get('contact_number')?.hasError('required')">Contact Number is required.</small>
+                <small *ngIf="userForm.get('contact_number')?.hasError('minlength')">Contact Number must be at least 10 digits.</small>
+                <small *ngIf="userForm.get('contact_number')?.hasError('maxlength')">Contact Number cannot exceed 13 characters.</small>
+                <small *ngIf="userForm.get('contact_number')?.hasError('invalidFormat')">Invalid format. Use 10 digits or +91XXXXXXXXXX.</small>
               </div>
             </div>
           </div>
@@ -81,7 +91,7 @@
             <div class="col-md-4">
               <label for="role_id" class="form-label">Role</label>
               <select 
-                class="form-control" 
+                class="form-select" 
                 formControlName="role_id" 
                 required
               >

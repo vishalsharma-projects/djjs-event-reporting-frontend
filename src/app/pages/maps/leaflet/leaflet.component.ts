@@ -64,7 +64,7 @@ export class LeafletComponent implements OnInit {
   };
   markersLayers = [
     circle([51.508, -0.11], { color: "#34c38f", fillColor: "#34c38f", radius: 500 }),
-    polygon([[51.509, -0.08], [51.503, -0.06], [51.51, -0.047],], { color: "#556ee6", fillColor: "#556ee6" }),
+    polygon([[51.509, -0.08], [51.503, -0.06], [51.51, -0.047],], { color: "#ff9800", fillColor: "#ff9800" }),
     marker([51.5, -0.09])
   ];
 
@@ -90,7 +90,7 @@ export class LeafletComponent implements OnInit {
   };
   popupLayers = [
     circle([51.508, -0.11], { color: "#34c38f", fillColor: "#34c38f", radius: 500 }).bindPopup("I am a circle."),
-    polygon([[51.509, -0.08], [51.503, -0.06], [51.51, -0.047],], { color: "#556ee6", fillColor: "#556ee6" }).bindPopup("I am a polygon."),
+    polygon([[51.509, -0.08], [51.503, -0.06], [51.51, -0.047],], { color: "#ff9800", fillColor: "#ff9800" }).bindPopup("I am a polygon."),
     marker([51.5, -0.09]).bindPopup("<b>Hello world!</b><br />I am a popup.")
   ];
 
