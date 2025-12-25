@@ -1,267 +1,142 @@
 <div class="modal-header">
-  <h5 class="modal-title">Media & Promotion</h5>
+  <h5 class="modal-title">Add Media Details</h5>
   <button type="button" class="btn-close" (click)="onClose()" aria-label="Close"></button>
 </div>
 <div class="modal-body">
   <form [formGroup]="mediaPromotionForm">
     <!-- Event Media Section -->
-    <div class="common-stepper">
-      <h5 class="mb-3">Event Media</h5>
-      <div class="row g-3">
-        <div class="col-md-4">
-          <label class="form-label">Media Coverage Type</label>
-          <select class="form-select" formControlName="mediaCoverageType">
-            <option value="">Select</option>
-            <option *ngFor="let type of mediaTypes" [value]="type">{{ type }}</option>
-          </select>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Company name</label>
-          <input type="text" class="form-control" formControlName="companyName" placeholder="Enter" />
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Company email</label>
-          <input type="email" class="form-control" formControlName="companyEmail" placeholder="Enter" />
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Media Coverage Type <span class="text-danger">*</span></label>
+        <ng-select formControlName="mediaCoverageType"
+          [items]="mediaTypes"
+          [searchable]="true"
+          [clearable]="true"
+          placeholder="Select Media Coverage Type"
+          [ngClass]="{'is-invalid': mediaPromotionForm.get('mediaCoverageType')?.invalid && mediaPromotionForm.get('mediaCoverageType')?.touched}">
+        </ng-select>
+        <div *ngIf="mediaPromotionForm.get('mediaCoverageType')?.invalid && mediaPromotionForm.get('mediaCoverageType')?.touched" class="invalid-feedback">
+          Media coverage type is required
         </div>
       </div>
-      <div class="row g-3 mt-2">
-        <div class="col-md-4">
-          <label class="form-label">Company website</label>
-          <input type="url" class="form-control" formControlName="companyWebsite" placeholder="Enter" />
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Company name <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" formControlName="companyName" placeholder="Enter company name"
+          [ngClass]="{'is-invalid': mediaPromotionForm.get('companyName')?.invalid && mediaPromotionForm.get('companyName')?.touched}" />
+        <div *ngIf="mediaPromotionForm.get('companyName')?.invalid && mediaPromotionForm.get('companyName')?.touched" class="invalid-feedback">
+          Company name is required
         </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Company email <span class="text-danger">*</span></label>
+        <input type="email" class="form-control" formControlName="companyEmail" placeholder="Enter company email"
+          [ngClass]="{'is-invalid': mediaPromotionForm.get('companyEmail')?.invalid && mediaPromotionForm.get('companyEmail')?.touched}" />
+        <div *ngIf="mediaPromotionForm.get('companyEmail')?.invalid && mediaPromotionForm.get('companyEmail')?.touched" class="invalid-feedback">
+          <span *ngIf="mediaPromotionForm.get('companyEmail')?.errors?.['required']">Company email is required</span>
+          <span *ngIf="mediaPromotionForm.get('companyEmail')?.errors?.['email']">Please enter a valid email</span>
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Company website</label>
+        <input type="url" class="form-control" formControlName="companyWebsite" placeholder="Enter company website" />
       </div>
     </div>
 
     <!-- Provide Details of Media Person Section -->
-    <div class="common-stepper">
-      <h5 class="mb-3">Provide Details of Media Person</h5>
-      <div class="row g-3">
-        <div class="col-md-4">
-          <label class="form-label">Gender</label>
-          <select class="form-select" formControlName="mediaGender">
-            <option value="">Select</option>
-            <option>Male</option>
-            <option>Female</option>
-            <option>Other</option>
-          </select>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Prefix</label>
-          <select class="form-select" formControlName="mediaPrefix">
-            <option value="">Select</option>
-            <option>Mr.</option>
-            <option>Mrs.</option>
-            <option>Ms.</option>
-          </select>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">First name</label>
-          <input type="text" class="form-control" formControlName="mediaFirstName" />
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Gender <span class="text-danger">*</span></label>
+        <ng-select formControlName="mediaGender"
+          [items]="['Male', 'Female', 'Other']"
+          [searchable]="true"
+          [clearable]="true"
+          placeholder="Select Gender"
+          [ngClass]="{'is-invalid': mediaPromotionForm.get('mediaGender')?.invalid && mediaPromotionForm.get('mediaGender')?.touched}">
+        </ng-select>
+        <div *ngIf="mediaPromotionForm.get('mediaGender')?.invalid && mediaPromotionForm.get('mediaGender')?.touched" class="invalid-feedback">
+          Gender is required
         </div>
       </div>
-      <div class="row g-3 mt-2">
-        <div class="col-md-4">
-          <label class="form-label">Middle name</label>
-          <input type="text" class="form-control" formControlName="mediaMiddleName" />
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Last name</label>
-          <input type="text" class="form-control" formControlName="mediaLastName" />
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Prefix <span class="text-danger">*</span></label>
+        <ng-select formControlName="mediaPrefix"
+          [items]="['Mr.', 'Mrs.', 'Ms.']"
+          [searchable]="true"
+          [clearable]="true"
+          placeholder="Select Prefix"
+          [ngClass]="{'is-invalid': mediaPromotionForm.get('mediaPrefix')?.invalid && mediaPromotionForm.get('mediaPrefix')?.touched}">
+        </ng-select>
+        <div *ngIf="mediaPromotionForm.get('mediaPrefix')?.invalid && mediaPromotionForm.get('mediaPrefix')?.touched" class="invalid-feedback">
+          Prefix is required
         </div>
       </div>
-      <div class="row g-3 mt-2">
-        <div class="col-md-4">
-          <label class="form-label">Designation</label>
-          <input type="text" class="form-control" formControlName="mediaDesignation" placeholder="Enter designation" />
+      <div class="col-md-6 mb-3">
+        <label class="form-label">First name <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" formControlName="mediaFirstName" placeholder="Enter first name"
+          [ngClass]="{'is-invalid': mediaPromotionForm.get('mediaFirstName')?.invalid && mediaPromotionForm.get('mediaFirstName')?.touched}" />
+        <div *ngIf="mediaPromotionForm.get('mediaFirstName')?.invalid && mediaPromotionForm.get('mediaFirstName')?.touched" class="invalid-feedback">
+          First name is required
         </div>
-        <div class="col-md-4">
-          <label class="form-label">Contact</label>
-          <input type="text" class="form-control" formControlName="mediaContact" placeholder="Enter phone number" />
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Middle name</label>
+        <input type="text" class="form-control" formControlName="mediaMiddleName" placeholder="Enter middle name" />
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Last name <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" formControlName="mediaLastName" placeholder="Enter last name"
+          [ngClass]="{'is-invalid': mediaPromotionForm.get('mediaLastName')?.invalid && mediaPromotionForm.get('mediaLastName')?.touched}" />
+        <div *ngIf="mediaPromotionForm.get('mediaLastName')?.invalid && mediaPromotionForm.get('mediaLastName')?.touched" class="invalid-feedback">
+          Last name is required
         </div>
-        <div class="col-md-4">
-          <label class="form-label">Email</label>
-          <input type="email" class="form-control" formControlName="mediaEmail" placeholder="Enter email" />
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Designation</label>
+        <input type="text" class="form-control" formControlName="mediaDesignation" placeholder="Enter designation" />
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Contact <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" formControlName="mediaContact" placeholder="Enter phone number"
+          [ngClass]="{'is-invalid': mediaPromotionForm.get('mediaContact')?.invalid && mediaPromotionForm.get('mediaContact')?.touched}" />
+        <div *ngIf="mediaPromotionForm.get('mediaContact')?.invalid && mediaPromotionForm.get('mediaContact')?.touched" class="invalid-feedback">
+          Contact is required
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Email <span class="text-danger">*</span></label>
+        <input type="email" class="form-control" formControlName="mediaEmail" placeholder="Enter email"
+          [ngClass]="{'is-invalid': mediaPromotionForm.get('mediaEmail')?.invalid && mediaPromotionForm.get('mediaEmail')?.touched}" />
+        <div *ngIf="mediaPromotionForm.get('mediaEmail')?.invalid && mediaPromotionForm.get('mediaEmail')?.touched" class="invalid-feedback">
+          <span *ngIf="mediaPromotionForm.get('mediaEmail')?.errors?.['required']">Email is required</span>
+          <span *ngIf="mediaPromotionForm.get('mediaEmail')?.errors?.['email']">Please enter a valid email</span>
         </div>
       </div>
     </div>
 
     <!-- Provide Details of Reference Person Section -->
-    <div class="common-stepper">
-      <h5 class="mb-3">Provide Details of Reference Person</h5>
-      <div class="row g-3">
-        <div class="col-md-4">
-          <label class="form-label">Reference branch ID</label>
-          <input type="text" class="form-control" formControlName="referenceBranchId" />
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Reference volunteer ID</label>
-          <input type="text" class="form-control" formControlName="referenceVolunteerId" />
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Reference person's name</label>
-          <input type="text" class="form-control" formControlName="referencePersonName" />
-        </div>
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Reference branch ID</label>
+        <input type="text" class="form-control" formControlName="referenceBranchId" placeholder="Enter reference branch ID" />
       </div>
-    </div>
-
-    <!-- Add Event Media Button and Table -->
-    <div class="common-stepper">
-      <div class="mt-3">
-        <button class="btn btn-warning btn-sm" type="button" (click)="onAddEventMedia()">+ Add Event Media</button>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Reference volunteer ID</label>
+        <input type="text" class="form-control" formControlName="referenceVolunteerId" placeholder="Enter reference volunteer ID" />
       </div>
-
-      <!-- Event Media Table -->
-      <div class="table-responsive mt-3">
-        <h6 class="mt-4">List of Event Media ({{ eventMediaList.length }})</h6>
-        <table class="table table-bordered align-middle">
-          <thead>
-            <tr>
-              <th>Action</th>
-              <th>Media Coverage Type</th>
-              <th>Company Name</th>
-              <th>Company Email</th>
-              <th>Company Website</th>
-              <th>Media Person's Gender</th>
-              <th>Media Person's Designation</th>
-              <th>Media Person's Contact</th>
-              <th>Reference Person</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let media of eventMediaList; let i = index">
-              <td><button class="btn btn-danger btn-sm" (click)="onRemoveEventMedia(i)">Remove</button></td>
-              <td>{{ media.mediaCoverageType }}</td>
-              <td>{{ media.companyName }}</td>
-              <td>{{ media.companyEmail }}</td>
-              <td>{{ media.companyWebsite }}</td>
-              <td>{{ media.gender }}</td>
-              <td>{{ media.designation }}</td>
-              <td>{{ media.contact }}</td>
-              <td>{{ media.referencePersonName }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-    <!-- Promotional Material Used -->
-    <div class="common-stepper">
-      <h5 class="mb-3">Promotional Material Used</h5>
-      
-      <!-- Dynamic Material Type Entries -->
-      <div *ngFor="let material of materialTypes; let i = index" class="mb-3">
-        <div class="row g-3">
-          <div class="col-md-4">
-            <label class="form-label">Material type</label>
-            <select class="form-select" [(ngModel)]="material.materialType" [ngModelOptions]="{standalone: true}" [disabled]="loadingMaterialTypes">
-              <option value="">Select</option>
-              <option *ngFor="let materialOption of materialTypeOptions" [value]="materialOption">{{ materialOption }}</option>
-            </select>
-            <small *ngIf="loadingMaterialTypes" class="text-muted">Loading material types...</small>
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">Quantity</label>
-            <input type="text" class="form-control" [(ngModel)]="material.quantity" [ngModelOptions]="{standalone: true}" />
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">Size</label>
-            <input type="text" class="form-control" [(ngModel)]="material.size" [ngModelOptions]="{standalone: true}" />
-          </div>
-        </div>
-        <div class="row g-3 mt-2">
-          <div class="col-md-4">
-            <label class="form-label">Custom dimension</label>
-            <div class="input-group">
-              <input type="number" class="form-control" placeholder="Height" [(ngModel)]="material.customHeight" [ngModelOptions]="{standalone: true}" />
-              <span class="input-group-text">x</span>
-              <input type="number" class="form-control" placeholder="Width" [(ngModel)]="material.customWidth" [ngModelOptions]="{standalone: true}" />
-              <span class="input-group-text">inch</span>
-            </div>
-          </div>
-          <div class="col-md-4 d-flex align-items-end">
-            <button type="button" class="btn btn-warning btn-xs" (click)="onRemoveMaterialType(i)"
-              [disabled]="materialTypes.length === 1">
-              <i class="fas fa-trash"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="mt-3">
-        <button class="btn btn-warning btn-sm" type="button" (click)="onAddMaterialType()">+ Add material type</button>
-      </div>
-
-      <!-- Media and Documentation -->
-      <h5 class="mb-3 mt-4">Media and Documentation</h5>
-      <div class="row g-3">
-        <div class="col-md-4">
-          <label class="form-label">Event photos</label>
-          <input type="file" class="form-control" (change)="onFileChange($event, 'eventPhotos')" multiple />
-          <!-- Display selected files -->
-          <div class="mt-2" *ngIf="fileMetadata.eventPhotos && fileMetadata.eventPhotos.length > 0">
-            <div class="small text-muted mb-1">Selected files:</div>
-            <div class="d-flex flex-column gap-1">
-              <div *ngFor="let file of fileMetadata.eventPhotos; let i = index"
-                   class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
-                <div class="flex-grow-1">
-                  <div class="small fw-bold">{{ file.name }}</div>
-                  <div class="small text-muted">{{ formatFileSizeMethod(file.size) }}</div>
-                </div>
-                <button type="button" class="btn btn-sm btn-danger ms-2"
-                        (click)="onRemoveFile('eventPhotos', i)"
-                        title="Remove file">
-                  <i class="fas fa-times"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Video coverage</label>
-          <input type="file" class="form-control" (change)="onFileChange($event, 'videoCoverage')" />
-          <!-- Display selected file -->
-          <div class="mt-2" *ngIf="fileMetadata.videoCoverage">
-            <div class="small text-muted mb-1">Selected file:</div>
-            <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
-              <div class="flex-grow-1">
-                <div class="small fw-bold">{{ fileMetadata.videoCoverage.name }}</div>
-                <div class="small text-muted">{{ formatFileSizeMethod(fileMetadata.videoCoverage.size) }}</div>
-              </div>
-              <button type="button" class="btn btn-sm btn-danger ms-2"
-                      (click)="onRemoveFile('videoCoverage')"
-                      title="Remove file">
-                <i class="fas fa-times"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Press release</label>
-          <input type="file" class="form-control" (change)="onFileChange($event, 'pressRelease')" multiple />
-          <!-- Display selected files -->
-          <div class="mt-2" *ngIf="fileMetadata.pressRelease && fileMetadata.pressRelease.length > 0">
-            <div class="small text-muted mb-1">Selected files:</div>
-            <div class="d-flex flex-column gap-1">
-              <div *ngFor="let file of fileMetadata.pressRelease; let i = index"
-                   class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
-                <div class="flex-grow-1">
-                  <div class="small fw-bold">{{ file.name }}</div>
-                  <div class="small text-muted">{{ formatFileSizeMethod(file.size) }}</div>
-                </div>
-                <button type="button" class="btn btn-sm btn-danger ms-2"
-                        (click)="onRemoveFile('pressRelease', i)"
-                        title="Remove file">
-                  <i class="fas fa-times"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Reference person's name</label>
+        <input type="text" class="form-control" formControlName="referencePersonName" placeholder="Enter reference person's name" />
       </div>
     </div>
   </form>
 </div>
 <div class="modal-footer">
-  <button type="button" class="btn btn-secondary" (click)="onClose()">Close</button>
+  <button type="button" class="btn btn-outline-secondary" (click)="onClose()">Cancel</button>
+  <button type="button" class="btn btn-primary" (click)="onAddEventMedia()" 
+    [disabled]="mediaPromotionForm.invalid"
+    style="background: linear-gradient(135deg, #ff6b35, #f7931e); border: none;">
+    Add Event Media
+  </button>
 </div>
 
 

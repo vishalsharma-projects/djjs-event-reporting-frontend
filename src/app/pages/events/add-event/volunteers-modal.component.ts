@@ -1,5 +1,5 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormGroup } from '@angular/forms';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 import { Volunteer } from 'src/app/core/services/event-api.service';
 
@@ -9,11 +9,12 @@ import { Volunteer } from 'src/app/core/services/event-api.service';
   styleUrls: ['./volunteers-modal.component.scss']
 })
 export class VolunteersModalComponent implements OnInit {
-  @Input() volunteersForm!: FormGroup;
-  @Input() volunteers: any[] = [];
-  @Input() volunteerSuggestions: Volunteer[] = [];
-  @Input() showVolunteerSuggestions: boolean = false;
-  @Input() searchingVolunteers: boolean = false;
+  // Properties will be set via initialState from BsModalService
+  volunteersForm!: FormGroup;
+  volunteers: any[] = [];
+  volunteerSuggestions: Volunteer[] = [];
+  showVolunteerSuggestions: boolean = false;
+  searchingVolunteers: boolean = false;
 
   @Output() close = new EventEmitter<void>();
   @Output() addVolunteer = new EventEmitter<void>();
@@ -24,7 +25,10 @@ export class VolunteersModalComponent implements OnInit {
 
   constructor(public bsModalRef: BsModalRef) {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    // Properties are set via initialState from BsModalService.show()
+    // No initialization needed here - ngx-bootstrap sets them automatically
+  }
 
   onClose(): void {
     this.close.emit();
@@ -39,7 +43,19 @@ export class VolunteersModalComponent implements OnInit {
     this.removeVolunteer.emit(index);
   }
 
+  onSearchFieldFocus(): void {
+    // Show dropdown if there are suggestions, searching, or if there's text in the field
+    const searchValue = this.volunteersForm?.get('volSearchMember')?.value || '';
+    if (this.volunteerSuggestions.length > 0 || this.searchingVolunteers || searchValue.length >= 2) {
+      this.showVolunteerSuggestions = true;
+    }
+  }
+
   onSearchVolunteers(searchTerm: string): void {
+    // Show dropdown when user starts typing
+    if (searchTerm && searchTerm.length >= 2) {
+      this.showVolunteerSuggestions = true;
+    }
     this.searchVolunteers.emit(searchTerm);
   }
 

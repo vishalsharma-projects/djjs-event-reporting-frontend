@@ -1,5 +1,5 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormGroup } from '@angular/forms';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 
 @Component({
@@ -8,10 +8,11 @@ import { BsModalRef } from 'ngx-bootstrap/modal';
   styleUrls: ['./special-guests-modal.component.scss']
 })
 export class SpecialGuestsModalComponent implements OnInit {
-  @Input() specialGuestsForm!: FormGroup;
-  @Input() specialGuests: any[] = [];
-  @Input() filteredCities: any[] = [];
-  @Input() states: string[] = [];
+  // Properties will be set via initialState from BsModalService
+  specialGuestsForm!: FormGroup;
+  specialGuests: any[] = [];
+  filteredCities: any[] = [];
+  states: string[] = [];
 
   @Output() close = new EventEmitter<void>();
   @Output() addSpecialGuest = new EventEmitter<void>();
@@ -19,7 +20,10 @@ export class SpecialGuestsModalComponent implements OnInit {
 
   constructor(public bsModalRef: BsModalRef) {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    // Properties are set via initialState from BsModalService.show()
+    // No initialization needed here - ngx-bootstrap sets them automatically
+  }
 
   onClose(): void {
     this.close.emit();

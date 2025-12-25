@@ -6,6 +6,7 @@ import { NgStepperModule } from 'angular-ng-stepper';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { BsDatepickerModule } from 'ngx-bootstrap/datepicker';
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
+import { ModalModule } from 'ngx-bootstrap/modal';
 import { DropzoneModule } from 'ngx-dropzone-wrapper';
 
 // PrimeNG Modules
@@ -22,6 +23,10 @@ import { SharedModule } from '../../shared/shared.module';
 import { EventsRoutingModule } from './events-routing.module';
 import { EventsListComponent } from './events-list/events-list.component';
 import { AddEventComponent } from './add-event/add-event.component';
+import { MediaPromotionModalComponent } from './add-event/media-promotion-modal.component';
+import { PromotionalMaterialModalComponent } from './add-event/promotional-material-modal.component';
+import { SpecialGuestsModalComponent } from './add-event/special-guests-modal.component';
+import { VolunteersModalComponent } from './add-event/volunteers-modal.component';
 
 // Dropzone configuration
 import { DROPZONE_CONFIG } from 'ngx-dropzone-wrapper';
@@ -40,7 +45,11 @@ const DEFAULT_DROPZONE_CONFIG: DropzoneConfigInterface = {
     EventsListComponent,
     AddEventComponent,
     ViewEventComponent,
-    GalleryComponent
+    GalleryComponent,
+    MediaPromotionModalComponent,
+    PromotionalMaterialModalComponent,
+    SpecialGuestsModalComponent,
+    VolunteersModalComponent
   ],
   imports: [
     CommonModule,
@@ -50,6 +59,7 @@ const DEFAULT_DROPZONE_CONFIG: DropzoneConfigInterface = {
     NgSelectModule,
     BsDatepickerModule.forRoot(),
     BsDropdownModule.forRoot(),
+    ModalModule.forRoot(),
     DropzoneModule,
     // PrimeNG Modules
     TableModule,

@@ -41,10 +41,16 @@ export class VerticalComponent implements OnInit, AfterViewInit {
   private closeMobileSidebar() {
     if (window.innerWidth <= 992) {
       document.body.classList.remove('sidebar-enable');
+      // Restore body styles
       document.body.style.overflow = '';
       document.body.style.position = '';
       document.body.style.width = '';
       document.body.style.height = '';
+      // Restore page-content scrolling
+      const pageContent = document.querySelector('.page-content') as HTMLElement;
+      if (pageContent) {
+        pageContent.style.overflow = '';
+      }
     }
   }
 
@@ -62,30 +68,24 @@ export class VerticalComponent implements OnInit, AfterViewInit {
 
     const sidebar = document.querySelector('.vertical-menu');
     const toggleButton = document.querySelector('#vertical-menu-btn');
-    const mainContent = document.querySelector('.main-content');
+    const topbar = document.querySelector('#page-topbar');
 
-    // Close if clicking on main content area (overlay)
-    if (mainContent && mainContent.contains(target)) {
-      this.closeMobileSidebar();
+    // Check if click is inside sidebar
+    const clickedInsideSidebar = sidebar && sidebar.contains(target);
+    
+    // Check if click is on toggle button
+    const clickedToggleButton = toggleButton && (toggleButton.contains(target) || target === toggleButton);
+    
+    // Check if click is on topbar (hamburger menu)
+    const clickedOnTopbar = topbar && topbar.contains(target);
+
+    // Don't close if clicking inside sidebar, on toggle button, or on topbar
+    if (clickedInsideSidebar || clickedToggleButton || clickedOnTopbar) {
       return;
     }
 
-    // Close if clicking outside sidebar and toggle button
-    if (sidebar && toggleButton) {
-      const clickedInsideSidebar = sidebar.contains(target);
-      const clickedToggleButton = toggleButton.contains(target);
-      const clickedOnLink = target.closest('a.side-nav-link-ref');
-
-      // Don't close if clicking on menu items (they handle their own closing)
-      if (clickedOnLink) {
-        return;
-      }
-
-      // Close if clicking outside sidebar
-      if (!clickedInsideSidebar && !clickedToggleButton) {
-        this.closeMobileSidebar();
-      }
-    }
+    // Close sidebar for all other clicks (backdrop, main content, etc.)
+    this.closeMobileSidebar();
   }
 
   ngOnInit() {
@@ -120,17 +120,29 @@ export class VerticalComponent implements OnInit, AfterViewInit {
       if (isOpen) {
         this.closeMobileSidebar();
       } else {
+        // Open sidebar
         document.body.classList.add('sidebar-enable');
+        // Prevent body scrolling
         document.body.style.overflow = 'hidden';
         document.body.style.position = 'fixed';
         document.body.style.width = '100%';
         document.body.style.height = '100%';
+        // Prevent page-content scrolling
+        const pageContent = document.querySelector('.page-content') as HTMLElement;
+        if (pageContent) {
+          pageContent.style.overflow = 'hidden';
+        }
       }
     } else {
       // Desktop behavior - toggle collapsed state
       this.isCondensed = !this.isCondensed;
       document.body.classList.toggle('vertical-collpsed');
       document.body.classList.remove('sidebar-enable');
+      // Restore body styles on desktop
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
     }
   }
 }

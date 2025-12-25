@@ -1,4 +1,4 @@
-// Volunteers Modal Styles - Matching Add New Member Modal Exactly
+// Promotional Material Modal Styles - Matching Add Media Details Modal Exactly
 
 // Modal backdrop - standard Bootstrap styling
 ::ng-deep .modal-backdrop {
@@ -85,7 +85,7 @@
   }
 }
 
-// Form labels - standard Bootstrap styling matching Add New Member exactly
+// Form labels - standard Bootstrap styling matching Add New Member
 .form-label {
   margin-bottom: 0.5rem;
   font-weight: 400;
@@ -222,20 +222,137 @@
   color: #dc3545;
 }
 
-// Dropdown menu for volunteer suggestions
-.dropdown-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  max-height: 300px;
-  overflow-y: auto;
-  display: block;
-  margin-top: 0.125rem;
-  padding: 0.5rem 0;
-  background-color: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  border-radius: 0.375rem;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+// ng-select styling to match form controls (same as add-event component)
+::ng-deep {
+  ng-select {
+    .ng-select {
+      .ng-select-container {
+        border-color: #dee2e6;
+        border-radius: 6px;
+        min-height: 38px;
+        transition: all 0.3s ease;
+
+        &:hover {
+          border-color: #adb5bd;
+        }
+
+        &.ng-select-focused {
+          border-color: #ff6b35;
+          box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25);
+        }
+      }
+
+      &.ng-select-opened {
+        .ng-select-container {
+          border-color: #ff6b35;
+        }
+      }
+
+      &.ng-select-disabled {
+        .ng-select-container {
+          background-color: #e9ecef;
+          opacity: 1;
+        }
+      }
+
+      &.is-invalid {
+        .ng-select-container {
+          border-color: #dc3545;
+          
+          &.ng-select-focused {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+          }
+        }
+      }
+    }
+
+    .ng-dropdown-panel {
+      border-color: #dee2e6;
+      border-radius: 6px;
+      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+
+      .ng-option {
+        padding: 0.5rem 0.75rem;
+        transition: all 0.2s ease;
+
+        &.ng-option-highlighted {
+          background-color: #ff6b35;
+          color: white;
+        }
+
+        &.ng-option-selected {
+          background-color: #f8f9fa;
+          color: #ff6b35;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+}
+
+// Input group styling for custom dimension
+.input-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  width: 100%;
+  
+  .form-control {
+    position: relative;
+    flex: 1 1 auto;
+    width: 1%;
+    min-width: 0;
+  }
+  
+  .input-group-text {
+    display: flex;
+    align-items: center;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #212529;
+    text-align: center;
+    white-space: nowrap;
+    background-color: #e9ecef;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+  }
+}
+
+// Button styling - matching Add Media Details modal button colors
+.btn-warning {
+  background-color: #FFEDD5;
+  color: #7C2D12;
+  border-color: #FFEDD5;
+  font-size: 12px;
+  padding: 0.375rem 0.75rem;
+  font-weight: 500;
+  
+  &:hover {
+    background-color: #FFEDD5;
+    color: #7C2D12;
+    border-color: #FFEDD5;
+    opacity: 0.9;
+  }
+  
+  &:focus {
+    box-shadow: 0 0 0 0.25rem rgba(255, 237, 213, 0.5);
+  }
+  
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+}
+
+.btn-xs {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+.btn-sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
 }

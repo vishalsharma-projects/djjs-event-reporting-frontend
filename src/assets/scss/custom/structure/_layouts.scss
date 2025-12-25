@@ -2,6 +2,15 @@
 // _layouts.scss
 //
 
+// Base layout-wrapper styles - flex container for proper scrolling
+#layout-wrapper {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; // Prevent layout-wrapper from scrolling
+    position: relative;
+}
+
 body[data-layout-size="boxed"] {
 
     background-color: var(--#{$prefix}boxed-body-bg);

@@ -1,508 +1,269 @@
-// Media Promotion Modal Styles - Enhanced UI
+// Media Promotion Modal Styles - Matching Add New Member Modal Exactly
 
-// Position modal backdrop to avoid sidebar
+// Modal backdrop - standard Bootstrap styling
 ::ng-deep .modal-backdrop {
-  position: fixed !important;
-  top: 70px !important; // Account for navbar height
-  left: 250px !important; // Account for sidebar width
-  right: 0 !important;
-  bottom: 0 !important;
-  width: calc(100vw - 250px) !important;
-  height: calc(100vh - 70px) !important;
-  background-color: rgba(0, 0, 0, 0.65) !important;
-  z-index: 1040 !important;
-  transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  backdrop-filter: blur(2px);
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  z-index: 10990 !important;
 }
 
-// Handle collapsed sidebar state
-::ng-deep body.vertical-collpsed .modal-backdrop,
-::ng-deep body[class*="vertical-collpsed"] .modal-backdrop {
-  left: 70px !important;
-  width: calc(100vw - 70px) !important;
-}
-
-// Handle small sidebar state
-::ng-deep body[data-sidebar-size="small"] .modal-backdrop {
-  left: 160px !important;
-  width: calc(100vw - 160px) !important;
-}
-
-// Position modal container to avoid sidebar
-::ng-deep .modal.show {
-  display: block !important;
-  position: fixed !important;
-  top: 70px !important;
-  left: 250px !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  width: calc(100vw - 250px) !important;
-  height: calc(100vh - 70px) !important;
-  z-index: 1050 !important;
-  background-color: transparent !important;
-  padding: 0 !important;
-  transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-// Handle collapsed sidebar state
-::ng-deep body.vertical-collpsed .modal.show,
-::ng-deep body[class*="vertical-collpsed"] .modal.show {
-  left: 70px !important;
-  width: calc(100vw - 70px) !important;
-}
-
-// Handle small sidebar state
-::ng-deep body[data-sidebar-size="small"] .modal.show {
-  left: 160px !important;
-  width: calc(100vw - 160px) !important;
-}
-
-// Center modal dialog within the available space
-::ng-deep .modal-dialog-centered {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  min-height: calc(100vh - 70px) !important;
-  margin: 0 auto !important;
-  padding: 1rem !important;
-}
-
-// Modal dialog styling - Fixed width calculation
+// Modal dialog - increased width to match Add New Member modal
 ::ng-deep .modal-dialog {
-  max-width: calc(100vw - 250px - 2rem) !important; // Account for sidebar + padding
-  width: calc(100vw - 250px - 2rem) !important;
-  margin: 0 auto !important;
-  position: relative !important;
-  z-index: 1051 !important;
+  &.modal-lg {
+    @media (min-width: 992px) {
+      max-width: 900px;
+      width: 900px;
+    }
+    @media (min-width: 1200px) {
+      max-width: 1000px;
+      width: 1000px;
+    }
+  }
+  
+  &.modal-dialog-centered {
+    display: flex;
+    align-items: center;
+    min-height: calc(100% - 1rem);
+  }
 }
 
-// Handle collapsed sidebar
-::ng-deep body.vertical-collpsed .modal-dialog,
-::ng-deep body[class*="vertical-collpsed"] .modal-dialog {
-  max-width: calc(100vw - 70px - 2rem) !important;
-  width: calc(100vw - 70px - 2rem) !important;
-}
-
-// Handle small sidebar
-::ng-deep body[data-sidebar-size="small"] .modal-dialog {
-  max-width: calc(100vw - 160px - 2rem) !important;
-  width: calc(100vw - 160px - 2rem) !important;
-}
-
-// Modal content styling - Enhanced
+// Modal content - standard Bootstrap styling
 ::ng-deep .modal-content {
-  border-radius: 16px !important;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
-  max-height: calc(100vh - 100px) !important;
-  display: flex !important;
-  flex-direction: column !important;
-  border: none !important;
-  overflow: hidden !important;
-  animation: modalSlideIn 0.3s ease-out !important;
+  border: none;
+  border-radius: 0.375rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075), 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
 
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-// Modal header - Enhanced
+// Modal header - standard Bootstrap styling matching Add New Member
 ::ng-deep .modal-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-  color: white !important;
-  padding: 1.25rem 1.75rem !important;
-  border-bottom: none !important;
-  border-radius: 16px 16px 0 0 !important;
-
+  border-bottom: 1px solid #dee2e6;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  
   .modal-title {
-    font-size: 1.5rem !important;
-    font-weight: 600 !important;
-    margin: 0 !important;
-    color: white !important;
+    font-size: 1.25rem;
+    font-weight: 500;
+    margin: 0;
+    line-height: 1.5;
   }
-
+  
   .btn-close {
-    filter: brightness(0) invert(1) !important;
-    opacity: 0.9 !important;
-    transition: opacity 0.2s ease !important;
-
+    padding: 0.5rem 0.5rem;
+    margin: -0.5rem -0.5rem -0.5rem auto;
+    background: transparent;
+    border: 0;
+    border-radius: 0.375rem;
+    opacity: 0.5;
+    
     &:hover {
-      opacity: 1 !important;
-      transform: scale(1.1) !important;
+      opacity: 0.75;
     }
   }
 }
 
-// Modal body - Enhanced with better spacing
+// Modal body - standard Bootstrap styling matching Add New Member
 .modal-body {
-  overflow-y: auto;
-  overflow-x: hidden;
-  max-height: calc(100vh - 280px) !important;
-  padding: 2rem !important;
-  background-color: #f8f9fa !important;
-
-  // Custom scrollbar
-  &::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 4px;
-
-    &:hover {
-      background: #a8a8a8;
+  padding: 1.5rem;
+  position: relative;
+  
+  form {
+    .row {
+      margin-left: -0.75rem;
+      margin-right: -0.75rem;
+      margin-bottom: 0;
+      
+      > * {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+      }
+      
+      &.mb-3 {
+        margin-bottom: 1rem !important;
+      }
     }
   }
 }
 
-// Form styling - Enhanced
-form {
-  .common-stepper {
-    background: white !important;
-    padding: 1.75rem !important;
-    margin-bottom: 1.5rem !important;
-    border-radius: 12px !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
-    transition: box-shadow 0.3s ease !important;
+// Form labels - standard Bootstrap styling matching Add New Member
+.form-label {
+  margin-bottom: 0.5rem;
+  font-weight: 400;
+  color: #212529;
+  font-size: 1rem;
+  line-height: 1.5;
+  display: inline-block;
+  
+  .text-danger {
+    color: #dc3545;
+    margin-left: 0.25rem;
+  }
+}
 
+// Form controls - standard Bootstrap styling matching Add New Member exactly
+.form-control,
+.form-select {
+  display: block;
+  width: 100%;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #212529;
+  background-color: #fff;
+  background-clip: padding-box;
+  border: 1px solid #ced4da;
+  appearance: none;
+  border-radius: 0.375rem;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  
+  &:focus {
+    color: #212529;
+    background-color: #fff;
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  }
+  
+  &::placeholder {
+    color: #6c757d;
+    opacity: 1;
+  }
+  
+  &:disabled {
+    background-color: #e9ecef;
+    opacity: 1;
+  }
+}
+
+.form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px 12px;
+  padding-right: 2.25rem;
+  cursor: pointer;
+  
+  &:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  }
+  
+  &[multiple],
+  &[size]:not([size="1"]) {
+    padding-right: 0.75rem;
+    background-image: none;
+  }
+}
+
+// Modal footer - standard Bootstrap styling matching Add New Member exactly
+::ng-deep .modal-footer {
+  border-top: 1px solid #dee2e6;
+  padding: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  
+  .btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    border-radius: 0.375rem;
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  }
+  
+  .btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+    background-color: transparent;
+    
     &:hover {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+      color: #fff;
+      background-color: #6c757d;
+      border-color: #6c757d;
     }
-
-    h5 {
-      color: #495057 !important;
-      font-weight: 600 !important;
-      font-size: 1.25rem !important;
-      margin-bottom: 1.5rem !important;
-      padding-bottom: 0.75rem !important;
-      border-bottom: 2px solid #e9ecef !important;
-    }
-
-    h6 {
-      color: #6c757d !important;
-      font-weight: 600 !important;
-      font-size: 1rem !important;
-      margin-bottom: 1rem !important;
-    }
-  }
-
-  // Form labels - Enhanced
-  .form-label {
-    font-weight: 500 !important;
-    color: #495057 !important;
-    margin-bottom: 0.5rem !important;
-    font-size: 0.9375rem !important;
-  }
-
-  // Form controls - Enhanced
-  .form-control,
-  .form-select {
-    border: 1.5px solid #dee2e6 !important;
-    border-radius: 8px !important;
-    padding: 0.625rem 0.875rem !important;
-    font-size: 0.9375rem !important;
-    transition: all 0.3s ease !important;
-    background-color: white !important;
-
+    
     &:focus {
-      border-color: #667eea !important;
-      box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15) !important;
-      outline: none !important;
-    }
-
-    &:hover:not(:disabled) {
-      border-color: #adb5bd !important;
-    }
-
-    &::placeholder {
-      color: #adb5bd !important;
-      opacity: 1 !important;
+      box-shadow: 0 0 0 0.25rem rgba(108, 117, 125, 0.5);
     }
   }
-
-  .form-select {
-    cursor: pointer !important;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
-    background-repeat: no-repeat !important;
-    background-position: right 0.75rem center !important;
-    background-size: 16px 12px !important;
-    padding-right: 2.5rem !important;
-  }
-}
-
-// Buttons - Enhanced
-.btn {
-  border-radius: 8px !important;
-  font-weight: 500 !important;
-  padding: 0.625rem 1.25rem !important;
-  transition: all 0.3s ease !important;
-  border: none !important;
-
-  &.btn-warning {
-    background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%) !important;
-    color: #212529 !important;
-    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3) !important;
-
+  
+  .btn-primary {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    border: none;
+    color: #fff;
+    font-weight: 400;
+    
     &:hover {
-      transform: translateY(-2px) !important;
-      box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4) !important;
+      background: linear-gradient(135deg, #f7931e, #ff6b35);
+      opacity: 0.9;
     }
-
-    &:active {
-      transform: translateY(0) !important;
+    
+    &:focus {
+      box-shadow: 0 0 0 0.25rem rgba(255, 107, 53, 0.5);
     }
-  }
-
-  &.btn-danger {
-    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
-    color: white !important;
-    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3) !important;
-
-    &:hover {
-      transform: translateY(-2px) !important;
-      box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4) !important;
-    }
-  }
-
-  &.btn-sm {
-    padding: 0.5rem 1rem !important;
-    font-size: 0.875rem !important;
-  }
-
-  &.btn-xs {
-    padding: 0.375rem 0.75rem !important;
-    font-size: 0.75rem !important;
-  }
-}
-
-// Table - Enhanced styling
-.table-responsive {
-  border-radius: 8px !important;
-  overflow: hidden !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
-}
-
-.table {
-  margin-bottom: 0 !important;
-  background: white !important;
-
-  thead {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-
-    th {
-      color: white !important;
-      font-weight: 600 !important;
-      padding: 1rem 0.75rem !important;
-      font-size: 0.875rem !important;
-      text-transform: uppercase !important;
-      letter-spacing: 0.5px !important;
-      border: none !important;
-      white-space: nowrap !important;
-    }
-  }
-
-  tbody {
-    tr {
-      transition: background-color 0.2s ease !important;
-
-      &:hover {
-        background-color: #f8f9fa !important;
-      }
-
-      td {
-        padding: 1rem 0.75rem !important;
-        vertical-align: middle !important;
-        border-color: #e9ecef !important;
-        font-size: 0.9375rem !important;
-        color: #495057 !important;
-      }
-    }
-  }
-
-  &.table-bordered {
-    border: 1px solid #dee2e6 !important;
-
-    thead th {
-      border-bottom: 2px solid rgba(255, 255, 255, 0.3) !important;
+    
+    &:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
     }
   }
 }
 
-// Input group - Enhanced
-.input-group {
-  .input-group-text {
-    background-color: #f8f9fa !important;
-    border: 1.5px solid #dee2e6 !important;
-    color: #6c757d !important;
-    font-weight: 500 !important;
-    padding: 0.625rem 0.875rem !important;
-  }
-}
-
-// File upload styling - Enhanced
+// File input styling with orange "Choose File" button
 input[type="file"] {
+  &.file-input-custom {
+    &::-webkit-file-upload-button {
+      padding: 0.375rem 0.75rem;
+      margin-right: 0.75rem;
+      color: #fff;
+      background: linear-gradient(135deg, #ff6b35, #f7931e);
+      border: none;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.15s ease-in-out;
+      
+      &:hover {
+        background: linear-gradient(135deg, #f7931e, #ff6b35);
+        opacity: 0.9;
+        transform: translateY(-1px);
+      }
+    }
+  }
+  
   &::-webkit-file-upload-button {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-    color: white !important;
-    border: none !important;
-    padding: 0.5rem 1rem !important;
-    border-radius: 6px !important;
-    cursor: pointer !important;
-    font-weight: 500 !important;
-    margin-right: 0.75rem !important;
-    transition: all 0.3s ease !important;
-
+    padding: 0.375rem 0.75rem;
+    margin-right: 0.75rem;
+    color: #212529;
+    background-color: #e9ecef;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+    
     &:hover {
-      transform: translateY(-1px) !important;
-      box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3) !important;
+      background-color: #d3d9df;
+      border-color: #adb5bd;
     }
   }
 }
 
-// File metadata display - Enhanced
+// File metadata display
 .bg-light {
   background-color: #f8f9fa !important;
-  border: 1px solid #e9ecef !important;
-  transition: all 0.2s ease !important;
-
-  &:hover {
-    background-color: #e9ecef !important;
-    border-color: #dee2e6 !important;
-  }
+  border: 1px solid #e9ecef;
+  border-radius: 0.375rem;
 }
 
-// Modal footer - Enhanced
-::ng-deep .modal-footer {
-  background-color: #f8f9fa !important;
-  border-top: 1px solid #dee2e6 !important;
-  padding: 1.25rem 1.75rem !important;
-  border-radius: 0 0 16px 16px !important;
-
-  .btn-secondary {
-    background: #6c757d !important;
-    color: white !important;
-    padding: 0.625rem 1.5rem !important;
-
-    &:hover {
-      background: #5a6268 !important;
-      transform: translateY(-2px) !important;
-      box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3) !important;
-    }
-  }
-}
-
-// Responsive adjustments
-@media (max-width: 1400px) {
-  ::ng-deep .modal-dialog {
-    max-width: calc(100vw - 250px - 1rem) !important;
-    width: calc(100vw - 250px - 1rem) !important;
-  }
-}
-
-@media (max-width: 1200px) {
-  ::ng-deep .modal-dialog {
-    max-width: calc(100vw - 250px - 1rem) !important;
-    width: calc(100vw - 250px - 1rem) !important;
-  }
-
-  .modal-body {
-    padding: 1.5rem !important;
-  }
-}
-
-@media (max-width: 992px) {
-  ::ng-deep .modal-backdrop {
-    left: 0 !important;
-    top: 70px !important;
-    width: 100vw !important;
-    height: calc(100vh - 70px) !important;
-  }
-
-  ::ng-deep .modal.show {
-    left: 0 !important;
-    width: 100vw !important;
-    height: calc(100vh - 70px) !important;
-  }
-
-  ::ng-deep .modal-dialog {
-    max-width: calc(100vw - 2rem) !important;
-    width: calc(100vw - 2rem) !important;
-    margin: 0.5rem !important;
-  }
-
-  .modal-body {
-    max-height: calc(100vh - 200px) !important;
-    padding: 1.25rem !important;
-  }
-
-  form .common-stepper {
-    padding: 1.25rem !important;
-  }
-}
-
-@media (max-width: 768px) {
-  ::ng-deep .modal-dialog {
-    max-width: calc(100vw - 1rem) !important;
-    width: calc(100vw - 1rem) !important;
-    margin: 0.5rem !important;
-  }
-
-  ::ng-deep .modal-header {
-    padding: 1rem 1.25rem !important;
-
-    .modal-title {
-      font-size: 1.25rem !important;
-    }
-  }
-
-  .modal-body {
-    max-height: calc(100vh - 180px) !important;
-    padding: 1rem !important;
-  }
-
-  form .common-stepper {
-    padding: 1rem !important;
-
-    h5 {
-      font-size: 1.125rem !important;
-    }
-  }
-
-  .table {
-    font-size: 0.875rem !important;
-
-    thead th,
-    tbody td {
-      padding: 0.75rem 0.5rem !important;
-    }
-  }
-}
-
-@media (max-width: 576px) {
-  ::ng-deep .modal-dialog {
-    max-width: calc(100vw - 0.5rem) !important;
-    width: calc(100vw - 0.5rem) !important;
-    margin: 0.25rem !important;
-  }
-
-  .modal-body {
-    padding: 0.75rem !important;
-    max-height: calc(100vh - 160px) !important;
-  }
-
-  form .common-stepper {
-    padding: 0.75rem !important;
-  }
+// Invalid feedback
+.invalid-feedback {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  font-size: 0.875em;
+  color: #dc3545;
 }

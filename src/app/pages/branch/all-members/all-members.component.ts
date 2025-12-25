@@ -63,7 +63,7 @@ export class AllMembersComponent implements OnInit {
     private fb: FormBuilder
   ) {
     this.memberForm = this.fb.group({
-      branch_id: [null, Validators.required], // Single field for all branches (parent and child)
+      branch_id: [null], // Optional field - not mandatory
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
       member_type: ['', Validators.required],
       branch_role: ['', Validators.required],
@@ -480,23 +480,15 @@ export class AllMembersComponent implements OnInit {
     this.isSubmitting = true;
     const formValue = this.memberForm.value;
     // Use unified service - all members stored in one table with branch_id
-    if (!formValue.branch_id) {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'Please select a branch.',
-        life: 3000
-      });
-      this.isSubmitting = false;
-      return;
-    }
-
-    // Ensure branch_id is a number (select dropdowns return strings)
-    const branchId = typeof formValue.branch_id === 'string' 
-      ? parseInt(formValue.branch_id, 10) 
-      : (typeof formValue.branch_id === 'number' ? formValue.branch_id : null);
+    // Branch is optional, so we allow null/undefined
+    const branchId = formValue.branch_id 
+      ? (typeof formValue.branch_id === 'string' 
+          ? parseInt(formValue.branch_id, 10) 
+          : (typeof formValue.branch_id === 'number' ? formValue.branch_id : null))
+      : null;
     
-    if (!branchId || isNaN(branchId)) {
+    // Validate branchId only if provided (not mandatory)
+    if (formValue.branch_id && (!branchId || isNaN(branchId))) {
       this.messageService.add({
         severity: 'error',
         summary: 'Error',
@@ -508,7 +500,7 @@ export class AllMembersComponent implements OnInit {
     }
 
     const memberPayload = {
-      branch_id: branchId,
+      branch_id: branchId || null, // Allow null - branch is optional
       name: formValue.name.trim(),
       member_type: formValue.member_type,
       branch_role: formValue.branch_role || '',

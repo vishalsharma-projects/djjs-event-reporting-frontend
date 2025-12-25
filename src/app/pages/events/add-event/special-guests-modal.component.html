@@ -1,173 +1,130 @@
 <div class="modal-header">
-  <h5 class="modal-title">Special Guests</h5>
+  <h5 class="modal-title">Add Special Guest</h5>
   <button type="button" class="btn-close" (click)="onClose()" aria-label="Close"></button>
 </div>
 <div class="modal-body">
   <form [formGroup]="specialGuestsForm">
-    <div class="common-stepper">
-      <h5 class="mb-3">Add Special Guests</h5>
-      <div class="row g-3">
-        <!-- Gender -->
-        <div class="col-md-4">
-          <label class="form-label">Gender</label>
-          <select class="form-select" formControlName="guestGender">
-            <option value="">Select</option>
-            <option>Male</option>
-            <option>Female</option>
-            <option>Other</option>
-          </select>
-        </div>
-
-        <!-- Prefix -->
-        <div class="col-md-4">
-          <label class="form-label">Prefix</label>
-          <select class="form-select" formControlName="guestPrefix">
-            <option value="">Select</option>
-            <option>Mr.</option>
-            <option>Mrs.</option>
-            <option>Ms.</option>
-          </select>
-        </div>
-
-        <!-- Names -->
-        <div class="col-md-4">
-          <label class="form-label">First name</label>
-          <input type="text" class="form-control" formControlName="guestFirstName" />
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Gender <span class="text-danger">*</span></label>
+        <ng-select formControlName="guestGender"
+          [items]="['Male', 'Female', 'Other']"
+          [searchable]="true"
+          [clearable]="true"
+          placeholder="Select Gender"
+          [ngClass]="{'is-invalid': specialGuestsForm.get('guestGender')?.invalid && specialGuestsForm.get('guestGender')?.touched}">
+        </ng-select>
+        <div *ngIf="specialGuestsForm.get('guestGender')?.invalid && specialGuestsForm.get('guestGender')?.touched" class="invalid-feedback">
+          Gender is required
         </div>
       </div>
-      <div class="row g-3 mt-2">
-        <div class="col-md-4">
-          <label class="form-label">Middle name</label>
-          <input type="text" class="form-control" formControlName="guestMiddleName" />
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Last name</label>
-          <input type="text" class="form-control" formControlName="guestLastName" />
-        </div>
-      </div>
-
-      <div class="row g-3 mt-2">
-        <!-- Designation -->
-        <div class="col-md-4">
-          <label class="form-label">Designation</label>
-          <input type="text" class="form-control" formControlName="guestDesignation" placeholder="Enter designation" />
-        </div>
-
-        <!-- Organization -->
-        <div class="col-md-4">
-          <label class="form-label">Organization</label>
-          <input type="text" class="form-control" formControlName="guestOrganization"
-            placeholder="Enter organization" />
-        </div>
-
-        <!-- Email -->
-        <div class="col-md-4">
-          <label class="form-label">Email</label>
-          <input type="email" class="form-control" formControlName="guestEmail" placeholder="Enter email" />
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Prefix <span class="text-danger">*</span></label>
+        <ng-select formControlName="guestPrefix"
+          [items]="['Mr.', 'Mrs.', 'Ms.']"
+          [searchable]="true"
+          [clearable]="true"
+          placeholder="Select Prefix"
+          [ngClass]="{'is-invalid': specialGuestsForm.get('guestPrefix')?.invalid && specialGuestsForm.get('guestPrefix')?.touched}">
+        </ng-select>
+        <div *ngIf="specialGuestsForm.get('guestPrefix')?.invalid && specialGuestsForm.get('guestPrefix')?.touched" class="invalid-feedback">
+          Prefix is required
         </div>
       </div>
-
-      <div class="row g-3 mt-2">
-        <!-- City -->
-        <div class="col-md-4">
-          <label class="form-label">City</label>
-          <select class="form-select" formControlName="guestCity" [disabled]="filteredCities.length === 0">
-            <option value="">{{ filteredCities.length === 0 ? 'Select State first' : 'Select' }}</option>
-            <option *ngFor="let city of filteredCities" [value]="city.name">{{ city.name }}</option>
-          </select>
-        </div>
-
-        <!-- State -->
-        <div class="col-md-4">
-          <label class="form-label">State</label>
-          <select class="form-select" formControlName="guestState">
-            <option value="">Select</option>
-            <option *ngFor="let state of states" [value]="state">{{ state }}</option>
-          </select>
-        </div>
-
-        <!-- Personal Number -->
-        <div class="col-md-4">
-          <label class="form-label">Personal number</label>
-          <input type="text" class="form-control" formControlName="guestPersonalNumber" placeholder="Enter number" />
+      <div class="col-md-6 mb-3">
+        <label class="form-label">First name <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" formControlName="guestFirstName" placeholder="Enter first name"
+          [ngClass]="{'is-invalid': specialGuestsForm.get('guestFirstName')?.invalid && specialGuestsForm.get('guestFirstName')?.touched}" />
+        <div *ngIf="specialGuestsForm.get('guestFirstName')?.invalid && specialGuestsForm.get('guestFirstName')?.touched" class="invalid-feedback">
+          First name is required
         </div>
       </div>
-      <div class="row g-3 mt-2">
-        <div class="col-md-4">
-          <label class="form-label">Contact person</label>
-          <input type="text" class="form-control" formControlName="guestContactPerson" />
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Middle name</label>
+        <input type="text" class="form-control" formControlName="guestMiddleName" placeholder="Enter middle name" />
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Last name <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" formControlName="guestLastName" placeholder="Enter last name"
+          [ngClass]="{'is-invalid': specialGuestsForm.get('guestLastName')?.invalid && specialGuestsForm.get('guestLastName')?.touched}" />
+        <div *ngIf="specialGuestsForm.get('guestLastName')?.invalid && specialGuestsForm.get('guestLastName')?.touched" class="invalid-feedback">
+          Last name is required
         </div>
       </div>
-
-      <div class="row g-3 mt-2">
-        <!-- Contact Person -->
-        <div class="col-md-4">
-          <label class="form-label">Contact person's number</label>
-          <input type="text" class="form-control" formControlName="guestContactPersonNumber" />
-        </div>
-
-        <!-- Reference Branch -->
-        <div class="col-md-4">
-          <label class="form-label">Reference branch ID</label>
-          <input type="text" class="form-control" formControlName="guestReferenceBranchId" />
-        </div>
-
-        <!-- Reference Volunteer -->
-        <div class="col-md-4">
-          <label class="form-label">Reference volunteer ID</label>
-          <input type="text" class="form-control" formControlName="guestReferenceVolunteerId" />
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Designation</label>
+        <input type="text" class="form-control" formControlName="guestDesignation" placeholder="Enter designation" />
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Organization</label>
+        <input type="text" class="form-control" formControlName="guestOrganization" placeholder="Enter organization" />
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Email <span class="text-danger">*</span></label>
+        <input type="email" class="form-control" formControlName="guestEmail" placeholder="Enter email"
+          [ngClass]="{'is-invalid': specialGuestsForm.get('guestEmail')?.invalid && specialGuestsForm.get('guestEmail')?.touched}" />
+        <div *ngIf="specialGuestsForm.get('guestEmail')?.invalid && specialGuestsForm.get('guestEmail')?.touched" class="invalid-feedback">
+          <span *ngIf="specialGuestsForm.get('guestEmail')?.errors?.['required']">Email is required</span>
+          <span *ngIf="specialGuestsForm.get('guestEmail')?.errors?.['email']">Please enter a valid email</span>
         </div>
       </div>
-      <div class="row g-3 mt-2">
-        <div class="col-md-4">
-          <label class="form-label">Reference person name</label>
-          <input type="text" class="form-control" formControlName="guestReferencePersonName" />
+      <div class="col-md-6 mb-3">
+        <label class="form-label">State</label>
+        <ng-select formControlName="guestState"
+          [items]="states"
+          [searchable]="true"
+          [clearable]="true"
+          placeholder="Select State">
+        </ng-select>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">City</label>
+        <ng-select formControlName="guestCity"
+          [items]="filteredCities"
+          bindLabel="name"
+          bindValue="name"
+          [searchable]="true"
+          [clearable]="true"
+          [placeholder]="filteredCities.length === 0 ? 'Select State first' : 'Select City'"
+          [disabled]="filteredCities.length === 0">
+        </ng-select>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Personal number <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" formControlName="guestPersonalNumber" placeholder="Enter number"
+          [ngClass]="{'is-invalid': specialGuestsForm.get('guestPersonalNumber')?.invalid && specialGuestsForm.get('guestPersonalNumber')?.touched}" />
+        <div *ngIf="specialGuestsForm.get('guestPersonalNumber')?.invalid && specialGuestsForm.get('guestPersonalNumber')?.touched" class="invalid-feedback">
+          Personal number is required
         </div>
       </div>
-
-      <!-- Add Guest Button -->
-      <div class="mt-3">
-        <button class="btn btn-warning btn-sm" type="button" (click)="onAddSpecialGuest()">+ Add guest</button>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Contact person</label>
+        <input type="text" class="form-control" formControlName="guestContactPerson" placeholder="Enter contact person" />
       </div>
-
-      <!-- Special Guest Table -->
-      <div class="table-responsive mt-3">
-        <table class="table table-bordered align-middle">
-          <thead>
-            <tr>
-              <th>Action</th>
-              <th>Name (Phone no.)</th>
-              <th>Gender</th>
-              <th>Designation</th>
-              <th>Organization</th>
-              <th>Email</th>
-              <th>City, State</th>
-              <th>Personal no.</th>
-              <th>Contact Person (Phone no.)</th>
-              <th>Reference Person (Phone no.)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let guest of specialGuests; let i = index">
-              <td><button class="btn btn-danger btn-sm" (click)="onRemoveSpecialGuest(i)">Remove</button></td>
-              <td>{{ guest.firstName }} {{ guest.lastName }} ({{ guest.personalNumber }})</td>
-              <td>{{ guest.gender }}</td>
-              <td>{{ guest.designation }}</td>
-              <td>{{ guest.organization }}</td>
-              <td>{{ guest.email }}</td>
-              <td>{{ guest.city }}, {{ guest.state }}</td>
-              <td>{{ guest.personalNumber }}</td>
-              <td>{{ guest.contactPerson }} ({{ guest.contactPersonNumber }})</td>
-              <td>{{ guest.referencePersonName }} ({{ guest.referenceVolunteerId }})</td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Contact person's number</label>
+        <input type="text" class="form-control" formControlName="guestContactPersonNumber" placeholder="Enter contact person's number" />
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Reference branch ID</label>
+        <input type="text" class="form-control" formControlName="guestReferenceBranchId" placeholder="Enter reference branch ID" />
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Reference volunteer ID</label>
+        <input type="text" class="form-control" formControlName="guestReferenceVolunteerId" placeholder="Enter reference volunteer ID" />
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Reference person name</label>
+        <input type="text" class="form-control" formControlName="guestReferencePersonName" placeholder="Enter reference person name" />
       </div>
     </div>
   </form>
 </div>
 <div class="modal-footer">
-  <button type="button" class="btn btn-secondary" (click)="onClose()">Close</button>
+  <button type="button" class="btn btn-outline-secondary" (click)="onClose()">Cancel</button>
+  <button type="button" class="btn btn-primary" (click)="onAddSpecialGuest()"
+    [disabled]="specialGuestsForm.invalid"
+    style="background: linear-gradient(135deg, #ff6b35, #f7931e); border: none;">
+    Add Guest
+  </button>
 </div>
-
-

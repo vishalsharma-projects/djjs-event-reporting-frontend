@@ -1,5 +1,5 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormGroup } from '@angular/forms';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 
 @Component({
@@ -8,14 +8,15 @@ import { BsModalRef } from 'ngx-bootstrap/modal';
   styleUrls: ['./media-promotion-modal.component.scss']
 })
 export class MediaPromotionModalComponent implements OnInit {
-  @Input() mediaPromotionForm!: FormGroup;
-  @Input() eventMediaList: any[] = [];
-  @Input() materialTypes: any[] = [];
-  @Input() fileMetadata: any = {};
-  @Input() uploadedFiles: any = {};
-  @Input() mediaTypes: string[] = [];
-  @Input() materialTypeOptions: string[] = [];
-  @Input() loadingMaterialTypes: boolean = false;
+  // Properties will be set via initialState from BsModalService
+  mediaPromotionForm!: FormGroup;
+  eventMediaList: any[] = [];
+  materialTypes: any[] = [];
+  fileMetadata: any = {};
+  uploadedFiles: any = {};
+  mediaTypes: string[] = [];
+  materialTypeOptions: string[] = [];
+  loadingMaterialTypes: boolean = false;
 
   @Output() close = new EventEmitter<void>();
   @Output() addEventMedia = new EventEmitter<void>();
@@ -28,7 +29,10 @@ export class MediaPromotionModalComponent implements OnInit {
 
   constructor(public bsModalRef: BsModalRef) {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    // Properties are set via initialState from BsModalService.show()
+    // No initialization needed here
+  }
 
   onClose(): void {
     this.close.emit();
@@ -52,6 +56,7 @@ export class MediaPromotionModalComponent implements OnInit {
   }
 
   onFileChange(event: any, fileType: string): void {
+    // Emit to parent component to handle file storage
     this.onFileInputChange.emit({event, fileType});
   }
 

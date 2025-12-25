@@ -76,59 +76,80 @@
       <div class="row">
         <div class="col-md-4 mb-3">
           <label class="form-label">Type <span class="text-danger">*</span></label>
-          <select class="form-select" formControlName="eventType" [disabled]="loadingEventTypes"
+          <ng-select formControlName="eventType" 
+            [items]="eventTypes"
+            bindLabel="name"
+            bindValue="name"
+            [searchable]="true"
+            [clearable]="true"
+            placeholder="{{ loadingEventTypes ? 'Loading...' : 'Select Event Type' }}"
+            [disabled]="loadingEventTypes"
             [ngClass]="{'is-invalid': isFieldInvalid('eventType')}">
-            <option value="">{{ loadingEventTypes ? 'Loading...' : 'Select' }}</option>
-            <option *ngFor="let type of eventTypes" [value]="type.name">{{ type.name }}</option>
-          </select>
+          </ng-select>
           <div class="invalid-feedback" *ngIf="isFieldInvalid('eventType')">
             Event Type is required.
           </div>
         </div>
         <div class="col-md-4 mb-3">
           <label class="form-label">Event category <span class="text-danger">*</span></label>
-          <select class="form-select" formControlName="eventCategory"
+          <ng-select formControlName="eventCategory"
+            [items]="filteredEventCategories"
+            bindLabel="name"
+            bindValue="name"
+            [searchable]="true"
+            [clearable]="true"
+            [placeholder]="loadingEventCategories ? 'Loading...' : (filteredEventCategories.length === 0 ? 'Select Event Type first' : 'Select Category')"
             [disabled]="loadingEventCategories || filteredEventCategories.length === 0"
             [ngClass]="{'is-invalid': isFieldInvalid('eventCategory')}">
-            <option value="">{{ loadingEventCategories ? 'Loading...' : (filteredEventCategories.length === 0 ? 'Select
-              Event Type first' : 'Select') }}</option>
-            <option *ngFor="let cat of filteredEventCategories" [value]="cat.name">{{ cat.name }}</option>
-          </select>
+          </ng-select>
           <div class="invalid-feedback" *ngIf="isFieldInvalid('eventCategory')">
             Event Category is required.
           </div>
         </div>
         <div class="col-md-4 mb-3">
           <label class="form-label">Event sub category</label>
-          <select class="form-select" formControlName="eventSubCategory"
+          <ng-select formControlName="eventSubCategory"
+            [items]="filteredEventSubCategories"
+            bindLabel="name"
+            bindValue="name"
+            [searchable]="true"
+            [clearable]="true"
+            [placeholder]="loadingEventSubCategories ? 'Loading...' : (filteredEventSubCategories.length === 0 ? 'Select Event Category first' : 'Select Sub Category')"
             [disabled]="loadingEventSubCategories || filteredEventSubCategories.length === 0">
-            <option value="">{{ loadingEventSubCategories ? 'Loading...' : (filteredEventSubCategories.length === 0 ? 'Select Event Category first' : 'Select') }}</option>
-            <option *ngFor="let sub of filteredEventSubCategories" [value]="sub.name">{{ sub.name }}</option>
-          </select>
+          </ng-select>
         </div>
       </div>
 
       <div class="row">
         <div class="col-md-4 mb-3">
           <label class="form-label">Scale</label>
-          <select class="form-select" formControlName="scale">
-            <option value="">Select</option>
-            <option *ngFor="let s of scales" [value]="s">{{ s }}</option>
-          </select>
+          <ng-select formControlName="scale"
+            [items]="scales"
+            [searchable]="true"
+            [clearable]="true"
+            placeholder="Select Scale">
+          </ng-select>
         </div>
         <div class="col-md-4 mb-3">
           <label class="form-label">Theme</label>
-          <select class="form-select" formControlName="theme" [disabled]="loadingThemes">
-            <option value="">{{ loadingThemes ? 'Loading...' : 'Select' }}</option>
-            <option *ngFor="let t of themes" [value]="t.name">{{ t.name }}</option>
-          </select>
+          <ng-select formControlName="theme"
+            [items]="themes"
+            bindLabel="name"
+            bindValue="name"
+            [searchable]="true"
+            [clearable]="true"
+            [placeholder]="loadingThemes ? 'Loading...' : 'Select Theme'"
+            [disabled]="loadingThemes">
+          </ng-select>
         </div>
         <div class="col-md-4 mb-3">
           <label class="form-label">Language</label>
-          <select class="form-select" formControlName="language">
-            <option value="">Select</option>
-            <option *ngFor="let l of languages" [value]="l">{{ l }}</option>
-          </select>
+          <ng-select formControlName="language"
+            [items]="languages"
+            [searchable]="true"
+            [clearable]="true"
+            placeholder="Select Language">
+          </ng-select>
         </div>
       </div>
 
@@ -166,10 +187,15 @@
       <div class="row">
         <div class="col-md-12 mb-3">
           <label class="form-label">Spiritual Orator</label>
-          <select class="form-select" formControlName="spiritualOrator" [disabled]="loadingOrators">
-            <option value="">{{ loadingOrators ? 'Loading...' : 'Select' }}</option>
-            <option *ngFor="let orator of orators" [value]="orator.name">{{ orator.name }}</option>
-          </select>
+          <ng-select formControlName="spiritualOrator"
+            [items]="orators"
+            bindLabel="name"
+            bindValue="name"
+            [searchable]="true"
+            [clearable]="true"
+            [placeholder]="loadingOrators ? 'Loading...' : 'Select Spiritual Orator'"
+            [disabled]="loadingOrators">
+          </ng-select>
         </div>
       </div>
     </div>
@@ -177,28 +203,70 @@
     <div class="common-stepper">
       <h5 class=" mb-3">Venue</h5>
       <div class="row">
-        <div class="col-md-4 mb-3">
+        <div class="col-md-3 mb-3">
           <label class="form-label">Country <span class="text-danger">*</span></label>
-          <select class="form-select" formControlName="country"
+          <ng-select formControlName="country"
+            [items]="countries"
+            bindLabel="name"
+            bindValue="name"
+            [searchable]="true"
+            [clearable]="true"
+            placeholder="Select Country"
             [ngClass]="{'is-invalid': isFieldInvalid('country')}">
-            <option value="">Select</option>
-            <option *ngFor="let c of countries" [value]="c.name">{{ c.name }}</option>
-          </select>
+          </ng-select>
           <div class="invalid-feedback" *ngIf="isFieldInvalid('country')">
             Country is required.
           </div>
         </div>
-        <div class="col-md-4 mb-3">
-          <label class="form-label">Pincode</label>
-          <input type="text" class="form-control" formControlName="pincode" placeholder="Enter pincode">
+        <div class="col-md-3 mb-3">
+          <label class="form-label">State <span class="text-danger">*</span></label>
+          <ng-select formControlName="state"
+            [items]="filteredStates"
+            bindLabel="name"
+            bindValue="name"
+            [searchable]="true"
+            [clearable]="true"
+            placeholder="Select State"
+            [ngClass]="{'is-invalid': isFieldInvalid('state')}">
+          </ng-select>
+          <div class="invalid-feedback" *ngIf="isFieldInvalid('state')">
+            State is required.
+          </div>
         </div>
-        <div class="col-md-4 mb-3">
-          <label class="form-label">Address type</label>
-          <input type="text" class="form-control" formControlName="addressType" placeholder="City / Village">
+        <div class="col-md-3 mb-3">
+          <label class="form-label">District</label>
+          <ng-select formControlName="district"
+            [items]="filteredDistricts"
+            bindLabel="name"
+            bindValue="name"
+            [searchable]="true"
+            [clearable]="true"
+            placeholder="Select District">
+          </ng-select>
+        </div>
+        <div class="col-md-3 mb-3">
+          <label class="form-label">City <span class="text-danger">*</span></label>
+          <ng-select formControlName="city"
+            [items]="filteredCities"
+            bindLabel="name"
+            bindValue="name"
+            [searchable]="true"
+            [clearable]="true"
+            [placeholder]="loadingCities ? 'Loading...' : (filteredCities.length === 0 ? 'Select State first' : 'Select City')"
+            [disabled]="loadingCities || filteredCities.length === 0"
+            [ngClass]="{'is-invalid': isFieldInvalid('city')}">
+          </ng-select>
+          <div class="invalid-feedback" *ngIf="isFieldInvalid('city')">
+            City is required.
+          </div>
         </div>
       </div>
 
       <div class="row">
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Pincode</label>
+          <input type="text" class="form-control" formControlName="pincode" placeholder="Enter pincode">
+        </div>
         <div class="col-md-4 mb-3">
           <label class="form-label">Post office</label>
           <input type="text" class="form-control" formControlName="postOffice">
@@ -207,40 +275,14 @@
           <label class="form-label">Police station</label>
           <input type="text" class="form-control" formControlName="policeStation">
         </div>
-        <div class="col-md-4 mb-3">
-          <label class="form-label">District</label>
-          <select class="form-select" formControlName="district">
-            <option value="">Select</option>
-            <option *ngFor="let d of filteredDistricts" [value]="d.name">{{ d.name }}</option>
-          </select>
-        </div>
       </div>
 
       <div class="row">
         <div class="col-md-4 mb-3">
-          <label class="form-label">State <span class="text-danger">*</span></label>
-          <select class="form-select" formControlName="state"
-            [ngClass]="{'is-invalid': isFieldInvalid('state')}">
-            <option value="">Select</option>
-            <option *ngFor="let s of filteredStates" [value]="s.name">{{ s.name }}</option>
-          </select>
-          <div class="invalid-feedback" *ngIf="isFieldInvalid('state')">
-            State is required.
-          </div>
+          <label class="form-label">Address type</label>
+          <input type="text" class="form-control" formControlName="addressType" placeholder="City / Village">
         </div>
-        <div class="col-md-4 mb-3">
-          <label class="form-label">City <span class="text-danger">*</span></label>
-          <select class="form-select" formControlName="city" [disabled]="loadingCities || filteredCities.length === 0"
-            [ngClass]="{'is-invalid': isFieldInvalid('city')}">
-            <option value="">{{ loadingCities ? 'Loading...' : (filteredCities.length === 0 ? 'Select State first' :
-              'Select') }}</option>
-            <option *ngFor="let city of filteredCities" [value]="city.name">{{ city.name }}</option>
-          </select>
-          <div class="invalid-feedback" *ngIf="isFieldInvalid('city')">
-            City is required.
-          </div>
-        </div>
-        <div class="col-md-4 mb-3">
+        <div class="col-md-8 mb-3">
           <label class="form-label">Address <span class="text-danger">*</span></label>
           <input type="text" class="form-control" formControlName="address"
             [ngClass]="{'is-invalid': isFieldInvalid('address')}">
@@ -253,9 +295,13 @@
       <div class="row">
         <div class="col-md-6 mb-3">
           <label class="form-label">Prachar</label>
-          <select class="form-select" multiple formControlName="prachar">
-            <option *ngFor="let area of pracharAreas" [value]="area">{{ area }}</option>
-          </select>
+          <ng-select formControlName="prachar"
+            [items]="pracharAreas"
+            [multiple]="true"
+            [searchable]="true"
+            [clearable]="true"
+            placeholder="Select Prachar Areas">
+          </ng-select>
         </div>
         <div class="col-md-6 mb-3">
           <label class="form-label">Area covered</label>
@@ -298,10 +344,12 @@
         <!-- Donation Type -->
         <div class="col-md-3">
           <label class="form-label">Donation type</label>
-          <select class="form-select" [(ngModel)]="donation.type" [ngModelOptions]="{standalone: true}" (change)="onDonationTypeChange(i)">
-            <option value="cash">Cash</option>
-            <option value="in-kind">In-kind</option>
-          </select>
+          <ng-select [(ngModel)]="donation.type" [ngModelOptions]="{standalone: true}" (change)="onDonationTypeChange(i)"
+            [items]="['cash', 'in-kind']"
+            [searchable]="true"
+            [clearable]="false"
+            placeholder="Select Donation Type">
+          </ng-select>
         </div>
 
         <!-- Cash Amount Field (shown only for cash type) -->
@@ -412,592 +460,248 @@
 <!-- ================= STEP 2 : MEDIA & PROMOTION ================= -->
 <!-- Step 2: Media & Promotion -->
 <div *ngIf="currentStep === 2">
-  <form [formGroup]="mediaPromotionForm">
-    <!-- Event Media Section -->
-    <div class="common-stepper">
-      <h5 class="mb-3">Event Media</h5>
-      <div class="row g-3">
-        <div class="col-md-4">
-          <label class="form-label">Media Coverage Type</label>
-          <select class="form-select" formControlName="mediaCoverageType">
-            <option value="">Select</option>
-            <option *ngFor="let type of mediaTypes" [value]="type">{{ type }}</option>
-          </select>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Company name</label>
-          <input type="text" class="form-control" formControlName="companyName" placeholder="Enter" />
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Company email</label>
-          <input type="email" class="form-control" formControlName="companyEmail" placeholder="Enter" />
-        </div>
-      </div>
-      <div class="row g-3 mt-2">
-        <div class="col-md-4">
-          <label class="form-label">Company website</label>
-          <input type="url" class="form-control" formControlName="companyWebsite" placeholder="Enter" />
-        </div>
-      </div>
-    </div>
-
-    <!-- Provide Details of Media Person Section -->
-    <div class="common-stepper">
-      <h5 class="mb-3">Provide Details of Media Person</h5>
-      <div class="row g-3">
-        <div class="col-md-4">
-          <label class="form-label">Gender</label>
-          <select class="form-select" formControlName="mediaGender">
-            <option value="">Select</option>
-            <option>Male</option>
-            <option>Female</option>
-            <option>Other</option>
-          </select>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Prefix</label>
-          <select class="form-select" formControlName="mediaPrefix">
-            <option value="">Select</option>
-            <option>Mr.</option>
-            <option>Mrs.</option>
-            <option>Ms.</option>
-          </select>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">First name</label>
-          <input type="text" class="form-control" formControlName="mediaFirstName" />
-        </div>
-      </div>
-      <div class="row g-3 mt-2">
-        <div class="col-md-4">
-          <label class="form-label">Middle name</label>
-          <input type="text" class="form-control" formControlName="mediaMiddleName" />
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Last name</label>
-          <input type="text" class="form-control" formControlName="mediaLastName" />
-        </div>
-      </div>
-      <div class="row g-3 mt-2">
-        <div class="col-md-4">
-          <label class="form-label">Designation</label>
-          <input type="text" class="form-control" formControlName="mediaDesignation" placeholder="Enter designation" />
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Contact</label>
-          <input type="text" class="form-control" formControlName="mediaContact" placeholder="Enter phone number" />
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Email</label>
-          <input type="email" class="form-control" formControlName="mediaEmail" placeholder="Enter email" />
-        </div>
-      </div>
-    </div>
-
-    <!-- Provide Details of Reference Person Section -->
-    <div class="common-stepper">
-      <h5 class="mb-3">Provide Details of Reference Person</h5>
-      <div class="row g-3">
-        <div class="col-md-4">
-          <label class="form-label">Reference branch ID</label>
-          <input type="text" class="form-control" formControlName="referenceBranchId" />
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Reference volunteer ID</label>
-          <input type="text" class="form-control" formControlName="referenceVolunteerId" />
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Reference person's name</label>
-          <input type="text" class="form-control" formControlName="referencePersonName" />
-        </div>
-      </div>
-    </div>
-
-    <!-- Add Event Media Button and Table -->
-    <div class="common-stepper">
-      <div class="mt-3">
-        <button class="btn btn-warning btn-sm" type="button" (click)="addEventMedia()">+ Add Event Media</button>
-      </div>
-
-      <!-- Event Media Table -->
-      <div class="table-responsive mt-3">
-        <h6 class="mt-4">List of Event Media ({{ eventMediaList.length }})</h6>
+  <!-- Button to open Media Promotion Modal - Top Right Corner -->
+  <div class="d-flex justify-content-end mb-3">
+    <button type="button" class="btn btn-warning" (click)="openMediaPromotionModal()">
+      <i class="fas fa-plus me-2"></i>Add Media Details
+    </button>
+  </div>
+  
+  <!-- Event Media Table -->
+  <div class="common-stepper">
+    <h6 class="mt-4">List of Event Media ({{ eventMediaList.length }})</h6>
+    <div class="table-container-scrollable mt-3">
+      <div class="table-responsive">
         <table class="table table-bordered align-middle">
-          <thead>
-            <tr>
-              <th>Action</th>
-              <th>Media Coverage Type</th>
-              <th>Company Name</th>
-              <th>Company Email</th>
-              <th>Company Website</th>
-              <th>Media Person’s Gender</th>
-              <th>Media Person’s Designation</th>
-              <th>Media Person’s Contact</th>
-              <th>Reference Person</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let media of eventMediaList; let i = index">
-              <td><button class="btn btn-danger btn-sm" (click)="removeEventMedia(i)">Remove</button></td>
-              <td>{{ media.mediaCoverageType }}</td>
-              <td>{{ media.companyName }}</td>
-              <td>{{ media.companyEmail }}</td>
-              <td>{{ media.companyWebsite }}</td>
-              <td>{{ media.gender }}</td>
-              <td>{{ media.designation }}</td>
-              <td>{{ media.contact }}</td>
-              <td>{{ media.referencePersonName }}</td>
-            </tr>
-          </tbody>
+        <thead>
+          <tr>
+            <th>Action</th>
+            <th>Media Coverage Type</th>
+            <th>Company Name</th>
+            <th>Company Email</th>
+            <th>Company Website</th>
+            <th>Media Person's Gender</th>
+            <th>Media Person's Designation</th>
+            <th>Media Person's Contact</th>
+            <th>Reference Person</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let media of eventMediaList; let i = index">
+            <td><button class="btn btn-danger btn-sm" (click)="removeEventMedia(i)">Remove</button></td>
+            <td>{{ media.mediaCoverageType }}</td>
+            <td>{{ media.companyName }}</td>
+            <td>{{ media.companyEmail }}</td>
+            <td>{{ media.companyWebsite }}</td>
+            <td>{{ media.gender }}</td>
+            <td>{{ media.designation }}</td>
+            <td>{{ media.contact }}</td>
+            <td>{{ media.referencePersonName }}</td>
+          </tr>
+          <tr *ngIf="eventMediaList.length === 0">
+            <td colspan="9" class="text-center text-muted">No event media added yet. Click "Add Media Details" to add.</td>
+          </tr>
+        </tbody>
         </table>
       </div>
     </div>
-    <!-- Promotional Material Used -->
-    <div class="common-stepper">
-      <h5 class=" mb-3">Promotional Material Used</h5>
-      
-      <!-- Dynamic Material Type Entries -->
-      <div *ngFor="let material of materialTypes; let i = index" class="mb-3">
-        <div class="row g-3">
-          <div class="col-md-4">
-            <label class="form-label">Material type</label>
-            <select class="form-select" [(ngModel)]="material.materialType" [ngModelOptions]="{standalone: true}" [disabled]="loadingMaterialTypes">
-              <option value="">Select</option>
-              <option *ngFor="let materialOption of materialTypeOptions" [value]="materialOption">{{ materialOption }}</option>
-            </select>
-            <small *ngIf="loadingMaterialTypes" class="text-muted">Loading material types...</small>
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">Quantity</label>
-            <input type="text" class="form-control" [(ngModel)]="material.quantity" [ngModelOptions]="{standalone: true}" />
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">Size</label>
-            <input type="text" class="form-control" [(ngModel)]="material.size" [ngModelOptions]="{standalone: true}" />
-          </div>
-        </div>
-        <div class="row g-3 mt-2">
-          <div class="col-md-4">
-            <label class="form-label">Custom dimension</label>
-            <div class="input-group">
-              <input type="number" class="form-control" placeholder="Height" [(ngModel)]="material.customHeight" [ngModelOptions]="{standalone: true}" />
-              <span class="input-group-text">x</span>
-              <input type="number" class="form-control" placeholder="Width" [(ngModel)]="material.customWidth" [ngModelOptions]="{standalone: true}" />
-              <span class="input-group-text">inch</span>
-            </div>
-          </div>
-          <div class="col-md-4 d-flex align-items-end">
-            <button type="button" class="btn btn-warning btn-xs" (click)="removeMaterialType(i)"
-              [disabled]="materialTypes.length === 1">
-              <i class="fas fa-trash"></i>
-            </button>
-          </div>
-        </div>
-      </div>
+  </div>
 
-      <div class="mt-3">
-        <button class="btn btn-warning btn-sm" type="button" (click)="addMaterialType()">+ Add material
-          type</button>
+  <!-- Promotional Material Used -->
+  <div class="common-stepper mt-4">
+    <h5 class="mb-3">Promotional Material Used</h5>
+    <div class="d-flex justify-content-end mb-3">
+      <button type="button" class="btn btn-warning" (click)="openPromotionalMaterialModal()">
+        <i class="fas fa-plus me-2"></i>Add Material Type
+      </button>
+    </div>
+    <h6 class="mt-4">List of Promotional Materials ({{ getValidMaterialTypesCount() }})</h6>
+    <div class="table-container-scrollable mt-3">
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+        <thead>
+          <tr>
+            <th>Action</th>
+            <th>Material Type</th>
+            <th>Quantity</th>
+            <th>Size</th>
+            <th>Custom Dimension</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let material of getValidMaterialTypes(); let i = index">
+            <td><button class="btn btn-danger btn-sm" (click)="removeMaterialTypeByValidIndex(i)">Remove</button></td>
+            <td>{{ material.materialType }}</td>
+            <td>{{ material.quantity }}</td>
+            <td>{{ material.size }}</td>
+            <td>{{ material.customHeight }} x {{ material.customWidth }} inch</td>
+          </tr>
+          <tr *ngIf="getValidMaterialTypesCount() === 0">
+            <td colspan="5" class="text-center text-muted">No promotional materials added yet. Click "Add Material Type" to add.</td>
+          </tr>
+        </tbody>
+        </table>
       </div>
+    </div>
+  </div>
 
-      <!-- Media and Documentation -->
-      <h5 class=" mb-3 mt-4">Media and Documentation</h5>
-      <div class="row g-3">
-        <div class="col-md-4">
-          <label class="form-label">Event photos</label>
-          <input type="file" class="form-control" (change)="onFileInputChange($event, 'eventPhotos')" multiple />
-          <!-- Display selected files -->
-          <div class="mt-2" *ngIf="fileMetadata.eventPhotos && fileMetadata.eventPhotos.length > 0">
-            <div class="small text-muted mb-1">Selected files:</div>
-            <div class="d-flex flex-column gap-1">
-              <div *ngFor="let file of fileMetadata.eventPhotos; let i = index"
-                   class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
-                <div class="flex-grow-1">
-                  <div class="small fw-bold">{{ file.name }}</div>
-                  <div class="small text-muted">{{ formatFileSize(file.size) }}</div>
-                </div>
-                <button type="button" class="btn btn-sm btn-danger ms-2"
-                        (click)="removeFile('eventPhotos', i)"
-                        title="Remove file">
-                  <i class="fas fa-times"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Video coverage</label>
-          <input type="file" class="form-control" (change)="onFileInputChange($event, 'videoCoverage')" />
-          <!-- Display selected file -->
-          <div class="mt-2" *ngIf="fileMetadata.videoCoverage">
-            <div class="small text-muted mb-1">Selected file:</div>
-            <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
-              <div class="flex-grow-1">
-                <div class="small fw-bold">{{ fileMetadata.videoCoverage.name }}</div>
-                <div class="small text-muted">{{ formatFileSize(fileMetadata.videoCoverage.size) }}</div>
-              </div>
-              <button type="button" class="btn btn-sm btn-danger ms-2"
-                      (click)="removeFile('videoCoverage')"
-                      title="Remove file">
-                <i class="fas fa-times"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Press release</label>
-          <input type="file" class="form-control" (change)="onFileInputChange($event, 'pressRelease')" multiple />
-          <!-- Display selected files -->
-          <div class="mt-2" *ngIf="fileMetadata.pressRelease && fileMetadata.pressRelease.length > 0">
-            <div class="small text-muted mb-1">Selected files:</div>
-            <div class="d-flex flex-column gap-1">
-              <div *ngFor="let file of fileMetadata.pressRelease; let i = index"
-                   class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
-                <div class="flex-grow-1">
-                  <div class="small fw-bold">{{ file.name }}</div>
-                  <div class="small text-muted">{{ formatFileSize(file.size) }}</div>
-                </div>
-                <button type="button" class="btn btn-sm btn-danger ms-2"
-                        (click)="removeFile('pressRelease', i)"
-                        title="Remove file">
-                  <i class="fas fa-times"></i>
-                </button>
-              </div>
-            </div>
-          </div>
+  <!-- Media and Documentation -->
+  <div class="common-stepper mt-4">
+    <h5 class="mb-3">Media and Documentation</h5>
+    <div class="row mb-3">
+      <div class="col-12">
+        <label class="form-label">Media Files (Photos, Videos, Documents)</label>
+        <input type="file" class="form-control file-input-custom" (change)="onFileInputChange($event, 'allFiles')" 
+          accept="image/*,video/*,.pdf,.doc,.docx" multiple />
+        <small class="form-text text-muted">Select photos, videos, or documents to upload</small>
+      </div>
+    </div>
+    <h6 class="mt-4">Uploaded Files ({{ fileMetadata.allFiles?.length || 0 }})</h6>
+    <div class="uploaded-files-list mt-3" *ngIf="fileMetadata.allFiles && fileMetadata.allFiles.length > 0">
+      <div class="d-flex flex-wrap gap-2">
+        <div *ngFor="let file of fileMetadata.allFiles; let i = index" class="uploaded-file-item">
+          <span class="file-name">{{ file.name }}</span>
+          <button type="button" class="btn-remove-file" (click)="removeFile('allFiles', i)" title="Remove file">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
       </div>
     </div>
-    <div class="d-flex justify-content-between align-items-center mt-4 common-stepper">
-      <div class="text-success small">
-        <i class="bi bi-check-circle"></i> All changes are autosaved
-      </div>
-      <div>
-        <button class="btn btn-warning me-2" (click)="previousStep()">Back</button>
-        <button class="btn btn-primary" (click)="nextStep()">Next</button>
-      </div>
+    <div *ngIf="!fileMetadata.allFiles || fileMetadata.allFiles.length === 0" class="text-center text-muted mt-3 p-3">
+      No files uploaded yet. Select files above to upload.
     </div>
-  </form>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center mt-4 common-stepper">
+    <div class="text-success small">
+      <i class="bi bi-check-circle"></i> All changes are autosaved
+    </div>
+    <div>
+      <button class="btn btn-warning me-2" (click)="previousStep()">Back</button>
+      <button class="btn btn-primary" (click)="nextStep()">Next</button>
+    </div>
+  </div>
 </div>
 
 
 <!-- ================= STEP 3 : SPECIAL GUESTS ================= -->
 <!-- Step 3: Special Guests -->
 <div *ngIf="currentStep === 3">
-  <form [formGroup]="specialGuestsForm">
-    <div class="common-stepper">
-      <h5 class="mb-3">Add Special Guests</h5>
-      <div class="row g-3">
-        <!-- Gender -->
-        <div class="col-md-4">
-          <label class="form-label">Gender</label>
-          <select class="form-select" formControlName="guestGender">
-            <option value="">Select</option>
-            <option>Male</option>
-            <option>Female</option>
-            <option>Other</option>
-          </select>
-        </div>
+  <!-- Button to open Special Guests Modal - Top Right Corner -->
+  <div class="d-flex justify-content-end mb-3">
+    <button type="button" class="btn btn-warning" (click)="openSpecialGuestsModal()">
+      <i class="fas fa-plus me-2"></i>Add Special Guest
+    </button>
+  </div>
 
-        <!-- Prefix -->
-        <div class="col-md-4">
-          <label class="form-label">Prefix</label>
-          <select class="form-select" formControlName="guestPrefix">
-            <option value="">Select</option>
-            <option>Mr.</option>
-            <option>Mrs.</option>
-            <option>Ms.</option>
-          </select>
-        </div>
-
-        <!-- Names -->
-        <div class="col-md-4">
-          <label class="form-label">First name</label>
-          <input type="text" class="form-control" formControlName="guestFirstName" />
-        </div>
-      </div>
-      <div class="row g-3 mt-2">
-        <div class="col-md-4">
-          <label class="form-label">Middle name</label>
-          <input type="text" class="form-control" formControlName="guestMiddleName" />
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Last name</label>
-          <input type="text" class="form-control" formControlName="guestLastName" />
-        </div>
-      </div>
-
-      <div class="row g-3 mt-2">
-        <!-- Designation -->
-        <div class="col-md-4">
-          <label class="form-label">Designation</label>
-          <input type="text" class="form-control" formControlName="guestDesignation" placeholder="Enter designation" />
-        </div>
-
-        <!-- Organization -->
-        <div class="col-md-4">
-          <label class="form-label">Organization</label>
-          <input type="text" class="form-control" formControlName="guestOrganization"
-            placeholder="Enter organization" />
-        </div>
-
-        <!-- Email -->
-        <div class="col-md-4">
-          <label class="form-label">Email</label>
-          <input type="email" class="form-control" formControlName="guestEmail" placeholder="Enter email" />
-        </div>
-      </div>
-
-      <div class="row g-3 mt-2">
-        <!-- City -->
-        <div class="col-md-4">
-          <label class="form-label">City</label>
-          <select class="form-select" formControlName="guestCity" [disabled]="filteredCities.length === 0">
-            <option value="">{{ filteredCities.length === 0 ? 'Select State first' : 'Select' }}</option>
-            <option *ngFor="let city of filteredCities" [value]="city.name">{{ city.name }}</option>
-          </select>
-        </div>
-
-        <!-- State -->
-        <div class="col-md-4">
-          <label class="form-label">State</label>
-          <select class="form-select" formControlName="guestState">
-            <option value="">Select</option>
-            <option *ngFor="let state of states" [value]="state">{{ state }}</option>
-          </select>
-        </div>
-
-        <!-- Personal Number -->
-        <div class="col-md-4">
-          <label class="form-label">Personal number</label>
-          <input type="text" class="form-control" formControlName="guestPersonalNumber" placeholder="Enter number" />
-        </div>
-      </div>
-      <div class="row g-3 mt-2">
-        <div class="col-md-4">
-          <label class="form-label">Contact person</label>
-          <input type="text" class="form-control" formControlName="guestContactPerson" />
-        </div>
-      </div>
-
-      <div class="row g-3 mt-2">
-        <!-- Contact Person -->
-        <div class="col-md-4">
-          <label class="form-label">Contact person's number</label>
-          <input type="text" class="form-control" formControlName="guestContactPersonNumber" />
-        </div>
-
-        <!-- Reference Branch -->
-        <div class="col-md-4">
-          <label class="form-label">Reference branch ID</label>
-          <input type="text" class="form-control" formControlName="guestReferenceBranchId" />
-        </div>
-
-        <!-- Reference Volunteer -->
-        <div class="col-md-4">
-          <label class="form-label">Reference volunteer ID</label>
-          <input type="text" class="form-control" formControlName="guestReferenceVolunteerId" />
-        </div>
-      </div>
-      <div class="row g-3 mt-2">
-        <div class="col-md-4">
-          <label class="form-label">Reference person name</label>
-          <input type="text" class="form-control" formControlName="guestReferencePersonName" />
-        </div>
-      </div>
-
-
-
-      <!-- Add Guest Button -->
-      <div class="mt-3">
-        <button class="btn btn-warning btn-sm" type="button" (click)="addSpecialGuest()">+ Add guest</button>
-      </div>
-
-      <!-- Special Guest Table -->
-      <div class="table-responsive mt-3">
+  <!-- Special Guest Table -->
+  <div class="common-stepper">
+    <h6 class="mt-4">List of Special Guests ({{ specialGuestList.length }})</h6>
+    <div class="table-container-scrollable mt-3">
+      <div class="table-responsive">
         <table class="table table-bordered align-middle">
-          <thead>
-            <tr>
-              <th>Action</th>
-              <th>Name (Phone no.)</th>
-              <th>Gender</th>
-              <th>Designation</th>
-              <th>Organization</th>
-              <th>Email</th>
-              <th>City, State</th>
-              <th>Personal no.</th>
-              <th>Contact Person (Phone no.)</th>
-              <th>Reference Person (Phone no.)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let guest of specialGuestList; let i = index">
-              <td><button class="btn btn-danger btn-sm" (click)="removeSpecialGuest(i)">Remove</button></td>
-              <td>{{ guest.firstName }} {{ guest.lastName }} ({{ guest.personalNumber }})</td>
-              <td>{{ guest.gender }}</td>
-              <td>{{ guest.designation }}</td>
-              <td>{{ guest.organization }}</td>
-              <td>{{ guest.email }}</td>
-              <td>{{ guest.city }}, {{ guest.state }}</td>
-              <td>{{ guest.personalNumber }}</td>
-              <td>{{ guest.contactPerson }} ({{ guest.contactPersonNumber }})</td>
-              <td>{{ guest.referencePersonName }} ({{ guest.referenceVolunteerId }})</td>
-            </tr>
-          </tbody>
+        <thead>
+          <tr>
+            <th>Action</th>
+            <th>Name (Phone no.)</th>
+            <th>Gender</th>
+            <th>Designation</th>
+            <th>Organization</th>
+            <th>Email</th>
+            <th>City, State</th>
+            <th>Personal no.</th>
+            <th>Contact Person (Phone no.)</th>
+            <th>Reference Person (Phone no.)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let guest of specialGuestList; let i = index">
+            <td><button class="btn btn-danger btn-sm" (click)="removeSpecialGuest(i)">Remove</button></td>
+            <td>{{ guest.firstName }} {{ guest.lastName }} ({{ guest.personalNumber }})</td>
+            <td>{{ guest.gender }}</td>
+            <td>{{ guest.designation }}</td>
+            <td>{{ guest.organization }}</td>
+            <td>{{ guest.email }}</td>
+            <td>{{ guest.city }}, {{ guest.state }}</td>
+            <td>{{ guest.personalNumber }}</td>
+            <td>{{ guest.contactPerson }} ({{ guest.contactPersonNumber }})</td>
+            <td>{{ guest.referencePersonName }} ({{ guest.referenceVolunteerId }})</td>
+          </tr>
+          <tr *ngIf="specialGuestList.length === 0">
+            <td colspan="10" class="text-center text-muted">No special guests added yet. Click "Add Special Guest" to add.</td>
+          </tr>
+        </tbody>
         </table>
       </div>
     </div>
-    <div class="d-flex justify-content-between align-items-center mt-4 common-stepper">
+  </div>
 
-      <div class="text-success small">
-        <i class="bi bi-check-circle"></i> All changes are autosaved
-      </div>
-      <div>
-        <button class="btn btn-warning me-2" (click)="previousStep()">Back</button>
-        <button class="btn btn-primary" (click)="nextStep()">Next</button>
-      </div>
+  <div class="d-flex justify-content-between align-items-center mt-4 common-stepper">
+    <div class="text-success small">
+      <i class="bi bi-check-circle"></i> All changes are autosaved
     </div>
-  </form>
+    <div>
+      <button class="btn btn-warning me-2" (click)="previousStep()">Back</button>
+      <button class="btn btn-primary" (click)="nextStep()">Next</button>
+    </div>
+  </div>
 </div>
 
 
 <!-- ================= STEP 4 : VOLUNTEERS ================= -->
 <!-- Step 4: Volunteers -->
 <div *ngIf="currentStep === 4">
-  <form [formGroup]="volunteersForm">
-    <div class="common-stepper">
-      <h5 class="mb-3">Add Volunteer</h5>
-      <div class="row g-3">
-        <!-- Branch Code -->
-        <div class="col-md-4">
-          <label class="form-label">Branch Code</label>
-          <input type="text" class="form-control" formControlName="volBranchId" placeholder="Enter" />
-        </div>
+  <!-- Button to open Volunteers Modal - Top Right Corner -->
+  <div class="d-flex justify-content-end mb-3">
+    <button type="button" class="btn btn-warning" (click)="openVolunteersModal()">
+      <i class="fas fa-plus me-2"></i>Add Volunteer
+    </button>
+  </div>
 
-        <!-- Search Volunteers -->
-        <div class="col-md-4">
-          <label class="form-label">Search Volunteers</label>
-          <div class="position-relative">
-            <input type="text" class="form-control" formControlName="volSearchMember"
-              placeholder="Search by name, mobile no., or email" 
-              (focus)="showVolunteerSuggestions = volunteerSuggestions.length > 0 || searchingVolunteers"
-              (blur)="hideVolunteerSuggestions()" />
-            <!-- Volunteer Suggestions Dropdown -->
-            <div class="dropdown-menu show" *ngIf="showVolunteerSuggestions" 
-              style="position: absolute; top: 100%; left: 0; right: 0; z-index: 1000; max-height: 300px; overflow-y: auto; display: block;">
-              <!-- Loading state -->
-              <div class="dropdown-item text-muted" *ngIf="searchingVolunteers">
-                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                Searching...
-              </div>
-              <!-- Results -->
-              <div *ngFor="let volunteer of volunteerSuggestions" 
-                class="dropdown-item" 
-                style="cursor: pointer; padding: 0.5rem 1rem;"
-                (mousedown)="selectVolunteer(volunteer); $event.preventDefault()"
-                (click)="selectVolunteer(volunteer); $event.preventDefault()">
-                <div class="d-flex flex-column">
-                  <strong>{{ volunteer.volunteer_name || volunteer.name || 'N/A' }}</strong>
-                  <small class="text-muted" *ngIf="volunteer.contact">Contact: {{ volunteer.contact }}</small>
-                  <small class="text-muted" *ngIf="volunteer.email">Email: {{ volunteer.email }}</small>
-                  <small class="text-muted" *ngIf="volunteer.branch?.name">Branch: {{ volunteer.branch.name }}</small>
-                </div>
-              </div>
-              <!-- No results message -->
-              <div class="dropdown-item text-muted" *ngIf="!searchingVolunteers && volunteerSuggestions.length === 0">
-                No volunteers found
-              </div>
-            </div>
-            <div class="position-absolute top-0 end-0 p-2" *ngIf="searchingVolunteers">
-              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Volunteer's Name -->
-        <div class="col-md-4">
-          <label class="form-label">Volunteer's name</label>
-          <input type="text" class="form-control" formControlName="volName" placeholder="Enter" />
-        </div>
-      </div>
-
-      <div class="row g-3 mt-2">
-        <!-- Contact Number -->
-        <div class="col-md-4">
-          <label class="form-label">Contact Number</label>
-          <input type="tel" class="form-control" formControlName="volContact" placeholder="Enter contact number"
-            pattern="[0-9]*" maxlength="15" />
-        </div>
-
-        <!-- No. of Days -->
-        <div class="col-md-4">
-          <label class="form-label">No. of Days</label>
-          <input type="number" class="form-control" formControlName="volDays" placeholder="Enter number" />
-        </div>
-
-        <!-- Seva Involved -->
-        <div class="col-md-4">
-          <label class="form-label">Seva involved</label>
-          <select class="form-select" formControlName="volSeva">
-            <option value="">Select</option>
-            <option>Others</option>
-            <option>Media</option>
-            <option>Decoration</option>
-            <option>Logistics</option>
-            <option>Hospitality</option>
-          </select>
-        </div>
-      </div>
-      <div class="row g-3 mt-2">
-        <!-- Mention Seva -->
-        <div class="col-md-4">
-          <label class="form-label">Mention seva</label>
-          <input type="text" class="form-control" formControlName="volMentionSeva" placeholder="Enter" />
-        </div>
-      </div>
-
-      <!-- Add Volunteer Button -->
-      <div class="mt-3">
-        <button class="btn btn-warning btn-sm" type="button" (click)="addVolunteer()">+ Add Volunteer</button>
-      </div>
-
-      <!-- Volunteer List Table -->
-      <div class="table-responsive mt-3">
+  <!-- Volunteer List Table -->
+  <div class="common-stepper">
+    <h6 class="mt-4">List of Volunteers ({{ volunteerList.length }})</h6>
+    <div class="table-container-scrollable mt-3">
+      <div class="table-responsive">
         <table class="table table-bordered align-middle">
-          <thead>
-            <tr>
-              <th>Action</th>
-              <th>Name</th>
-              <th>Contact no.</th>
-              <th>No. of Days</th>
-              <th>Seva involved</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let vol of volunteerList; let i = index">
-              <td>
-                <button class="btn btn-danger btn-sm" (click)="removeVolunteer(i)">Remove</button>
-              </td>
-              <td>{{ vol.name }}</td>
-              <td>{{ vol.contact }}</td>
-              <td>{{ vol.days }}</td>
-              <td>{{ vol.seva }}</td>
-            </tr>
-          </tbody>
+        <thead>
+          <tr>
+            <th>Action</th>
+            <th>Name</th>
+            <th>Contact no.</th>
+            <th>No. of Days</th>
+            <th>Seva involved</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let vol of volunteerList; let i = index">
+            <td>
+              <button class="btn btn-danger btn-sm" (click)="removeVolunteer(i)">Remove</button>
+            </td>
+            <td>{{ vol.name }}</td>
+            <td>{{ vol.contact }}</td>
+            <td>{{ vol.days }}</td>
+            <td>{{ vol.seva }}</td>
+          </tr>
+          <tr *ngIf="volunteerList.length === 0">
+            <td colspan="5" class="text-center text-muted">No volunteers added yet. Click "Add Volunteer" to add.</td>
+          </tr>
+        </tbody>
         </table>
       </div>
     </div>
-    <!-- Navigation Buttons -->
-    <div class="d-flex justify-content-between mt-3 common-stepper">
-      <button class="btn btn-warning" (click)="previousStep()">Back</button>
-      <div>
-        <button class="btn btn-secondary me-2" (click)="saveAsDraft()" [disabled]="loadingEvent">
-          <i class="fas fa-save me-1"></i>Save as Draft
-        </button>
-        <button class="btn btn-success" (click)="onSubmit()" [disabled]="loadingEvent">
-          <i class="fas fa-check me-1"></i>Submit
-        </button>
-      </div>
+  </div>
+
+  <!-- Navigation Buttons -->
+  <div class="d-flex justify-content-between mt-3 common-stepper">
+    <button class="btn btn-warning" (click)="previousStep()">Back</button>
+    <div>
+      <button class="btn btn-secondary me-2" (click)="saveAsDraft()" [disabled]="loadingEvent">
+        <i class="fas fa-save me-1"></i>Save as Draft
+      </button>
+      <button class="btn btn-success" (click)="onSubmit()" [disabled]="loadingEvent">
+        <i class="fas fa-check me-1"></i>Submit
+      </button>
     </div>
-  </form>
+  </div>
 </div>

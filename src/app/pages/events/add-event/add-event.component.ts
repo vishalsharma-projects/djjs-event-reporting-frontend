@@ -268,6 +268,11 @@ import { EventApiService, EventDetails, EventWithRelatedData, SpecialGuest, Volu
 import { ToastService } from 'src/app/core/services/toast.service';
 import { ValidationSettingsService } from 'src/app/core/services/validation-settings.service';
 import { debounceTime, Subscription } from 'rxjs';
+import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
+import { MediaPromotionModalComponent } from './media-promotion-modal.component';
+import { PromotionalMaterialModalComponent } from './promotional-material-modal.component';
+import { SpecialGuestsModalComponent } from './special-guests-modal.component';
+import { VolunteersModalComponent } from './volunteers-modal.component';
 
 @Component({
   selector: 'app-add-event',
@@ -344,7 +349,8 @@ export class AddEventComponent implements OnInit, OnDestroy {
     eventPhotos: [],
     videoCoverage: '',
     pressRelease: [],
-    testimonials: []
+    testimonials: [],
+    allFiles: []
   };
 
   // File metadata for display and draft storage
@@ -352,7 +358,8 @@ export class AddEventComponent implements OnInit, OnDestroy {
     eventPhotos: [],
     videoCoverage: null,
     pressRelease: [],
-    testimonials: []
+    testimonials: [],
+    allFiles: []
   };
 
   // Mock data for testing
@@ -604,6 +611,12 @@ export class AddEventComponent implements OnInit, OnDestroy {
   prefixes = ['Mr.', 'Mrs.', 'Ms.', 'Dr.', 'Prof.', 'Shri', 'Smt.'];
   sevaTypes = ['Event Management', 'Catering', 'Decoration', 'Transportation', 'Registration', 'Other'];
 
+  // Modal references
+  mediaPromotionModalRef?: BsModalRef;
+  promotionalMaterialModalRef?: BsModalRef;
+  specialGuestsModalRef?: BsModalRef;
+  volunteersModalRef?: BsModalRef;
+
   constructor(
     private fb: FormBuilder,
     private router: Router,
@@ -613,7 +626,8 @@ export class AddEventComponent implements OnInit, OnDestroy {
     private eventDraftService: EventDraftService,
     private eventApiService: EventApiService,
     private toastService: ToastService,
-    public validationSettings: ValidationSettingsService
+    public validationSettings: ValidationSettingsService,
+    private modalService: BsModalService
   ) { }
 
   ngOnInit(): void {
@@ -644,19 +658,25 @@ export class AddEventComponent implements OnInit, OnDestroy {
   /**
    * Load countries first, then load draft data
    * This ensures countries list is available when populating draft
+   * Note: Draft loading is skipped when editing an existing event
    */
   loadCountriesAndThenDraft(): void {
     this.locationService.getCountries().subscribe({
       next: (countries) => {
         this.countries = countries;
-        // Now that countries are loaded, load draft
-        this.loadDraftData();
+        // Only load draft if not editing an existing event
+        // When editing, we load event data instead of draft data
+        if (!this.isEditing) {
+          this.loadDraftData();
+        }
       },
       error: (error) => {
         this.errorMessage = 'Failed to load countries. Please refresh the page.';
         setTimeout(() => this.errorMessage = '', 5000);
-        // Still try to load draft even if countries fail
-        this.loadDraftData();
+        // Only load draft if not editing an existing event
+        if (!this.isEditing) {
+          this.loadDraftData();
+        }
       }
     });
   }
@@ -880,8 +900,15 @@ export class AddEventComponent implements OnInit, OnDestroy {
   /**
    * Auto-save function
    * Called automatically when user types (after 800ms debounce)
+   * Note: When editing an event, auto-save still works but saves to draft separately
+   * The event data is loaded from API, not from draft
    */
   autoSave(step: string, value: any): void {
+    // Skip auto-save if editing and event hasn't loaded yet (to avoid conflicts)
+    if (this.isEditing && this.loadingEvent) {
+      return;
+    }
+
     // Include donationTypes when auto-saving generalDetails
     if (step === 'generalDetails') {
       value = {
@@ -889,11 +916,11 @@ export class AddEventComponent implements OnInit, OnDestroy {
         donationTypes: this.donationTypes || []
       };
     }
-    // Include materialTypes when auto-saving mediaPromotion
+    // Include materialTypes when auto-saving mediaPromotion (only save valid ones)
     if (step === 'mediaPromotion') {
       value = {
         ...value,
-        materialTypes: this.materialTypes || []
+        materialTypes: this.getValidMaterialTypes() || []
       };
     }
     
@@ -1180,7 +1207,8 @@ export class AddEventComponent implements OnInit, OnDestroy {
           eventPhotos: fileMetadata.eventPhotos || [],
           videoCoverage: fileMetadata.videoCoverage || null,
           pressRelease: fileMetadata.pressRelease || [],
-          testimonials: fileMetadata.testimonials || []
+          testimonials: fileMetadata.testimonials || [],
+          allFiles: fileMetadata.allFiles || []
         };
       }
 
@@ -1208,7 +1236,14 @@ export class AddEventComponent implements OnInit, OnDestroy {
 
       // Load material types if they exist
       if (draftData.mediaPromotion.materialTypes && Array.isArray(draftData.mediaPromotion.materialTypes)) {
-        this.materialTypes = draftData.mediaPromotion.materialTypes;
+        // Filter out empty entries when loading from draft
+        const validMaterials = draftData.mediaPromotion.materialTypes.filter((m: any) => 
+          m.materialType && m.materialType.trim() !== ''
+        );
+        // If there are valid materials, use them; otherwise initialize with one empty entry
+        this.materialTypes = validMaterials.length > 0 
+          ? validMaterials 
+          : [{ materialType: '', quantity: '', size: '', customHeight: '', customWidth: '' }];
       }
     }
 
@@ -1783,11 +1818,270 @@ export class AddEventComponent implements OnInit, OnDestroy {
   // Add material type functionality
   addMaterialType(): void {
     this.materialTypes.push({ materialType: '', quantity: '', size: '', customHeight: '', customWidth: '' });
+    // Trigger auto-save after adding
+    this.autoSave('mediaPromotion', {
+      ...this.mediaPromotionForm.value,
+      eventMediaList: this.eventMediaList,
+      materialTypes: this.getValidMaterialTypes(),
+      fileMetadata: this.fileMetadata
+    });
   }
 
   removeMaterialType(index: number): void {
     if (this.materialTypes.length > 1) {
       this.materialTypes.splice(index, 1);
+      // Clean up empty entries and trigger auto-save
+      this.cleanupMaterialTypes();
+      this.autoSave('mediaPromotion', {
+        ...this.mediaPromotionForm.value,
+        eventMediaList: this.eventMediaList,
+        materialTypes: this.getValidMaterialTypes(),
+        fileMetadata: this.fileMetadata
+      });
+    }
+  }
+
+  // Remove material by valid index (for table removal - index from filtered valid materials)
+  removeMaterialTypeByValidIndex(validIndex: number): void {
+    const validMaterials = this.getValidMaterialTypes();
+    if (validIndex >= 0 && validIndex < validMaterials.length) {
+      const materialToRemove = validMaterials[validIndex];
+      // Find the actual index in the full materialTypes array
+      const actualIndex = this.materialTypes.findIndex(m => 
+        m === materialToRemove
+      );
+      if (actualIndex !== -1) {
+        this.materialTypes.splice(actualIndex, 1);
+        // Clean up empty entries and trigger auto-save
+        this.cleanupMaterialTypes();
+        this.autoSave('mediaPromotion', {
+          ...this.mediaPromotionForm.value,
+          eventMediaList: this.eventMediaList,
+          materialTypes: this.getValidMaterialTypes(),
+          fileMetadata: this.fileMetadata
+        });
+      }
+    }
+  }
+
+  // Get only valid material types (with at least materialType filled)
+  getValidMaterialTypes(): any[] {
+    return this.materialTypes.filter(m => m.materialType && m.materialType.trim() !== '');
+  }
+
+  // Get count of valid material types
+  getValidMaterialTypesCount(): number {
+    return this.getValidMaterialTypes().length;
+  }
+
+  // Clean up empty material types (keep only one empty entry if all are empty)
+  cleanupMaterialTypes(): void {
+    const validMaterials = this.getValidMaterialTypes();
+    if (validMaterials.length === 0 && this.materialTypes.length === 0) {
+      // If no valid materials and array is empty, add one empty entry
+      this.materialTypes = [{ materialType: '', quantity: '', size: '', customHeight: '', customWidth: '' }];
+    } else {
+      // Remove all empty entries, keep only valid ones
+      this.materialTypes = validMaterials;
+      // If no valid materials remain, ensure at least one empty entry exists
+      if (this.materialTypes.length === 0) {
+        this.materialTypes = [{ materialType: '', quantity: '', size: '', customHeight: '', customWidth: '' }];
+      }
+    }
+  }
+
+  // Open promotional material modal
+  openPromotionalMaterialModal(): void {
+    // Create a copy of materialTypes to pass to modal (so changes are tracked)
+    const materialTypesCopy = this.materialTypes.map(m => ({ ...m }));
+    
+    const initialState = {
+      materialTypes: materialTypesCopy,
+      materialTypeOptions: this.materialTypeOptions,
+      loadingMaterialTypes: this.loadingMaterialTypes
+    };
+
+    this.promotionalMaterialModalRef = this.modalService.show(PromotionalMaterialModalComponent, {
+      initialState,
+      class: 'modal-lg modal-dialog-centered',
+      backdrop: true,
+      keyboard: true
+    });
+
+    // Subscribe to modal events to sync changes
+    if (this.promotionalMaterialModalRef.content) {
+      this.promotionalMaterialModalRef.content.close.subscribe(() => {
+        if (this.promotionalMaterialModalRef) {
+          this.promotionalMaterialModalRef.hide();
+        }
+      });
+
+      // Sync materialTypes when modal closes (after user makes changes)
+      this.promotionalMaterialModalRef.onHidden?.subscribe(() => {
+        if (this.promotionalMaterialModalRef?.content) {
+          // Sync materialTypes from modal back to parent
+          this.materialTypes = [...this.promotionalMaterialModalRef.content.materialTypes];
+          // Clean up empty entries
+          this.cleanupMaterialTypes();
+          // Trigger auto-save with updated materials
+          this.autoSave('mediaPromotion', {
+            ...this.mediaPromotionForm.value,
+            eventMediaList: this.eventMediaList,
+            materialTypes: this.getValidMaterialTypes(),
+            fileMetadata: this.fileMetadata
+          });
+        }
+      });
+    }
+  }
+
+  // Open media promotion modal
+  openMediaPromotionModal(): void {
+    const initialState = {
+      mediaPromotionForm: this.mediaPromotionForm,
+      eventMediaList: this.eventMediaList,
+      materialTypes: this.materialTypes,
+      fileMetadata: this.fileMetadata,
+      uploadedFiles: this.uploadedFiles,
+      mediaTypes: this.mediaCoverageTypes,
+      materialTypeOptions: this.materialTypeOptions,
+      loadingMaterialTypes: this.loadingMaterialTypes
+    };
+
+    this.mediaPromotionModalRef = this.modalService.show(MediaPromotionModalComponent, {
+      initialState,
+      class: 'modal-lg modal-dialog-centered',
+      backdrop: true,
+      keyboard: true
+    });
+
+    // Subscribe to modal events
+    if (this.mediaPromotionModalRef.content) {
+      this.mediaPromotionModalRef.content.close.subscribe(() => {
+        if (this.mediaPromotionModalRef) {
+          this.mediaPromotionModalRef.hide();
+        }
+      });
+
+      this.mediaPromotionModalRef.content.addEventMedia.subscribe(() => {
+        this.addEventMedia();
+      });
+
+      this.mediaPromotionModalRef.content.removeEventMedia.subscribe((index: number) => {
+        this.removeEventMedia(index);
+      });
+
+      this.mediaPromotionModalRef.content.addMaterialType.subscribe(() => {
+        this.addMaterialType();
+      });
+
+      this.mediaPromotionModalRef.content.removeMaterialType.subscribe((index: number) => {
+        this.removeMaterialType(index);
+      });
+
+      this.mediaPromotionModalRef.content.onFileInputChange.subscribe((data: {event: any, fileType: string}) => {
+        this.onFileInputChange(data.event, data.fileType);
+      });
+
+      this.mediaPromotionModalRef.content.removeFile.subscribe((data: {fileType: string, index?: number}) => {
+        this.removeFile(data.fileType, data.index);
+      });
+
+      // Sync fileMetadata when modal closes
+      this.mediaPromotionModalRef.onHidden?.subscribe(() => {
+        if (this.mediaPromotionModalRef?.content) {
+          // Sync fileMetadata from modal back to parent
+          if (this.mediaPromotionModalRef.content.fileMetadata) {
+            this.fileMetadata = { ...this.mediaPromotionModalRef.content.fileMetadata };
+          }
+          // Trigger auto-save with updated file metadata
+          this.saveFileMetadataToDraft();
+        }
+      });
+    }
+  }
+
+  // Open special guests modal
+  openSpecialGuestsModal(): void {
+    const initialState = {
+      specialGuestsForm: this.specialGuestsForm,
+      specialGuests: this.specialGuests,
+      filteredCities: this.filteredCities,
+      states: this.filteredStates.map(s => s.name)
+    };
+
+    this.specialGuestsModalRef = this.modalService.show(SpecialGuestsModalComponent, {
+      initialState,
+      class: 'modal-lg modal-dialog-centered',
+      backdrop: true,
+      keyboard: true
+    });
+
+    // Subscribe to modal events
+    if (this.specialGuestsModalRef.content) {
+      this.specialGuestsModalRef.content.close.subscribe(() => {
+        if (this.specialGuestsModalRef) {
+          this.specialGuestsModalRef.hide();
+        }
+      });
+
+      this.specialGuestsModalRef.content.addSpecialGuest.subscribe(() => {
+        this.addSpecialGuest();
+      });
+
+      this.specialGuestsModalRef.content.removeSpecialGuest.subscribe((index: number) => {
+        this.removeSpecialGuest(index);
+      });
+    }
+  }
+
+  // Open volunteers modal
+  openVolunteersModal(): void {
+    const initialState = {
+      volunteersForm: this.volunteersForm,
+      volunteers: this.volunteers,
+      volunteerSuggestions: this.volunteerSuggestions,
+      showVolunteerSuggestions: this.showVolunteerSuggestions,
+      searchingVolunteers: this.searchingVolunteers
+    };
+
+    this.volunteersModalRef = this.modalService.show(VolunteersModalComponent, {
+      initialState,
+      class: 'modal-lg modal-dialog-centered',
+      backdrop: true,
+      keyboard: true
+    });
+
+    // Subscribe to modal events
+    if (this.volunteersModalRef.content) {
+      this.volunteersModalRef.content.close.subscribe(() => {
+        if (this.volunteersModalRef) {
+          this.volunteersModalRef.hide();
+        }
+      });
+
+      this.volunteersModalRef.content.addVolunteer.subscribe(() => {
+        this.addVolunteer();
+      });
+
+      this.volunteersModalRef.content.removeVolunteer.subscribe((index: number) => {
+        this.removeVolunteer(index);
+      });
+
+      this.volunteersModalRef.content.searchVolunteers.subscribe((searchTerm: string) => {
+        // Get branch code from modal form if available
+        const branchCode = this.volunteersModalRef.content.volunteersForm?.get('volBranchId')?.value || 
+                          this.volunteersForm?.get('volBranchId')?.value || '';
+        this.searchVolunteers(searchTerm);
+      });
+
+      this.volunteersModalRef.content.selectVolunteer.subscribe((volunteer: Volunteer) => {
+        this.selectVolunteer(volunteer);
+      });
+
+      this.volunteersModalRef.content.hideVolunteerSuggestions.subscribe(() => {
+        this.hideVolunteerSuggestions();
+      });
     }
   }
 
@@ -1877,12 +2171,24 @@ export class AddEventComponent implements OnInit, OnDestroy {
       this.volunteerSuggestions = [];
       this.showVolunteerSuggestions = false;
       this.searchingVolunteers = false;
+      // Update modal if it's open
+      if (this.volunteersModalRef?.content) {
+        this.volunteersModalRef.content.volunteerSuggestions = [];
+        this.volunteersModalRef.content.showVolunteerSuggestions = false;
+        this.volunteersModalRef.content.searchingVolunteers = false;
+      }
       return;
     }
 
     this.searchingVolunteers = true;
     // Show suggestions dropdown while searching
     this.showVolunteerSuggestions = true;
+    
+    // Update modal if it's open
+    if (this.volunteersModalRef?.content) {
+      this.volunteersModalRef.content.searchingVolunteers = true;
+      this.volunteersModalRef.content.showVolunteerSuggestions = true;
+    }
     
     // Get branch code from form if available
     const branchCode = this.volunteersForm?.get('volBranchId')?.value || '';
@@ -1893,6 +2199,13 @@ export class AddEventComponent implements OnInit, OnDestroy {
         // Keep dropdown open if there are results or if we want to show "no results" message
         this.showVolunteerSuggestions = true;
         this.searchingVolunteers = false;
+        
+        // Update modal if it's open
+        if (this.volunteersModalRef?.content) {
+          this.volunteersModalRef.content.volunteerSuggestions = volunteers || [];
+          this.volunteersModalRef.content.showVolunteerSuggestions = true;
+          this.volunteersModalRef.content.searchingVolunteers = false;
+        }
       },
       error: (error) => {
         console.error('[AddEventComponent] Error searching volunteers:', error);
@@ -1900,6 +2213,13 @@ export class AddEventComponent implements OnInit, OnDestroy {
         // Still show dropdown to display error or "no results" message
         this.showVolunteerSuggestions = true;
         this.searchingVolunteers = false;
+        
+        // Update modal if it's open
+        if (this.volunteersModalRef?.content) {
+          this.volunteersModalRef.content.volunteerSuggestions = [];
+          this.volunteersModalRef.content.showVolunteerSuggestions = true;
+          this.volunteersModalRef.content.searchingVolunteers = false;
+        }
       }
     });
   }
@@ -1940,6 +2260,10 @@ export class AddEventComponent implements OnInit, OnDestroy {
       // Only hide if user is not interacting with dropdown
       if (!this.searchingVolunteers) {
         this.showVolunteerSuggestions = false;
+        // Update modal if it's open
+        if (this.volunteersModalRef?.content) {
+          this.volunteersModalRef.content.showVolunteerSuggestions = false;
+        }
       }
     }, 300);
   }
@@ -2015,6 +2339,39 @@ export class AddEventComponent implements OnInit, OnDestroy {
 
     const files = Array.from(input.files);
 
+    // Handle allFiles (combined Photos, Videos, Documents)
+    if (fileType === 'allFiles') {
+      // Add new files to existing allFiles array
+      if (!this.uploadedFiles.allFiles) {
+        this.uploadedFiles.allFiles = [];
+      }
+      if (!this.fileMetadata.allFiles) {
+        this.fileMetadata.allFiles = [];
+      }
+      
+      // Add files to uploadedFiles
+      this.uploadedFiles.allFiles.push(...files);
+      
+      // Store file metadata for display and draft
+      const newFileMetadata = files.map((file: File) => ({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        lastModified: file.lastModified
+      }));
+      this.fileMetadata.allFiles.push(...newFileMetadata);
+      
+      // Trigger auto-save to include file metadata in draft
+      this.saveFileMetadataToDraft();
+      
+      // Show message
+      this.toastService.info(`${files.length} file(s) selected. They will be uploaded when you save the event.`, 'Files Selected');
+      
+      // Reset input
+      input.value = '';
+      return;
+    }
+
     // Store files to upload after event creation
     if (fileType === 'eventPhotos' || fileType === 'pressRelease' || fileType === 'testimonials') {
       this.uploadedFiles[fileType] = files;
@@ -2050,6 +2407,8 @@ export class AddEventComponent implements OnInit, OnDestroy {
   saveFileMetadataToDraft(): void {
     const mediaPromotionData = {
       ...this.mediaPromotionForm.value,
+      eventMediaList: this.eventMediaList,
+      materialTypes: this.getValidMaterialTypes(),
       fileMetadata: this.fileMetadata
     };
     this.autoSave('mediaPromotion', mediaPromotionData);
@@ -2057,6 +2416,23 @@ export class AddEventComponent implements OnInit, OnDestroy {
 
   // Remove file from selection
   removeFile(fileType: string, index?: number): void {
+    if (fileType === 'allFiles') {
+      if (index !== undefined) {
+        if (this.uploadedFiles.allFiles && this.uploadedFiles.allFiles.length > index) {
+          this.uploadedFiles.allFiles.splice(index, 1);
+        }
+        if (this.fileMetadata.allFiles && this.fileMetadata.allFiles.length > index) {
+          this.fileMetadata.allFiles.splice(index, 1);
+        }
+      } else {
+        this.uploadedFiles.allFiles = [];
+        this.fileMetadata.allFiles = [];
+      }
+      // Update draft
+      this.saveFileMetadataToDraft();
+      return;
+    }
+    
     if (fileType === 'videoCoverage') {
       this.uploadedFiles[fileType] = '';
       this.fileMetadata[fileType] = null;
@@ -2130,6 +2506,22 @@ export class AddEventComponent implements OnInit, OnDestroy {
     if (this.uploadedFiles.testimonials && Array.isArray(this.uploadedFiles.testimonials) && this.uploadedFiles.testimonials.length > 0) {
       this.uploadedFiles.testimonials.forEach((file: File) => {
         this.uploadQueue.push({ file, category: 'Testimonials', eventId });
+      });
+    }
+
+    // Add allFiles (combined Photos, Videos, Documents) to queue
+    if (this.uploadedFiles.allFiles && Array.isArray(this.uploadedFiles.allFiles) && this.uploadedFiles.allFiles.length > 0) {
+      this.uploadedFiles.allFiles.forEach((file: File) => {
+        // Categorize files based on type
+        let category = 'Media Files';
+        if (file.type.startsWith('image/')) {
+          category = 'Event Photos';
+        } else if (file.type.startsWith('video/')) {
+          category = 'Video Coverage';
+        } else if (file.type.includes('pdf') || file.type.includes('doc') || file.type.includes('document')) {
+          category = 'Press Release';
+        }
+        this.uploadQueue.push({ file, category, eventId });
       });
     }
 
@@ -2215,13 +2607,15 @@ export class AddEventComponent implements OnInit, OnDestroy {
       eventPhotos: [],
       videoCoverage: '',
       pressRelease: [],
-      testimonials: []
+      testimonials: [],
+      allFiles: []
     };
     this.fileMetadata = {
       eventPhotos: [],
       videoCoverage: null,
       pressRelease: [],
-      testimonials: []
+      testimonials: [],
+      allFiles: []
     };
   }
 
@@ -2432,7 +2826,23 @@ export class AddEventComponent implements OnInit, OnDestroy {
       error: (error) => {
         console.error('Error loading event:', error);
         this.loadingEvent = false;
-        this.toastService.error('Failed to load event data.', 'Error');
+        let errorMessage = 'Failed to load event data.';
+        
+        if (error.status === 404) {
+          errorMessage = 'Event not found. It may have been deleted.';
+        } else if (error.status === 403) {
+          errorMessage = 'You do not have permission to edit this event.';
+        } else if (error.error?.error) {
+          errorMessage = error.error.error;
+        } else if (error.error?.message) {
+          errorMessage = error.error.message;
+        }
+        
+        this.toastService.error(errorMessage, 'Error');
+        // Navigate back to events list after a short delay
+        setTimeout(() => {
+          this.router.navigate(['/events']);
+        }, 2000);
       }
     });
   }
@@ -2722,10 +3132,12 @@ export class AddEventComponent implements OnInit, OnDestroy {
       },
       mediaPromotion: {
         ...mediaPromotion,
-        eventMediaList: this.eventMediaList || []
+        eventMediaList: this.eventMediaList || [],
+        materialTypes: this.getValidMaterialTypes() || [],
+        fileMetadata: this.fileMetadata || {}
       },
       donationTypes: this.donationTypes || [],
-      materialTypes: this.materialTypes || [],
+      materialTypes: this.getValidMaterialTypes() || [],
       specialGuests: this.specialGuests || [],
       volunteers: this.volunteers || [],
       uploadedFiles: this.uploadedFiles || {}
@@ -3170,13 +3582,15 @@ export class AddEventComponent implements OnInit, OnDestroy {
       eventPhotos: [],
       videoCoverage: '',
       pressRelease: [],
-      testimonials: []
+      testimonials: [],
+      allFiles: []
     };
     this.fileMetadata = {
       eventPhotos: [],
       videoCoverage: null,
       pressRelease: [],
-      testimonials: []
+      testimonials: [],
+      allFiles: []
     };
     this.successMessage = 'All forms cleared successfully!';
     setTimeout(() => this.successMessage = '', 3000);

@@ -6,7 +6,7 @@
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h5 class="mb-0">All Members ({{ members.length }})</h5>
-          <button class="btn btn-primary" (click)="openAddMemberModal()">
+          <button class="btn btn-primary" (click)="openAddMemberModal()" style="background: linear-gradient(135deg, #ff6b35, #f7931e); border: none;">
             <i class="fas fa-plus me-1"></i>Add Member
           </button>
         </div>
@@ -156,17 +156,13 @@
           <!-- Branch Selection - All Branches (Parent and Child) -->
           <div class="row mb-3">
             <div class="col-12">
-              <label class="form-label">Select Branch <span class="text-danger">*</span></label>
-              <select class="form-select" formControlName="branch_id"
-                [ngClass]="{'is-invalid': memberForm.get('branch_id')?.invalid && memberForm.get('branch_id')?.touched}">
+              <label class="form-label">Select Branch</label>
+              <select class="form-select" formControlName="branch_id">
                 <option [value]="null">-- Select a Branch --</option>
                 <option *ngFor="let branch of allBranches" [value]="branch.id">
                   {{ branch.name }}{{ branch.isChildBranch ? ' (Child Branch)' : '' }}
                 </option>
               </select>
-              <div *ngIf="memberForm.get('branch_id')?.invalid && memberForm.get('branch_id')?.touched" class="invalid-feedback">
-                Please select a branch
-              </div>
             </div>
           </div>
 

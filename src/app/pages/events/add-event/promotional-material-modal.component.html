@@ -1,0 +1,65 @@
+<div class="modal-header">
+  <h5 class="modal-title">Promotional Material Used</h5>
+  <button type="button" class="btn-close" (click)="onClose()" aria-label="Close"></button>
+</div>
+<div class="modal-body">
+  <form [formGroup]="materialTypesForm">
+    <!-- Dynamic Material Type Entries -->
+    <div formArrayName="materials">
+      <div *ngFor="let material of materialTypes; let i = index" class="mb-4" [formGroupName]="i">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Material type <span class="text-danger">*</span></label>
+            <ng-select formControlName="materialType"
+              [items]="materialTypeOptions"
+              [searchable]="true"
+              [clearable]="true"
+              [placeholder]="loadingMaterialTypes ? 'Loading...' : 'Select Material Type'"
+              [disabled]="loadingMaterialTypes"
+              [ngClass]="{'is-invalid': isFieldInvalid(i, 'materialType')}">
+            </ng-select>
+            <small *ngIf="loadingMaterialTypes" class="text-muted">Loading material types...</small>
+            <div *ngIf="isFieldInvalid(i, 'materialType')" class="invalid-feedback">
+              {{ getFieldError(i, 'materialType') }}
+            </div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Quantity <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="quantity" placeholder="Enter quantity"
+              [ngClass]="{'is-invalid': isFieldInvalid(i, 'quantity')}" />
+            <div *ngIf="isFieldInvalid(i, 'quantity')" class="invalid-feedback">
+              {{ getFieldError(i, 'quantity') }}
+            </div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Size</label>
+            <input type="text" class="form-control" formControlName="size" placeholder="Enter size" />
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Custom dimension</label>
+            <div class="input-group">
+              <input type="number" class="form-control" placeholder="Height" formControlName="customHeight" />
+              <span class="input-group-text">x</span>
+              <input type="number" class="form-control" placeholder="Width" formControlName="customWidth" />
+              <span class="input-group-text">inch</span>
+            </div>
+          </div>
+          <div class="col-12 mb-3">
+            <button type="button" class="btn btn-warning btn-xs" (click)="onRemoveMaterialType(i)"
+              [disabled]="materialTypes.length === 1">
+              <i class="fas fa-trash"></i> Remove
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-3">
+      <button class="btn btn-warning btn-sm" type="button" (click)="onAddMaterialType()">+ Add material type</button>
+    </div>
+  </form>
+</div>
+<div class="modal-footer">
+  <button type="button" class="btn btn-outline-secondary" (click)="onClose()">Close</button>
+</div>
+

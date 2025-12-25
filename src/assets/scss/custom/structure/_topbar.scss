@@ -373,6 +373,7 @@ body:not(.vertical-collpsed) {
     margin-bottom: 0;
     padding-bottom: calc(#{$grid-gutter-width} * 0.75);
     flex: 1;
+    min-height: 0; // Critical: allows flex child to shrink below content size
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
