@@ -14,10 +14,7 @@ import { of } from 'rxjs'
 })
 export class EditBranchComponent implements OnInit {
     branchForm: FormGroup;
-    activeMemberType: 'preacher' | 'samarpit' = 'samarpit';
-    activeTab: string = 'branch';   // default tab
     branchId: number | null = null;
-    searchTerm: string = '';
 
     //Track progress
     completion = 0; // example, bind dynamically based on form fill %
@@ -58,9 +55,6 @@ export class EditBranchComponent implements OnInit {
     ) { }
 
     //for Tabs
-    setActiveTab(tab: string) {
-        this.activeTab = tab;
-    }
 
     ngOnInit(): void {
         console.log('EditBranchComponent - ngOnInit called');
@@ -95,17 +89,7 @@ export class EditBranchComponent implements OnInit {
             status: [true],
             ncr: [false],
             regionId: [''],
-            branchCode: [''],
-            members: this.fb.array([]),
-            // Member input fields (for adding new members)
-            memberType: ['samarpit'], // Default member type
-            memberName: [''], // Member name input
-            memberRole: [''], // Member role input
-            memberResponsibility: [''], // Member responsibility input
-            memberAge: [''], // Member age input
-            memberDateOfSamarpan: [''], // Member date of samarpan input
-            memberQualification: [''], // Member qualification input
-            memberDateOfBirth: [''] // Member date of birth input
+            branchCode: ['']
         });
 
         // Set initial breadcrumbs
@@ -410,8 +394,6 @@ export class EditBranchComponent implements OnInit {
                 // Load infrastructure data
                 this.loadBranchInfrastructure();
 
-                // Load members for this branch
-                this.loadBranchMembers();
 
                 // Now handle location fields (country -> state -> city)
                 if (countryIdToUse) {
@@ -706,147 +688,6 @@ export class EditBranchComponent implements OnInit {
         }));
     }
 
-    get members(): FormArray {
-        return this.branchForm.get('members') as FormArray;
-    }
-
-
-    addMember() {
-        const memberType = this.branchForm.get('memberType')?.value || 'samarpit';
-        const name = this.branchForm.get('memberName')?.value || '';
-        const role = this.branchForm.get('memberRole')?.value || '';
-        const responsibility = this.branchForm.get('memberResponsibility')?.value || '';
-        const age = this.branchForm.get('memberAge')?.value || '';
-        const dateOfSamarpan = this.branchForm.get('memberDateOfSamarpan')?.value || '';
-        const qualification = this.branchForm.get('memberQualification')?.value || '';
-        const dateOfBirth = this.branchForm.get('memberDateOfBirth')?.value || '';
-        
-        // Validate required fields
-        if (!name || !role) {
-            this.messageService.add({
-                severity: 'warn',
-                summary: 'Validation Error',
-                detail: 'Name and Role are required fields',
-                life: 3000
-            });
-            return;
-        }
-        
-        this.members.push(this.fb.group({
-            id: [null], // null for new members, will be set for existing members
-            name: [name, Validators.required],
-            role: [role, Validators.required],
-            responsibility: [responsibility],
-            age: [age],
-            dateOfSamarpan: [dateOfSamarpan],
-            qualification: [qualification],
-            dateOfBirth: [dateOfBirth],
-            memberType: [memberType, Validators.required]
-        }));
-        
-        // Clear the input fields after adding
-        this.branchForm.patchValue({
-            memberName: '',
-            memberRole: '',
-            memberResponsibility: '',
-            memberAge: '',
-            memberDateOfSamarpan: '',
-            memberQualification: '',
-            memberDateOfBirth: ''
-        });
-    }
-
-    removeMember(index: number) {
-        const memberControl = this.members.at(index);
-        const memberId = memberControl.get('id')?.value;
-        const memberName = memberControl.get('name')?.value || 'this member';
-
-        if (memberId) {
-            // Existing member - confirm deletion first
-            this.confirmationDialog.confirmDelete({
-                title: 'Delete Member',
-                text: `Are you sure you want to delete "${memberName}"? This action cannot be undone.`,
-                successTitle: 'Member Deleted',
-                successText: `Member "${memberName}" deleted successfully`,
-                showSuccessMessage: false // We'll use PrimeNG message service instead
-            }).then((result) => {
-                if (result.value) {
-                    this.locationService.deleteBranchMember(memberId).subscribe({
-                        next: () => {
-                            this.members.removeAt(index);
-                            this.messageService.add({
-                                severity: 'success',
-                                summary: 'Success',
-                                detail: `Member "${memberName}" deleted successfully`,
-                                life: 3000
-                            });
-                        },
-                        error: (error) => {
-                            console.error('Error deleting member:', error);
-                            let errorMessage = 'Failed to delete member. Please try again.';
-
-                            if (error.error) {
-                                if (error.error.message) {
-                                    errorMessage = error.error.message;
-                                } else if (error.error.error) {
-                                    errorMessage = error.error.error;
-                                } else if (typeof error.error === 'string') {
-                                    errorMessage = error.error;
-                                }
-                            } else if (error.message) {
-                                errorMessage = error.message;
-                            }
-
-                            this.messageService.add({
-                                severity: 'error',
-                                summary: 'Error',
-                                detail: errorMessage,
-                                life: 5000
-                            });
-                        }
-                    });
-                }
-            });
-        } else {
-            // New member - just remove from form (no confirmation needed for unsaved member)
-            this.members.removeAt(index);
-        }
-    }
-
-    switchMemberType(type: 'preacher' | 'samarpit') {
-        this.activeMemberType = type;
-    }
-
-    onSearchChange(searchValue: string): void {
-        this.searchTerm = searchValue;
-    }
-
-    get filteredMembers() {
-        let filtered = this.members.controls.filter(m => m.value.memberType === this.activeMemberType);
-        
-        // Apply search term filter
-        if (this.searchTerm && this.searchTerm.trim()) {
-            const searchLower = this.searchTerm.toLowerCase().trim();
-            filtered = filtered.filter(member => {
-                const nameMatch = member.value.name?.toLowerCase().includes(searchLower) || false;
-                const roleMatch = member.value.role?.toLowerCase().includes(searchLower) || false;
-                const responsibilityMatch = member.value.responsibility?.toLowerCase().includes(searchLower) || false;
-                const qualificationMatch = member.value.qualification?.toLowerCase().includes(searchLower) || false;
-                const memberTypeMatch = member.value.memberType?.toLowerCase().includes(searchLower) || false;
-                return nameMatch || roleMatch || responsibilityMatch || qualificationMatch || memberTypeMatch;
-            });
-        }
-        
-        return filtered;
-    }
-
-    get preacherCount() {
-        return this.members.controls.filter(m => m.value.memberType === 'preacher').length;
-    }
-
-    get samarpitCount() {
-        return this.members.controls.filter(m => m.value.memberType === 'samarpit').length;
-    }
 
     onSubmit() {
         if (this.branchForm.valid && !this.isSubmitting && this.branchId) {
@@ -917,18 +758,15 @@ export class EditBranchComponent implements OnInit {
                 next: (response) => {
                     console.log('Branch updated successfully:', response);
 
-                    // Save members after branch update
-                    this.saveOrUpdateMembers(() => {
-                        this.messageService.add({
-                            severity: 'success',
-                            summary: 'Success',
-                            detail: 'Branch and members updated successfully!'
-                        });
-                        this.isSubmitting = false;
-                        setTimeout(() => {
-                            this.router.navigate(['/branch']);
-                        }, 1500);
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Success',
+                        detail: 'Branch updated successfully!'
                     });
+                    this.isSubmitting = false;
+                    setTimeout(() => {
+                        this.router.navigate(['/branch']);
+                    }, 1500);
                 },
                 error: (error) => {
                     console.error('Error updating branch:', error);
@@ -1077,117 +915,5 @@ export class EditBranchComponent implements OnInit {
         });
     }
 
-    /**
-     * Load branch members from API
-     */
-    loadBranchMembers() {
-        if (!this.branchId) return;
-
-        this.locationService.getBranchMembers(this.branchId).subscribe({
-            next: (members) => {
-                // Clear existing members
-                while (this.members.length !== 0) {
-                    this.members.removeAt(0);
-                }
-
-                // Add members to form
-                members.forEach((member: any) => {
-                    this.members.push(this.fb.group({
-                        id: [member.id],
-                        name: [member.name || '', Validators.required],
-                        role: [member.branch_role || '', Validators.required],
-                        responsibility: [member.responsibility || ''],
-                        age: [member.age || ''],
-                        dateOfSamarpan: [member.date_of_samarpan ? member.date_of_samarpan.split('T')[0] : ''],
-                        qualification: [member.qualification || ''],
-                        dateOfBirth: [member.date_of_birth ? member.date_of_birth.split('T')[0] : ''],
-                        memberType: [member.member_type || 'samarpit', Validators.required]
-                    }));
-                });
-            },
-            error: (error) => {
-                console.error('Error loading branch members:', error);
-            }
-        });
-    }
-
-    /**
-     * Save or update members after branch update
-     */
-    saveOrUpdateMembers(callback?: () => void) {
-        const membersToProcess = this.members.controls.filter(m => m.valid);
-        if (membersToProcess.length === 0) {
-            if (callback) callback();
-            return;
-        }
-
-        let completed = 0;
-        const total = membersToProcess.length;
-        let hasError = false;
-
-        membersToProcess.forEach((memberControl) => {
-            const memberData = memberControl.value;
-            const memberId = memberData.id;
-            const memberPayload = {
-                branch_id: this.branchId,
-                member_type: memberData.memberType,
-                name: memberData.name,
-                branch_role: memberData.role || '',
-                responsibility: memberData.responsibility || '',
-                age: memberData.age ? parseInt(memberData.age, 10) : 0,
-                date_of_samarpan: memberData.dateOfSamarpan || null,
-                qualification: memberData.qualification || '',
-                date_of_birth: memberData.dateOfBirth || null
-            };
-
-            if (memberId) {
-                // Update existing member
-                this.locationService.updateBranchMember(memberId, memberPayload).subscribe({
-                    next: () => {
-                        completed++;
-                        if (completed === total && !hasError) {
-                            if (callback) callback();
-                        }
-                    },
-                    error: (error) => {
-                        console.error('Error updating member:', error);
-                        hasError = true;
-                        completed++;
-                        if (completed === total) {
-                            this.messageService.add({
-                                severity: 'warn',
-                                summary: 'Warning',
-                                detail: 'Branch updated but some members could not be saved.'
-                            });
-                            if (callback) callback();
-                        }
-                    }
-                });
-            } else {
-                // Create new member
-                this.locationService.createBranchMember(memberPayload).subscribe({
-                    next: () => {
-                        completed++;
-                        if (completed === total && !hasError) {
-                            if (callback) callback();
-                        }
-                    },
-                    error: (error) => {
-                        console.error('Error creating member:', error);
-                        hasError = true;
-                        completed++;
-                        if (completed === total) {
-                            this.messageService.add({
-                                severity: 'warn',
-                                summary: 'Warning',
-                                detail: 'Branch updated but some members could not be saved.'
-                            });
-                            if (callback) callback();
-                        }
-                    }
-                });
-            }
-        });
-    }
 
 }

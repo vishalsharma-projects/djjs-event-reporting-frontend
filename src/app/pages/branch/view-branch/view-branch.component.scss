@@ -1,3 +1,22 @@
+// Button styles - use orange theme instead of blue
+.btn-edit {
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  border: none;
+  color: white;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+    background: linear-gradient(135deg, #e55a2b 0%, #e0851a 100%);
+    color: white;
+  }
+}
+
 .nav-tabs-custom {
   border-bottom: 2px solid #dee2e6;
 
@@ -22,5 +41,31 @@
 
 .tab-content {
   padding-top: 1rem;
+}
+
+// Override any blue colors
+.btn-primary {
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%) !important;
+  border-color: #ff6b35 !important;
+  color: white !important;
+
+  &:hover {
+    background: linear-gradient(135deg, #e55a2b 0%, #e0851a 100%) !important;
+    border-color: #e55a2b !important;
+    color: white !important;
+  }
+}
+
+.text-primary {
+  color: #ff6b35 !important;
+}
+
+.text-orange {
+  color: #ff6b35 !important;
+}
+
+.spinner-border.text-orange {
+  border-color: #ff6b35;
+  border-right-color: transparent;
 }
 

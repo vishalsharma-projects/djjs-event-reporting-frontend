@@ -32,8 +32,8 @@ export class ViewBranchComponent implements OnInit {
   branch: Branch | null = null;
   loading: boolean = false;
   activeTab: 'details' | 'members' = 'details';
-  completion: number = 0;
-  circumference: number = 2 * Math.PI * 45; // radius = 45
+  branchInfrastructure: any[] = [];
+  membersCount: number = 0;
 
   // Breadcrumb items
   breadCrumbItems: Array<{}> = [];
@@ -81,15 +81,15 @@ export class ViewBranchComponent implements OnInit {
       next: (branch) => {
         console.log('Branch loaded successfully:', branch);
         this.branch = branch;
-        this.loading = false;
         // Update breadcrumb with branch name
         this.breadCrumbItems = [
           { label: 'Branches', routerLink: '/branch' },
           { label: branch.name || 'Branch Details', active: true }
         ];
-        // Calculate completion percentage
-        this.calculateCompletion();
-        console.log('Branch completion:', this.completion);
+        // Load infrastructure and members count
+        this.loadBranchInfrastructure();
+        this.loadMembersCount();
+        this.loading = false;
       },
       error: (error) => {
         console.error('Error loading branch:', error);
@@ -127,31 +127,40 @@ export class ViewBranchComponent implements OnInit {
     });
   }
 
-  calculateCompletion() {
-    if (!this.branch) return;
-    let filledFields = 0;
-    const totalFields = 15; // Adjust based on your fields
+  loadBranchInfrastructure() {
+    if (!this.branchId) return;
 
-    if (this.branch.name) filledFields++;
-    if (this.branch.email) filledFields++;
-    if (this.branch.contact_number) filledFields++;
-    if (this.branch.coordinator_name) filledFields++;
-    if (this.branch.established_on) filledFields++;
-    if (this.branch.aashram_area) filledFields++;
-    if (this.branch.country?.name) filledFields++;
-    if (this.branch.state?.name) filledFields++;
-    if (this.branch.city?.name) filledFields++;
-    if (this.branch.address) filledFields++;
-    if (this.branch.pincode) filledFields++;
-    if (this.branch.post_office) filledFields++;
-    if (this.branch.police_station) filledFields++;
-    if (this.branch.open_days) filledFields++;
+    this.locationService.getBranchInfraByBranchId(this.branchId).subscribe({
+      next: (infra) => {
+        this.branchInfrastructure = infra || [];
+      },
+      error: (error) => {
+        console.error('Error loading branch infrastructure:', error);
+        this.branchInfrastructure = [];
+      }
+    });
+  }
 
-    this.completion = Math.round((filledFields / totalFields) * 100);
+  loadMembersCount() {
+    if (!this.branchId) return;
+
+    this.locationService.getBranchMembers(this.branchId).subscribe({
+      next: (members) => {
+        this.membersCount = members?.length || 0;
+      },
+      error: (error) => {
+        console.error('Error loading members count:', error);
+        this.membersCount = 0;
+      }
+    });
   }
 
   setActiveTab(tab: 'details' | 'members') {
     this.activeTab = tab;
+  }
+
+  goBack() {
+    this.router.navigate(['/branch']);
   }
 
   editBranch() {

@@ -153,6 +153,12 @@
                       <span>Edit</span>
                     </a>
                     <a class="dropdown-item" href="#"
+                      (click)="viewBranchMembers(branch.id); closeActionMenu(); $event.preventDefault()"
+                      title="View Members">
+                      <i class="pi pi-users"></i>
+                      <span>View Members</span>
+                    </a>
+                    <a class="dropdown-item" href="#"
                       (click)="addBranchMember(branch.id); closeActionMenu(); $event.preventDefault()"
                       title="Add Member">
                       <i class="pi pi-user-plus"></i>
@@ -252,6 +258,12 @@
                                   <span>Edit</span>
                                 </a>
                                 <a class="dropdown-item" href="#"
+                                  (click)="viewBranchMembers(childBranch.id); closeActionMenu(); $event.preventDefault()"
+                                  title="View Members">
+                                  <i class="pi pi-users"></i>
+                                  <span>View Members</span>
+                                </a>
+                                <a class="dropdown-item" href="#"
                                   (click)="addChildBranchMember(childBranch.id); closeActionMenu(); $event.preventDefault()"
                                   title="Add Member">
                                   <i class="pi pi-user-plus"></i>
@@ -302,5 +314,79 @@
         </p-table>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Branch Members Drawer - Custom Right-Side Drawer -->
+<div class="volunteer-drawer-backdrop"
+     *ngIf="isMembersDrawerOpen"
+     (click)="closeMembersDrawer()"
+     [class.show]="isMembersDrawerOpen">
+</div>
+
+<div class="volunteer-drawer"
+     *ngIf="isMembersDrawerOpen"
+     [class.show]="isMembersDrawerOpen"
+     (click)="$event.stopPropagation()">
+  <!-- Drawer Header -->
+  <div class="drawer-header">
+    <h5 id="membersDrawerTitle">Members ({{ selectedBranchMembers?.length || 0 }})</h5>
+    <button type="button"
+            class="drawer-close"
+            (click)="closeMembersDrawer()"
+            aria-label="Close">
+      ✕
+    </button>
+  </div>
+
+  <!-- Drawer Content - Scrollable Content -->
+  <div class="drawer-content">
+    <div *ngIf="loadingMembers[selectedBranchId || '']" class="text-center p-4">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="text-muted mt-2">Loading members...</p>
+    </div>
+    <div *ngIf="!loadingMembers[selectedBranchId || ''] && (!selectedBranchMembers || selectedBranchMembers.length === 0)" class="text-center">
+      <i class="pi pi-users text-muted" style="font-size: 3rem;"></i>
+      <p class="text-muted mt-3">No members found for this branch.</p>
+    </div>
+    <div *ngIf="!loadingMembers[selectedBranchId || ''] && selectedBranchMembers && selectedBranchMembers.length > 0">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Member Type</th>
+            <th>Branch Role</th>
+            <th>Responsibility</th>
+            <th>Age</th>
+            <th>Qualification</th>
+            <th>Date of Samarpan</th>
+            <th>Date of Birth</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let member of selectedBranchMembers">
+            <td data-label="Name">{{ member.name || 'N/A' }}</td>
+            <td data-label="Member Type">{{ member.member_type || 'N/A' }}</td>
+            <td data-label="Branch Role">{{ member.branch_role || 'N/A' }}</td>
+            <td data-label="Responsibility">{{ member.responsibility || 'N/A' }}</td>
+            <td data-label="Age">{{ member.age || 'N/A' }}</td>
+            <td data-label="Qualification">{{ member.qualification || 'N/A' }}</td>
+            <td data-label="Date of Samarpan">{{ member.date_of_samarpan || 'N/A' }}</td>
+            <td data-label="Date of Birth">{{ member.date_of_birth || 'N/A' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Drawer Footer -->
+  <div class="drawer-footer">
+    <button type="button"
+            class="btn btn-secondary"
+            (click)="closeMembersDrawer()">
+      Close
+    </button>
   </div>
 </div>

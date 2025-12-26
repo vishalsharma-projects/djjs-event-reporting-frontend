@@ -18,28 +18,16 @@
   <!-- Tabs -->
   <ul class="nav nav-tabs nav-tabs-custom" role="tablist">
   <li class="nav-item">
-    <button class="nav-link"
-      [ngClass]="{'active': activeTab === 'branch'}"
-      (click)="setActiveTab('branch')"
+    <button class="nav-link active"
       type="button">
       <span class="d-block d-sm-none"><i class="fas fa-user-plus"></i></span>
       <span class="d-none d-sm-block">Branch Details</span>
     </button>
   </li>
-  <li class="nav-item">
-    <button class="nav-link"
-      [ngClass]="{'active': activeTab === 'members'}"
-      (click)="setActiveTab('members')"
-      type="button">
-      <span class="d-block d-sm-none"><i class="fas fa-users"></i></span>
-      <span class="d-none d-sm-block">Members</span>
-    </button>
-  </li>
 </ul>
-  <!-- Tab Content Branch Details-->
-  <div  class="tab-content p-3">
-      <div class="tab-pane"
-       [ngClass]="{'show active': activeTab === 'branch'}">
+  <!-- Branch Details Content-->
+  <div class="tab-content p-3">
+      <div class="tab-pane show active">
       <!-- Branch details -->
       <section class="card mb-4">
         <div class="card-body">
@@ -277,99 +265,6 @@
 
 
 
-
-    </div>
-
-    <!-- Tab Content Members-->
-   <div class="tab-pane"
-       [ngClass]="{'show active': activeTab === 'members'}">
-      <!-- List of Members -->
-      <section class="card mb-4">
-        <div class="card-body">
-          <div class="alert alert-info mb-3" role="alert">
-            <i class="fas fa-info-circle me-2"></i>
-            <strong>Note:</strong> This is a view-only list of members for this branch. To add new members, please use the branch members management page.
-          </div>
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">List of Members ({{members.length}})</h5>
-            <div class="btn-group">
-              <button type="button" class="btn btn-sm"
-                [ngClass]="{'btn-primary': activeMemberType==='preacher', 'btn-outline-primary': activeMemberType!=='preacher'}"
-                (click)="switchMemberType('preacher')">
-                Preacher ({{preacherCount}})
-              </button>
-              <button type="button" class="btn btn-sm"
-                [ngClass]="{'btn-primary': activeMemberType==='samarpit', 'btn-outline-primary': activeMemberType!=='samarpit'}"
-                (click)="switchMemberType('samarpit')">
-                Samarpit Sewadar ({{samarpitCount}})
-              </button>
-            </div>
-          </div>
-
-          <!-- Search Section -->
-          <div class="mb-3">
-            <div class="form-group">
-              <label for="searchMembers" class="form-label">Search Members</label>
-              <div class="input-group">
-                <span class="input-group-text">
-                  <i class="fas fa-search"></i>
-                </span>
-                <input type="text" class="form-control" id="searchMembers"
-                       placeholder="Search by name, role, responsibility, qualification, or type"
-                       [(ngModel)]="searchTerm"
-                       (input)="onSearchChange($any($event.target).value)">
-              </div>
-            </div>
-          </div>
-
-          <div class="table-responsive">
-            <table class="table table-bordered align-middle">
-              <thead class="table-light">
-                <tr>
-                  <th>Name</th>
-                  <th>Role</th>
-                  <th>Responsibility</th>
-                  <th>Age</th>
-                  <th>Date of samarpan</th>
-                  <th>Qualification</th>
-                  <th>Date of birth</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let member of filteredMembers; let i = index">
-                  <td>{{member.value.name || '-'}}</td>
-                  <td>{{member.value.role || '-'}}</td>
-                  <td>{{member.value.responsibility || '-'}}</td>
-                  <td>{{member.value.age || '-'}}</td>
-                  <td>{{member.value.dateOfSamarpan || '-'}}</td>
-                  <td>{{member.value.qualification || '-'}}</td>
-                  <td>{{member.value.dateOfBirth || '-'}}</td>
-                  <td>
-                    <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeMember(i)">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  </td>
-                </tr>
-                <tr *ngIf="filteredMembers.length === 0">
-                  <td colspan="8" class="text-center text-muted">No members to show</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="d-flex justify-content-between align-items-center">
-            <small class="text-muted">
-              Showing 1 to {{filteredMembers.length}} of {{filteredMembers.length}} entries
-            </small>
-            <div class="btn-group">
-              <button type="button" class="btn btn-sm btn-outline-secondary">Previous</button>
-              <button type="button" class="btn btn-sm btn-primary">1</button>
-              <button type="button" class="btn btn-sm btn-outline-secondary">Next</button>
-            </div>
-          </div>
-        </div>
-      </section>
 
     </div>
   </div>

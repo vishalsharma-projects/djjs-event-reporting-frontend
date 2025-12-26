@@ -66,6 +66,11 @@ export class BranchListComponent implements OnInit, OnDestroy {
   // Action menu state
   openActionMenu: string | null = null;
 
+  // Members drawer state
+  isMembersDrawerOpen: boolean = false;
+  selectedBranchId: string | null = null;
+  selectedBranchMembers: any[] = [];
+
   constructor(
     private router: Router,
     private locationService: LocationService,
@@ -792,6 +797,128 @@ export class BranchListComponent implements OnInit, OnDestroy {
   }
 
   // Close dropdown when clicking outside
+  // View branch members
+  viewBranchMembers(branchId: string): void {
+    this.selectedBranchId = branchId;
+    this.openMembersDrawer();
+    this.loadMembersForDrawer(branchId);
+  }
+
+  // Load members for drawer
+  loadMembersForDrawer(branchId: string): void {
+    const branchIdNum = parseInt(branchId, 10);
+    if (isNaN(branchIdNum)) {
+      console.error('Invalid branch ID:', branchId);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Invalid branch ID',
+        life: 3000
+      });
+      return;
+    }
+
+    this.loadingMembers[branchId] = true;
+    this.locationService.getBranchMembers(branchIdNum).subscribe({
+      next: (members: any[]) => {
+        // Map API response to component member structure
+        this.selectedBranchMembers = (members || []).map(member => ({
+          name: member.name || '',
+          member_type: member.member_type || '',
+          branch_role: member.branch_role || '',
+          responsibility: member.responsibility || '',
+          age: member.age || 0,
+          qualification: member.qualification || '',
+          date_of_samarpan: member.date_of_samarpan ? new Date(member.date_of_samarpan).toLocaleDateString() : '',
+          date_of_birth: member.date_of_birth ? new Date(member.date_of_birth).toLocaleDateString() : ''
+        }));
+        this.loadingMembers[branchId] = false;
+      },
+      error: (error) => {
+        console.error('Error loading branch members:', error);
+        this.loadingMembers[branchId] = false;
+        this.selectedBranchMembers = [];
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: error?.error?.error || 'Failed to load members',
+          life: 5000
+        });
+      }
+    });
+  }
+
+  // Open Members Drawer
+  openMembersDrawer(): void {
+    this.isMembersDrawerOpen = true;
+    this.lockBodyScroll();
+
+    // Force change detection to render the drawer
+    setTimeout(() => {
+      const drawer = document.querySelector('.volunteer-drawer') as HTMLElement;
+      const backdrop = document.querySelector('.volunteer-drawer-backdrop') as HTMLElement;
+
+      if (drawer && backdrop) {
+        // Move to body if not already there
+        if (drawer.parentElement && drawer.parentElement !== document.body) {
+          document.body.appendChild(drawer);
+        }
+        if (backdrop.parentElement && backdrop.parentElement !== document.body) {
+          document.body.appendChild(backdrop);
+        }
+        // Ensure show class is applied
+        drawer.classList.add('show');
+        drawer.setAttribute('role', 'dialog');
+        drawer.setAttribute('aria-modal', 'true');
+        drawer.setAttribute('aria-labelledby', 'membersDrawerTitle');
+        drawer.removeAttribute('aria-hidden');
+        backdrop.classList.add('show');
+      }
+    }, 100);
+  }
+
+  // Close Members Drawer
+  closeMembersDrawer(): void {
+    const drawers = document.querySelectorAll('.volunteer-drawer');
+    const backdrops = document.querySelectorAll('.volunteer-drawer-backdrop');
+    const drawer = Array.from(drawers).find(d => d.querySelector('#membersDrawerTitle'));
+    const backdrop = backdrops[0];
+
+    if (drawer) {
+      drawer.classList.remove('show');
+    }
+    if (backdrop) {
+      backdrop.classList.remove('show');
+    }
+
+    // Wait for animation to complete before hiding
+    setTimeout(() => {
+      this.isMembersDrawerOpen = false;
+      this.selectedBranchId = null;
+      this.selectedBranchMembers = [];
+      this.unlockBodyScroll();
+
+      // Remove accessibility attributes when closing
+      if (drawer) {
+        drawer.setAttribute('aria-hidden', 'true');
+        const focusedElement = drawer.querySelector(':focus');
+        if (focusedElement) {
+          (focusedElement as HTMLElement).blur();
+        }
+      }
+    }, 300);
+  }
+
+  // Lock body scroll when drawer is open
+  private lockBodyScroll(): void {
+    document.body.style.overflow = 'hidden';
+  }
+
+  // Unlock body scroll when drawer is closed
+  private unlockBodyScroll(): void {
+    document.body.style.overflow = '';
+  }
+
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event | null): void {
     // Check if event exists and has target

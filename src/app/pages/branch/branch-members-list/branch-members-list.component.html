@@ -45,8 +45,8 @@
           </span>
           <input type="text" class="form-control" id="searchMembers"
                  placeholder="Search by name, role, responsibility, qualification, or type"
-                 [(ngModel)]="searchTerm"
-                 (input)="onSearchChange($any($event.target).value)">
+                 [ngModel]="searchTerm"
+                 (ngModelChange)="onSearchChange($event)">
         </div>
       </div>
     </div>

@@ -107,7 +107,7 @@ export class BranchMembersListComponent implements OnInit {
   }
 
   onSearchChange(searchValue: string): void {
-    this.searchTerm = searchValue;
+    this.searchTerm = searchValue || '';
     this.applyFilters();
   }
 
@@ -123,11 +123,11 @@ export class BranchMembersListComponent implements OnInit {
     if (this.searchTerm && this.searchTerm.trim()) {
       const searchLower = this.searchTerm.toLowerCase().trim();
       filtered = filtered.filter(member => {
-        const nameMatch = member.name?.toLowerCase().includes(searchLower) || false;
-        const roleMatch = member.branch_role?.toLowerCase().includes(searchLower) || false;
-        const responsibilityMatch = member.responsibility?.toLowerCase().includes(searchLower) || false;
-        const qualificationMatch = member.qualification?.toLowerCase().includes(searchLower) || false;
-        const memberTypeMatch = member.member_type?.toLowerCase().includes(searchLower) || false;
+        const nameMatch = (member.name || '').toLowerCase().includes(searchLower);
+        const roleMatch = (member.branch_role || '').toLowerCase().includes(searchLower);
+        const responsibilityMatch = (member.responsibility || '').toLowerCase().includes(searchLower);
+        const qualificationMatch = (member.qualification || '').toLowerCase().includes(searchLower);
+        const memberTypeMatch = (member.member_type || '').toLowerCase().includes(searchLower);
         return nameMatch || roleMatch || responsibilityMatch || qualificationMatch || memberTypeMatch;
       });
     }
