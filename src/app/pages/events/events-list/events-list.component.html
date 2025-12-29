@@ -984,6 +984,12 @@
         <button type="button" class="btn-close" (click)="closeExportModal()" aria-label="Close"></button>
       </div>
       <div class="modal-body">
+        <!-- Info about filter type -->
+        <div class="alert alert-info mb-4">
+          <i class="pi pi-info-circle me-2"></i>
+          <strong>Filtering by:</strong> Created Date (when the event was created)
+        </div>
+
         <!-- Quick Date Range Selection -->
         <div class="mb-4">
           <label class="form-label fw-bold mb-3">Quick Date Range Selection</label>
@@ -1034,39 +1040,27 @@
           <div class="row g-3">
             <div class="col-md-6">
               <label for="modalExportStartDate" class="form-label">From Date</label>
-              <p-calendar 
+              <input 
+                type="date" 
+                class="form-control" 
                 id="modalExportStartDate"
-                [(ngModel)]="exportStartDate" 
-                [showIcon]="true"
-                dateFormat="yy-mm-dd"
+                [value]="getDateInputValue(exportStartDate)"
+                (change)="onStartDateChange($event)"
+                [max]="getDateInputValue(exportEndDate)"
                 placeholder="Select start date"
-                [maxDate]="exportEndDate"
-                [appendTo]="'body'"
-                [baseZIndex]="11020"
-                [panelStyleClass]="'small-calendar export-modal-calendar'"
-                styleClass="w-100"
-                inputStyleClass="form-control form-control-sm"
-                [showOnFocus]="true"
-                [touchUI]="false">
-              </p-calendar>
+                autocomplete="off">
             </div>
             <div class="col-md-6">
               <label for="modalExportEndDate" class="form-label">To Date</label>
-              <p-calendar 
+              <input 
+                type="date" 
+                class="form-control" 
                 id="modalExportEndDate"
-                [(ngModel)]="exportEndDate" 
-                [showIcon]="true"
-                dateFormat="yy-mm-dd"
+                [value]="getDateInputValue(exportEndDate)"
+                (change)="onEndDateChange($event)"
+                [min]="getDateInputValue(exportStartDate)"
                 placeholder="Select end date"
-                [minDate]="exportStartDate"
-                [appendTo]="'body'"
-                [baseZIndex]="11020"
-                [panelStyleClass]="'small-calendar export-modal-calendar'"
-                styleClass="w-100"
-                inputStyleClass="form-control form-control-sm"
-                [showOnFocus]="true"
-                [touchUI]="false">
-              </p-calendar>
+                autocomplete="off">
             </div>
           </div>
         </div>
@@ -1074,7 +1068,7 @@
         <!-- Selected Date Range Display -->
         <div class="alert alert-info mt-3">
           <i class="pi pi-info-circle me-2"></i>
-          <strong>Selected Range:</strong>
+          <strong>Selected Range (Created Date):</strong>
           <span *ngIf="exportStartDate && exportEndDate">
             {{ exportStartDate | date:'mediumDate' }} to {{ exportEndDate | date:'mediumDate' }}
           </span>
@@ -1091,7 +1085,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeExportModal()">Cancel</button>
-        <button type="button" class="btn btn-success" (click)="exportEventsToExcel()" [disabled]="exporting">
+        <button type="button" class="btn btn-success" (click)="exportEventsToExcel()" [disabled]="exporting || !isExportDateRangeValid()">
           <i class="pi pi-file-excel me-1"></i>
           <span *ngIf="!exporting">Export to Excel</span>
           <span *ngIf="exporting">Exporting...</span>

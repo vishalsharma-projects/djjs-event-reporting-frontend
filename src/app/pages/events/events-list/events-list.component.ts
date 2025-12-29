@@ -127,7 +127,7 @@ export class EventsListComponent implements OnInit, AfterViewChecked, OnDestroy 
   private searchSubject = new Subject<string>();
   private destroy$ = new Subject<void>();
 
-  // Date range for export
+  // Date range for export (always filters by created_on)
   exportStartDate: Date | null = null;
   exportEndDate: Date | null = null;
   exporting: boolean = false;
@@ -1887,41 +1887,105 @@ export class EventsListComponent implements OnInit, AfterViewChecked, OnDestroy 
    * Set quick date range
    */
   setQuickDateRange(range: string): void {
-    const today = new Date();
-    today.setHours(23, 59, 59, 999); // End of today
-    this.exportEndDate = new Date(today);
+    if (range === 'all') {
+      this.exportStartDate = null;
+      this.exportEndDate = null;
+      this.cdr.detectChanges();
+      return;
+    }
 
-    const startDate = new Date();
+    const today = new Date();
+    const endDate = new Date(today);
+    endDate.setHours(23, 59, 59, 999); // End of today
+    this.exportEndDate = endDate;
+
+    const startDate = new Date(today);
     startDate.setHours(0, 0, 0, 0); // Start of day
 
     switch (range) {
       case 'lastWeek':
-        startDate.setDate(today.getDate() - 7);
+        // Subtract 7 days from today
+        startDate.setDate(startDate.getDate() - 7);
         break;
       case 'lastMonth':
-        startDate.setMonth(today.getMonth() - 1);
+        // Go back 1 month from today
+        startDate.setMonth(startDate.getMonth() - 1);
         break;
       case 'last3Months':
-        startDate.setMonth(today.getMonth() - 3);
+        // Go back 3 months from today
+        startDate.setMonth(startDate.getMonth() - 3);
         break;
       case 'last6Months':
-        startDate.setMonth(today.getMonth() - 6);
+        // Go back 6 months from today
+        startDate.setMonth(startDate.getMonth() - 6);
         break;
       case 'lastYear':
-        startDate.setFullYear(today.getFullYear() - 1);
+        // Go back 1 year from today
+        startDate.setFullYear(startDate.getFullYear() - 1);
         break;
       case 'last2Years':
-        startDate.setFullYear(today.getFullYear() - 2);
+        // Go back 2 years from today
+        startDate.setFullYear(startDate.getFullYear() - 2);
         break;
-      case 'all':
-        this.exportStartDate = null;
-        this.exportEndDate = null;
-        return;
       default:
         return;
     }
 
     this.exportStartDate = startDate;
+    // Force change detection to update UI
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Check if export date range is valid
+   */
+  isExportDateRangeValid(): boolean {
+    if (!this.exportStartDate && !this.exportEndDate) {
+      return true; // "All Events" is valid
+    }
+    if (this.exportStartDate && this.exportEndDate) {
+      return this.exportStartDate <= this.exportEndDate;
+    }
+    return true; // Partial ranges (only start or only end) are valid
+  }
+
+  /**
+   * Convert Date object to YYYY-MM-DD string for native date input
+   */
+  getDateInputValue(date: Date | null): string {
+    if (!date) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  /**
+   * Handle start date change from native date input
+   */
+  onStartDateChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.value;
+    if (value) {
+      this.exportStartDate = new Date(value + 'T00:00:00');
+    } else {
+      this.exportStartDate = null;
+    }
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Handle end date change from native date input
+   */
+  onEndDateChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.value;
+    if (value) {
+      this.exportEndDate = new Date(value + 'T23:59:59');
+    } else {
+      this.exportEndDate = null;
+    }
+    this.cdr.detectChanges();
   }
 
   /**
@@ -1929,7 +1993,7 @@ export class EventsListComponent implements OnInit, AfterViewChecked, OnDestroy 
    */
   exportEventsToExcel(): void {
     // Validate date range
-    if (this.exportStartDate && this.exportEndDate && this.exportStartDate > this.exportEndDate) {
+    if (!this.isExportDateRangeValid()) {
       this.messageService.add({
         severity: 'warn',
         summary: 'Warning',
@@ -1939,10 +2003,7 @@ export class EventsListComponent implements OnInit, AfterViewChecked, OnDestroy 
       return;
     }
 
-    this.exporting = true;
-    this.closeExportModal();
-
-    // Format dates as YYYY-MM-DD
+    // Format dates as YYYY-MM-DD BEFORE closing modal (which resets dates)
     const formatDate = (date: Date | null): string | undefined => {
       if (!date) return undefined;
       const year = date.getFullYear();
@@ -1953,6 +2014,18 @@ export class EventsListComponent implements OnInit, AfterViewChecked, OnDestroy 
 
     const startDate = formatDate(this.exportStartDate);
     const endDate = formatDate(this.exportEndDate);
+    
+    // Warn if no dates are selected (will export all events)
+    if (!startDate && !endDate) {
+      const confirmExport = confirm('No date range selected. This will export ALL events. Continue?');
+      if (!confirmExport) {
+        return;
+      }
+    }
+    
+    // Now close modal and set exporting flag
+    this.exporting = true;
+    this.closeExportModal();
     const status = this.statusFilter !== 'all' ? this.statusFilter : undefined;
 
     this.eventApiService.exportEventsToExcel(startDate, endDate, status).subscribe({
@@ -1986,9 +2059,7 @@ export class EventsListComponent implements OnInit, AfterViewChecked, OnDestroy 
           life: 3000
         });
         this.exporting = false;
-        // Reset dates after export
-        this.exportStartDate = null;
-        this.exportEndDate = null;
+        // Dates are already reset in closeExportModal(), no need to reset again
       },
       error: (error) => {
         console.error('Error exporting events:', error);

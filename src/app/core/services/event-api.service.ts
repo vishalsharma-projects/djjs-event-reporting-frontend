@@ -475,6 +475,7 @@ export class EventApiService {
 
   /**
    * Export events to Excel with date range filter
+   * Filters by created_on date (when the event was created)
    * @param startDate Optional start date (YYYY-MM-DD format)
    * @param endDate Optional end date (YYYY-MM-DD format)
    * @param status Optional status filter ('complete' or 'incomplete')
@@ -491,6 +492,8 @@ export class EventApiService {
     if (status) {
       params = params.set('status', status);
     }
+    // Always filter by created_on date
+    params = params.set('date_filter_type', 'created_on');
 
     const url = this.apiConfig.buildApiUrl('/events/export');
     return this.http.get(url, {
