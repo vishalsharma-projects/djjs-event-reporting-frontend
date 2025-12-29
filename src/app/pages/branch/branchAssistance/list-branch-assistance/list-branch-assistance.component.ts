@@ -19,7 +19,7 @@ export class ListBranchAssistanceComponent implements OnInit {
 
   // Pagination & Filters
   first = 0;
-  rows = 10;
+  rows = 20;
   rowsPerPageOptions = [10, 20, 50];
   globalFilterValue: string = '';
 

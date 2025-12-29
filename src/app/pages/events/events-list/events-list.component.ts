@@ -99,7 +99,7 @@ export class EventsListComponent implements OnInit, AfterViewChecked, OnDestroy 
 
   // Pagination
   first = 0;
-  rows = 10;
+  rows = 20;
   rowsPerPageOptions = [10, 20, 50];
 
   // Sorting
