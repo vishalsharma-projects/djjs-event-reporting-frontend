@@ -139,7 +139,23 @@ export class TopbarComponent implements OnInit {
       }
       
       currentUrl += `/${segment}`;
-      const label = this.formatLabel(segment);
+      
+      // Check if we're editing an event (segment is "edit" or "add" with ID parameter)
+      let label = this.formatLabel(segment);
+      if (segment === 'edit') {
+        label = 'Edit Event';
+      } else if (segment === 'add') {
+        // Check if there's an ID parameter in the route (backward compatibility)
+        let route = this.activatedRoute.root;
+        while (route.firstChild) {
+          route = route.firstChild;
+          if (route.snapshot.paramMap.has('id')) {
+            label = 'Edit Event';
+            break;
+          }
+        }
+      }
+      
       this.breadcrumbItems.push({
         label: label,
         link: currentUrl,

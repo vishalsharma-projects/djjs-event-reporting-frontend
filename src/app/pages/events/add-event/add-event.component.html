@@ -213,9 +213,9 @@
     </div>
     <!-- Venue Section -->
     <div class="common-stepper">
-      <h5 class=" mb-3">Venue</h5>
+      <h5 class="mb-3">Venue</h5>
       <div class="row">
-        <div class="col-md-3 mb-3">
+        <div class="col-md-4 mb-3">
           <label class="form-label">Country <span class="text-danger">*</span></label>
           <ng-select formControlName="country"
             [items]="countries"
@@ -230,7 +230,7 @@
             Country is required.
           </div>
         </div>
-        <div class="col-md-3 mb-3">
+        <div class="col-md-4 mb-3">
           <label class="form-label">State <span class="text-danger">*</span></label>
           <ng-select formControlName="state"
             [items]="filteredStates"
@@ -245,18 +245,7 @@
             State is required.
           </div>
         </div>
-        <div class="col-md-3 mb-3">
-          <label class="form-label">District</label>
-          <ng-select formControlName="district"
-            [items]="filteredDistricts"
-            bindLabel="name"
-            bindValue="name"
-            [searchable]="true"
-            [clearable]="true"
-            placeholder="Select District">
-          </ng-select>
-        </div>
-        <div class="col-md-3 mb-3">
+        <div class="col-md-4 mb-3">
           <label class="form-label">City <span class="text-danger">*</span></label>
           <ng-select formControlName="city"
             [items]="filteredCities"
@@ -292,7 +281,12 @@
       <div class="row">
         <div class="col-md-4 mb-3">
           <label class="form-label">Address type</label>
-          <input type="text" class="form-control" formControlName="addressType" placeholder="City / Village">
+          <ng-select formControlName="addressType"
+            [items]="addressTypes"
+            [searchable]="true"
+            [clearable]="true"
+            placeholder="Select Address Type">
+          </ng-select>
         </div>
         <div class="col-md-8 mb-3">
           <label class="form-label">Address <span class="text-danger">*</span></label>
@@ -304,7 +298,7 @@
         </div>
       </div>
 
-      <div class="row">
+      <!-- <div class="row">
         <div class="col-md-6 mb-3">
           <label class="form-label">Prachar</label>
           <ng-select formControlName="prachar"
@@ -315,9 +309,9 @@
             placeholder="Select Prachar Areas">
           </ng-select>
         </div>
-      </div>
+      </div> -->
       <div class="row">
-        <div class="col-md-6 mb-3">
+        <div class="col-md-4 mb-3">
           <label class="form-label">Area covered</label>
           <input type="text" class="form-control" formControlName="areaCovered" placeholder="0.00 Sq km">
         </div>
@@ -422,7 +416,7 @@
     </div>
     <!-- Beneficiaries -->
     <div class="common-stepper">
-      <h5 class=" mb-3">Beneficiaries (0)</h5>
+      <h5 class="mb-3">Beneficiaries (0)</h5>
       <div class="row">
         <div class="col-md-4 mb-3">
           <label class="form-label">Men</label>
@@ -440,7 +434,7 @@
     </div>
     <!-- Initiations -->
     <div class="common-stepper">
-      <h5 class=" mb-3">Initiations (0)</h5>
+      <h5 class="mb-3">Initiations (0)</h5>
       <div class="row">
         <div class="col-md-4 mb-3">
           <label class="form-label">Men</label>

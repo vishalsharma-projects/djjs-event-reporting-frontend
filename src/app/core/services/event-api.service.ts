@@ -24,6 +24,9 @@ export interface EventDetails {
   post_office?: string;
   pincode?: string;
   address?: string;
+  address_type?: string;
+  police_station?: string;
+  area_covered?: string;
   beneficiary_men?: number;
   beneficiary_women?: number;
   beneficiary_child?: number;
@@ -45,7 +48,7 @@ export interface EventDetails {
     event_type_id: number;
   };
   branch_id?: number;
-  branch?: {
+  branch?: string | {
     id: number;
     name: string;
   };

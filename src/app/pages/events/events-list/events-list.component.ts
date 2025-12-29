@@ -966,7 +966,7 @@ export class EventsListComponent implements OnInit, AfterViewChecked, OnDestroy 
    * Continue editing a draft
    */
   continueDraft(eventId: string): void {
-    this.router.navigate(['/events/add', eventId]);
+    this.router.navigate(['/events/edit', eventId]);
   }
 
   /**
@@ -990,7 +990,7 @@ export class EventsListComponent implements OnInit, AfterViewChecked, OnDestroy 
       city: event.city || '',
       spiritualOrator: event.spiritual_orator || '',
       language: event.language || '',
-      branch: event.branch?.name || '',
+      branch: typeof event.branch === 'string' ? event.branch : (event.branch?.name || ''),
       beneficiaries: {
         total: (event.beneficiary_men || 0) + (event.beneficiary_women || 0) + (event.beneficiary_child || 0),
         men: event.beneficiary_men || 0,

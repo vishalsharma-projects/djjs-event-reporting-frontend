@@ -261,7 +261,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
-import { LocationService, Country, State, District, City } from 'src/app/core/services/location.service';
+import { LocationService, Country, State, City } from 'src/app/core/services/location.service';
 import { BranchOptionsService } from 'src/app/core/services/branch-options.service';
 import { EventMasterDataService, EventType, EventCategory, PromotionMaterialType, Orator, EventSubCategory, Theme } from 'src/app/core/services/event-master-data.service';
 import { EventDraftService } from 'src/app/core/services/event-draft.service';
@@ -607,7 +607,6 @@ export class AddEventComponent implements OnInit, OnDestroy {
   languages = ['Hindi', 'English', 'Sanskrit', 'Gujarati', 'Marathi', 'Bengali', 'Tamil', 'Telugu', 'Kannada', 'Malayalam'];
   countries: Country[] = [];
   filteredStates: State[] = [];
-  filteredDistricts: District[] = [];
   filteredCities: City[] = [];
   branches: Array<{ id: number; name: string; isChildBranch: boolean }> = [];
   loadingBranches: boolean = false;
@@ -723,7 +722,6 @@ export class AddEventComponent implements OnInit, OnDestroy {
       policeStation: [''],
       tehsil: [''],
       state: ['Karnataka', Validators.required],
-      district: [''],
       city: ['Bangalore', Validators.required],
       addressType: [''],
       address: ['', Validators.required],
@@ -1026,7 +1024,6 @@ export class AddEventComponent implements OnInit, OnDestroy {
       // Store the location values to set after dropdowns are populated
       const countryName = generalDetails.country;
       const stateName = generalDetails.state;
-      const districtName = generalDetails.district;
       const cityName = generalDetails.city;
 
       // Store event type and category separately to handle filtering
@@ -1037,7 +1034,6 @@ export class AddEventComponent implements OnInit, OnDestroy {
       const nonLocationFields = { ...generalDetails };
       delete nonLocationFields.country;
       delete nonLocationFields.state;
-      delete nonLocationFields.district;
       delete nonLocationFields.city;
       delete nonLocationFields.eventType;
       delete nonLocationFields.eventCategory;
@@ -1084,51 +1080,26 @@ export class AddEventComponent implements OnInit, OnDestroy {
             next: (states) => {
               this.filteredStates = states;
 
-              // Now set state value and load districts/cities
+              // Now set state value and load cities
               if (stateName) {
                 const selectedState = this.filteredStates.find(s => s.name === stateName);
                 if (selectedState) {
-                  // Load districts by state and country
-                  this.locationService.getDistrictsByStateAndCountry(selectedState.id, selectedCountry.id).subscribe({
-                    next: (districts) => {
-                      this.filteredDistricts = districts;
-
-                      // Load cities by state
-                      this.locationService.getCitiesByState(selectedState.id).subscribe({
-                        next: (cities) => {
-                          this.filteredCities = cities;
-                          // Now set all location values at once (without emitting events)
-                          this.generalDetailsForm.patchValue({
-                            country: countryName,
-                            state: stateName,
-                            district: districtName || '',
-                            city: cityName || ''
-                          }, { emitEvent: false });
-                        },
-                        error: () => {
-                          // Set values even if cities fail to load
-                          this.generalDetailsForm.patchValue({
-                            country: countryName,
-                            state: stateName,
-                            district: districtName || '',
-                            city: cityName || ''
-                          }, { emitEvent: false });
-                        }
-                      });
-                    },
-                    error: () => {
-                      // Try to load cities even if districts fail
-                      this.locationService.getCitiesByState(selectedState.id).subscribe({
-                        next: (cities) => {
-                          this.filteredCities = cities;
-                        },
-                        error: () => { }
-                      });
-                      // Set values even if districts fail to load
+                  // Load cities by state
+                  this.locationService.getCitiesByState(selectedState.id).subscribe({
+                    next: (cities) => {
+                      this.filteredCities = cities;
+                      // Now set all location values at once (without emitting events)
                       this.generalDetailsForm.patchValue({
                         country: countryName,
                         state: stateName,
-                        district: districtName || '',
+                        city: cityName || ''
+                      }, { emitEvent: false });
+                    },
+                    error: () => {
+                      // Set values even if cities fail to load
+                      this.generalDetailsForm.patchValue({
+                        country: countryName,
+                        state: stateName,
                         city: cityName || ''
                       }, { emitEvent: false });
                     }
@@ -1138,7 +1109,6 @@ export class AddEventComponent implements OnInit, OnDestroy {
                   this.generalDetailsForm.patchValue({
                     country: countryName,
                     state: stateName,
-                    district: districtName || '',
                     city: cityName || ''
                   }, { emitEvent: false });
                 }
@@ -1154,7 +1124,6 @@ export class AddEventComponent implements OnInit, OnDestroy {
               this.generalDetailsForm.patchValue({
                 country: countryName,
                 state: stateName || '',
-                district: districtName || '',
                 city: cityName || ''
               }, { emitEvent: false });
             }
@@ -1164,7 +1133,6 @@ export class AddEventComponent implements OnInit, OnDestroy {
           this.generalDetailsForm.patchValue({
             country: countryName,
             state: stateName || '',
-            district: districtName || '',
             city: cityName || ''
           }, { emitEvent: false });
         }
@@ -1172,7 +1140,6 @@ export class AddEventComponent implements OnInit, OnDestroy {
         // No country, just set other location fields if they exist
         this.generalDetailsForm.patchValue({
           state: stateName || '',
-          district: districtName || '',
           city: cityName || ''
         }, { emitEvent: false });
       }
@@ -1536,37 +1503,6 @@ export class AddEventComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Load districts by country ID from API
-   */
-  loadDistrictsByCountry(countryId: number): void {
-    this.locationService.getDistrictsByCountry(countryId).subscribe({
-      next: (districts) => {
-        this.filteredDistricts = districts;
-      },
-      error: () => {
-        this.errorMessage = 'Failed to load districts. Please refresh the page.';
-        setTimeout(() => this.errorMessage = '', 5000);
-        this.filteredDistricts = [];
-      }
-    });
-  }
-
-  /**
-   * Load districts by state ID and country ID from API
-   */
-  loadDistrictsByStateAndCountry(stateId: number, countryId: number): void {
-    this.locationService.getDistrictsByStateAndCountry(stateId, countryId).subscribe({
-      next: (districts) => {
-        this.filteredDistricts = districts;
-      },
-      error: () => {
-        this.errorMessage = 'Failed to load districts. Please refresh the page.';
-        setTimeout(() => this.errorMessage = '', 5000);
-        this.filteredDistricts = [];
-      }
-    });
-  }
 
   /**
    * Load cities by state ID from API
@@ -1601,12 +1537,11 @@ export class AddEventComponent implements OnInit, OnDestroy {
    */
   onCountryChange(selectedCountryName: string): void {
     if (!selectedCountryName) {
-      // If no country selected, clear states, districts, and cities
+      // If no country selected, clear states and cities
       this.filteredStates = [];
-      this.filteredDistricts = [];
       this.filteredCities = [];
-      // Reset state, district, and city fields
-      this.generalDetailsForm.patchValue({ state: '', district: '', city: '' });
+      // Reset state and city fields
+      this.generalDetailsForm.patchValue({ state: '', city: '' });
       return;
     }
 
@@ -1616,16 +1551,13 @@ export class AddEventComponent implements OnInit, OnDestroy {
     if (selectedCountry) {
       // Load states for the selected country from API
       this.loadStatesByCountry(selectedCountry.id);
-      // Load districts for the selected country from API
-      this.loadDistrictsByCountry(selectedCountry.id);
       // Clear cities when country changes (will be loaded when state is selected)
       this.filteredCities = [];
-      // Reset state, district, and city fields when country changes
-      this.generalDetailsForm.patchValue({ state: '', district: '', city: '' });
+      // Reset state and city fields when country changes
+      this.generalDetailsForm.patchValue({ state: '', city: '' });
     } else {
-      // If country not found, clear states and districts
+      // If country not found, clear states
       this.filteredStates = [];
-      this.filteredDistricts = [];
     }
   }
 
@@ -1634,21 +1566,10 @@ export class AddEventComponent implements OnInit, OnDestroy {
    */
   onStateChange(selectedStateName: string): void {
     if (!selectedStateName) {
-      // If no state selected, load districts filtered by country (if country is selected)
-      const selectedCountryName = this.generalDetailsForm.get('country')?.value;
-      if (selectedCountryName) {
-        const selectedCountry = this.countries.find(c => c.name === selectedCountryName);
-        if (selectedCountry) {
-          this.loadDistrictsByCountry(selectedCountry.id);
-        } else {
-          this.filteredDistricts = [];
-        }
-      } else {
-        this.filteredDistricts = [];
-      }
-      // Reset district and city fields
-      this.generalDetailsForm.patchValue({ district: '', city: '' });
+      // If no state selected, clear cities
       this.filteredCities = [];
+      // Reset city field
+      this.generalDetailsForm.patchValue({ city: '' });
       return;
     }
 
@@ -1656,49 +1577,21 @@ export class AddEventComponent implements OnInit, OnDestroy {
     const selectedState = this.filteredStates.find(s => s.name === selectedStateName);
 
     if (selectedState) {
-      // Get the selected country to pass both state_id and country_id
-      const selectedCountryName = this.generalDetailsForm.get('country')?.value;
-      const selectedCountry = this.countries.find(c => c.name === selectedCountryName);
-
-      if (selectedCountry) {
-        // Load districts by state_id and country_id from API
-        this.loadDistrictsByStateAndCountry(selectedState.id, selectedCountry.id);
-      } else {
-        // If country not found, clear districts
-        this.filteredDistricts = [];
-      }
       // Load cities by state_id from API
       this.loadCitiesByState(selectedState.id);
-      // Only reset district and city fields if they don't match the new state
-      // This prevents clearing when user manually selects a district
-      const currentDistrict = this.generalDetailsForm.get('district')?.value;
+      // Only reset city field if it doesn't match the new state
       const currentCity = this.generalDetailsForm.get('city')?.value;
-      if (currentDistrict || currentCity) {
-        // Check if current district/city is still valid for the new state
-        // If not, reset them
+      if (currentCity) {
+        // Check if current city is still valid for the new state
+        // If not, reset it
         setTimeout(() => {
-          const districtStillValid = this.filteredDistricts.some(d => d.name === currentDistrict);
           const cityStillValid = this.filteredCities.some(c => c.name === currentCity);
-          if (!districtStillValid || !cityStillValid) {
+          if (!cityStillValid) {
             this.generalDetailsForm.patchValue({
-              district: districtStillValid ? currentDistrict : '',
-              city: cityStillValid ? currentCity : ''
+              city: ''
             });
           }
         }, 500);
-      }
-    } else {
-      // If state not found, load districts filtered by country (if country is selected)
-      const selectedCountryName = this.generalDetailsForm.get('country')?.value;
-      if (selectedCountryName) {
-        const selectedCountry = this.countries.find(c => c.name === selectedCountryName);
-        if (selectedCountry) {
-          this.loadDistrictsByCountry(selectedCountry.id);
-        } else {
-          this.filteredDistricts = [];
-        }
-      } else {
-        this.filteredDistricts = [];
       }
     }
   }
@@ -2873,7 +2766,7 @@ export class AddEventComponent implements OnInit, OnDestroy {
       next: (response: EventWithRelatedData) => {
         this.populateFormsFromEvent(response);
         this.loadingEvent = false;
-        this.toastService.info('Event data loaded. You can continue editing.', 'Event Loaded');
+        // this.toastService.info('Event data loaded. You can continue editing.', 'Event Loaded');
       },
       error: (error) => {
         console.error('Error loading event:', error);
@@ -2945,9 +2838,14 @@ export class AddEventComponent implements OnInit, OnDestroy {
       dailyStartTime: event.daily_start_time || '',
       dailyEndTime: event.daily_end_time || '',
       spiritualOrator: event.spiritual_orator || '',
+      language: event.language || '',
       pincode: event.pincode || '',
       postOffice: event.post_office || '',
-      address: event.address || ''
+      address: event.address || '',
+      addressType: event.address_type || '',
+      policeStation: event.police_station || '',
+      areaCovered: event.area_covered || '',
+      branchId: event.branch_id || null
     });
 
     // Load location dropdowns sequentially before setting values
@@ -2956,9 +2854,8 @@ export class AddEventComponent implements OnInit, OnDestroy {
       const countryObj = this.countries.find(c => c.name === event.country);
       if (countryObj) {
         this.generalDetailsForm.patchValue({ country: event.country }, { emitEvent: false });
-        // Load states and districts for this country
+        // Load states for this country
         this.loadStatesByCountry(countryObj.id);
-        this.loadDistrictsByCountry(countryObj.id);
         
         // Wait for states to load, then set state and load cities
         setTimeout(() => {
@@ -2966,18 +2863,11 @@ export class AddEventComponent implements OnInit, OnDestroy {
             const stateObj = this.filteredStates.find(s => s.name === event.state);
             if (stateObj) {
               this.generalDetailsForm.patchValue({ state: event.state }, { emitEvent: false });
-              // Load districts by state and cities
-              this.loadDistrictsByStateAndCountry(stateObj.id, countryObj.id);
+              // Load cities
               this.loadCitiesByState(stateObj.id);
               
-              // Wait for districts and cities to load, then set their values
+              // Wait for cities to load, then set the value
               setTimeout(() => {
-                if (event.district) {
-                  const districtExists = this.filteredDistricts.find(d => d.name === event.district);
-                  if (districtExists) {
-                    this.generalDetailsForm.patchValue({ district: event.district }, { emitEvent: false });
-                  }
-                }
                 if (event.city) {
                   const cityExists = this.filteredCities.find(c => c.name === event.city);
                   if (cityExists) {
@@ -2997,9 +2887,6 @@ export class AddEventComponent implements OnInit, OnDestroy {
         if (event.state) {
           this.generalDetailsForm.patchValue({ state: event.state }, { emitEvent: false });
         }
-        if (event.district) {
-          this.generalDetailsForm.patchValue({ district: event.district }, { emitEvent: false });
-        }
         if (event.city) {
           this.generalDetailsForm.patchValue({ city: event.city }, { emitEvent: false });
         }
@@ -3016,6 +2903,16 @@ export class AddEventComponent implements OnInit, OnDestroy {
       initiationChildren: event.initiation_child || 0
     });
 
+    // Also update generalDetailsForm with beneficiaries and initiations (they're used in step 1)
+    this.generalDetailsForm.patchValue({
+      beneficiariesMen: event.beneficiary_men || 0,
+      beneficiariesWomen: event.beneficiary_women || 0,
+      beneficiariesChildren: event.beneficiary_child || 0,
+      initiationMen: event.initiation_men || 0,
+      initiationWomen: event.initiation_women || 0,
+      initiationChildren: event.initiation_child || 0
+    }, { emitEvent: false });
+
     // Trigger event type change to load categories
     if (event.event_type?.name) {
       setTimeout(() => {
@@ -3024,6 +2921,19 @@ export class AddEventComponent implements OnInit, OnDestroy {
         if (event.event_category?.name) {
           setTimeout(() => {
             this.onEventCategoryChange(event.event_category!.name);
+            // Try to set eventSubCategory if it exists in the event object
+            // Note: eventSubCategory is not stored in database, so this will only work if it's in the response
+            setTimeout(() => {
+              if ((event as any).event_sub_category || (event as any).eventSubCategory) {
+                const subCategoryName = (event as any).event_sub_category?.name || (event as any).eventSubCategory;
+                if (subCategoryName) {
+                  const subCategoryExists = this.filteredEventSubCategories.find(sc => sc.name === subCategoryName);
+                  if (subCategoryExists) {
+                    this.generalDetailsForm.patchValue({ eventSubCategory: subCategoryName }, { emitEvent: false });
+                  }
+                }
+              }
+            }, 500);
           }, 300);
         }
       }, 300);
@@ -3031,7 +2941,37 @@ export class AddEventComponent implements OnInit, OnDestroy {
       // If event type is not available but category is, still try to load sub categories
       setTimeout(() => {
         this.onEventCategoryChange(event.event_category!.name);
+        // Try to set eventSubCategory if it exists
+        setTimeout(() => {
+          if ((event as any).event_sub_category || (event as any).eventSubCategory) {
+            const subCategoryName = (event as any).event_sub_category?.name || (event as any).eventSubCategory;
+            if (subCategoryName) {
+              const subCategoryExists = this.filteredEventSubCategories.find(sc => sc.name === subCategoryName);
+              if (subCategoryExists) {
+                this.generalDetailsForm.patchValue({ eventSubCategory: subCategoryName }, { emitEvent: false });
+              }
+            }
+          }
+        }, 500);
       }, 300);
+    }
+
+    // Set additional fields that might not be in the main event object but could be in response
+    // Check if these fields exist in the event object (they might be added later or in drafts)
+    if ((event as any).address_type || (event as any).addressType) {
+      this.generalDetailsForm.patchValue({ 
+        addressType: (event as any).address_type || (event as any).addressType || '' 
+      }, { emitEvent: false });
+    }
+    if ((event as any).police_station || (event as any).policeStation) {
+      this.generalDetailsForm.patchValue({ 
+        policeStation: (event as any).police_station || (event as any).policeStation || '' 
+      }, { emitEvent: false });
+    }
+    if ((event as any).area_covered || (event as any).areaCovered) {
+      this.generalDetailsForm.patchValue({ 
+        areaCovered: (event as any).area_covered || (event as any).areaCovered || '0.00' 
+      }, { emitEvent: false });
     }
 
     // Populate special guests array
@@ -3088,7 +3028,71 @@ export class AddEventComponent implements OnInit, OnDestroy {
         referenceVolunteerId: '', // Not stored in EventMedia model
         referencePersonName: '' // Not stored in EventMedia model
       }));
+    } else {
+      this.eventMediaList = [];
     }
+
+    // Populate donations
+    if (response.donations && response.donations.length > 0) {
+      this.donationTypes = response.donations.map((donation: any) => {
+        const donationType = donation.donation_type?.toLowerCase() || 'cash';
+        if (donationType === 'in-kind' || donation.kindtype) {
+          // Parse in-kind items - if kindtype is a string, try to split it
+          let tags: string[] = [];
+          if (donation.kindtype) {
+            if (typeof donation.kindtype === 'string') {
+              // Try to parse as comma-separated or array
+              tags = donation.kindtype.split(',').map((t: string) => t.trim()).filter((t: string) => t);
+            } else if (Array.isArray(donation.kindtype)) {
+              tags = donation.kindtype;
+            }
+          }
+          return {
+            type: 'in-kind',
+            amount: '',
+            tags: tags,
+            currentInput: '',
+            materialValue: donation.amount?.toString() || ''
+          };
+        } else {
+          return {
+            type: 'cash',
+            amount: donation.amount?.toString() || '',
+            tags: [],
+            currentInput: '',
+            materialValue: ''
+          };
+        }
+      });
+    } else {
+      // Initialize with empty donation if none exist
+      this.donationTypes = [{
+        type: 'cash',
+        amount: '',
+        tags: [],
+        currentInput: '',
+        materialValue: ''
+      }];
+    }
+
+    // Populate promotional materials
+    if (response.promotionMaterials && response.promotionMaterials.length > 0) {
+      this.materialTypes = response.promotionMaterials.map((material: any) => ({
+        materialType: material.promotion_material?.material_type || material.material_type || '',
+        quantity: material.quantity?.toString() || '',
+        size: material.size || '',
+        customHeight: material.dimension_height?.toString() || '',
+        customWidth: material.dimension_width?.toString() || ''
+      }));
+    } else {
+      // Initialize with empty material if none exist
+      this.materialTypes = [{ materialType: '', quantity: '', size: '', customHeight: '', customWidth: '' }];
+    }
+
+    // Set eventSubCategory after categories are loaded (if available)
+    // Note: eventSubCategory is not stored in event_details table, so we can't retrieve it
+    // But we'll try to set it if it was previously selected (would need to be stored separately)
+    // For now, we'll leave it empty as it's not persisted in the database
   }
 
   /**
@@ -3167,13 +3171,17 @@ export class AddEventComponent implements OnInit, OnDestroy {
         spiritualOrator: generalDetails.spiritualOrator || '',
         country: generalDetails.country || '',
         state: generalDetails.state || '',
-        district: generalDetails.district || '',
         city: generalDetails.city || '',
         pincode: generalDetails.pincode || '',
         postOffice: generalDetails.postOffice || '',
         address: generalDetails.address || '',
+        addressType: generalDetails.addressType || '',
+        policeStation: generalDetails.policeStation || '',
+        areaCovered: generalDetails.areaCovered || '',
+        language: generalDetails.language || '',
         // Branch ID: Optional field, included in API payload if backend supports it
-        branchId: generalDetails.branchId || null
+        // Convert to number if it's a string, or keep as number/null
+        branchId: generalDetails.branchId ? (typeof generalDetails.branchId === 'string' ? parseInt(generalDetails.branchId, 10) : generalDetails.branchId) : null
       },
       involvedParticipants: {
         // Read from generalDetailsForm since these fields are in step 1
@@ -3462,7 +3470,6 @@ export class AddEventComponent implements OnInit, OnDestroy {
 
     // Clear location filter arrays
     this.filteredStates = [];
-    this.filteredDistricts = [];
     this.filteredCities = [];
 
     // Clear arrays
