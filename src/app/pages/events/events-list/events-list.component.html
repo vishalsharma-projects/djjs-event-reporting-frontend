@@ -459,10 +459,12 @@
                   <button
                     class="btn btn-link p-0 action-menu-btn"
                     type="button"
-                    (click)="toggleActionMenu(event.id)">
+                    (click)="toggleActionMenu(event.id, $event)">
                     <i class="pi pi-ellipsis-v"></i>
                   </button>
-                  <div class="action-menu-dropdown" [class.show]="isActionMenuOpen(event.id)">
+                  <div class="action-menu-dropdown" 
+                       [class.show]="isActionMenuOpen(event.id)"
+                       [class.position-up]="getActionMenuPosition(event.id) === 'up'">
                     <a class="dropdown-item" href="#"
                       [routerLink]="['/events/edit', event.id]"
                       (click)="closeActionMenu()"
