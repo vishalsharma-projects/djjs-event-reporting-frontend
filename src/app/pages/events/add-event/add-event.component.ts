@@ -346,6 +346,18 @@ export class AddEventComponent implements OnInit, OnDestroy {
   specialGuestPagination = { first: 0, rows: 5, rowsPerPageOptions: [5, 10, 20] };
   volunteerPagination = { first: 0, rows: 5, rowsPerPageOptions: [5, 10, 20] };
 
+  // Search functionality
+  eventMediaSearchTerm: string = '';
+  promotionalMaterialSearchTerm: string = '';
+  specialGuestSearchTerm: string = '';
+  volunteerSearchTerm: string = '';
+
+  // Edit mode tracking
+  editingEventMediaIndex: number | null = null;
+  editingPromotionalMaterialIndex: number | null = null;
+  editingSpecialGuestIndex: number | null = null;
+  editingVolunteerIndex: number | null = null;
+
   // Getters for template compatibility
   get specialGuestList(): any[] {
     return this.specialGuests;
@@ -1793,6 +1805,95 @@ export class AddEventComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Edit promotional material functionality
+  editPromotionalMaterial(validIndex: number): void {
+    const validMaterials = this.getValidMaterialTypes();
+    if (validIndex >= 0 && validIndex < validMaterials.length) {
+      const material = validMaterials[validIndex];
+      // Find the actual index in the full materialTypes array
+      const actualIndex = this.materialTypes.findIndex(m => m === material);
+      if (actualIndex !== -1) {
+        this.editingPromotionalMaterialIndex = actualIndex;
+        
+        // Populate form with existing data
+        this.mediaPromotionForm.patchValue({
+          materialType: material.materialType || '',
+          quantity: material.quantity || '',
+          size: material.size || ''
+        });
+
+        // Handle custom dimensions
+        if (material.customHeight || material.customWidth) {
+          // Populate custom dimension fields if needed
+          // Note: Custom dimensions are part of the material object
+        }
+
+        // Open modal for editing
+        this.openPromotionalMaterialModal();
+      }
+    }
+  }
+
+  // Update promotional material after editing
+  updatePromotionalMaterial(): void {
+    if (this.editingPromotionalMaterialIndex === null) return;
+
+    const formValue = this.mediaPromotionForm.value;
+    const material = {
+      materialType: formValue.materialType || '',
+      quantity: formValue.quantity || '',
+      size: formValue.size || '',
+      customHeight: formValue.customHeight || '',
+      customWidth: formValue.customWidth || ''
+    };
+
+    // Update the existing entry
+    this.materialTypes[this.editingPromotionalMaterialIndex] = material;
+    this.editingPromotionalMaterialIndex = null;
+
+    // Clear form fields
+    this.mediaPromotionForm.patchValue({
+      materialType: '',
+      quantity: '',
+      size: ''
+    });
+
+    // Clean up and trigger auto-save
+    this.cleanupMaterialTypes();
+    this.autoSave('mediaPromotion', {
+      ...this.mediaPromotionForm.value,
+      eventMediaList: this.eventMediaList,
+      materialTypes: this.getValidMaterialTypes(),
+      fileMetadata: this.fileMetadata
+    });
+
+    this.toastService.success('Promotional material updated successfully', 'Success');
+  }
+
+  // Cancel editing promotional material
+  cancelEditPromotionalMaterial(): void {
+    this.editingPromotionalMaterialIndex = null;
+    this.mediaPromotionForm.patchValue({
+      materialType: '',
+      quantity: '',
+      size: ''
+    });
+  }
+
+  // Get filtered promotional material list
+  getFilteredPromotionalMaterials(): any[] {
+    const validMaterials = this.getValidMaterialTypes();
+    if (!this.promotionalMaterialSearchTerm.trim()) {
+      return validMaterials;
+    }
+    const searchLower = this.promotionalMaterialSearchTerm.toLowerCase();
+    return validMaterials.filter(material => 
+      (material.materialType || '').toLowerCase().includes(searchLower) ||
+      (material.quantity || '').toString().toLowerCase().includes(searchLower) ||
+      (material.size || '').toLowerCase().includes(searchLower)
+    );
+  }
+
   // Get only valid material types (with at least materialType filled)
   getValidMaterialTypes(): any[] {
     return this.materialTypes.filter(m => m.materialType && m.materialType.trim() !== '');
@@ -2016,6 +2117,12 @@ export class AddEventComponent implements OnInit, OnDestroy {
 
   // Add special guest functionality
   addSpecialGuest(): void {
+    // Check if we're in edit mode
+    if (this.editingSpecialGuestIndex !== null) {
+      this.updateSpecialGuest();
+      return;
+    }
+
     // Collect data from form
     const formValue = this.specialGuestsForm.value;
     const newGuest = {
@@ -2055,8 +2162,16 @@ export class AddEventComponent implements OnInit, OnDestroy {
     });
   }
 
-  removeSpecialGuest(index: number): void {
-    this.specialGuests.splice(index, 1);
+  removeSpecialGuest(filteredIndex: number): void {
+    // Get the actual index from the filtered list
+    const filteredList = this.filteredSpecialGuestList;
+    const guest = filteredList[filteredIndex];
+    // Find the actual index in the original array
+    const actualIndex = this.specialGuests.indexOf(guest);
+    
+    if (actualIndex === -1) return;
+    
+    this.specialGuests.splice(actualIndex, 1);
 
     // Trigger auto-save after removal
     this.autoSave('specialGuests', {
@@ -2065,8 +2180,112 @@ export class AddEventComponent implements OnInit, OnDestroy {
     });
   }
 
+  // Edit special guest functionality
+  editSpecialGuest(filteredIndex: number): void {
+    // Get the actual index from the filtered list
+    const filteredList = this.filteredSpecialGuestList;
+    const guest = filteredList[filteredIndex];
+    // Find the actual index in the original array
+    const actualIndex = this.specialGuests.indexOf(guest);
+    
+    if (actualIndex === -1) return;
+    
+    this.editingSpecialGuestIndex = actualIndex;
+    
+    // Populate form with existing data
+    this.specialGuestsForm.patchValue({
+      guestGender: guest.gender || '',
+      guestPrefix: guest.prefix || '',
+      guestFirstName: guest.firstName || '',
+      guestMiddleName: guest.middleName || '',
+      guestLastName: guest.lastName || '',
+      guestDesignation: guest.designation || '',
+      guestOrganization: guest.organization || '',
+      guestEmail: guest.email || '',
+      guestCity: guest.city || '',
+      guestState: guest.state || '',
+      guestPersonalNumber: guest.personalNumber || '',
+      guestContactPerson: guest.contactPerson || '',
+      guestContactPersonNumber: guest.contactPersonNumber || '',
+      guestReferenceBranchId: guest.referenceBranchId || '',
+      guestReferenceVolunteerId: guest.referenceVolunteerId || '',
+      guestReferencePersonName: guest.referencePersonName || ''
+    });
+
+    // Open modal for editing
+    this.openSpecialGuestsModal();
+  }
+
+  // Update special guest after editing
+  updateSpecialGuest(): void {
+    if (this.editingSpecialGuestIndex === null) return;
+
+    const formValue = this.specialGuestsForm.value;
+    const guest = {
+      gender: formValue.guestGender || '',
+      prefix: formValue.guestPrefix || '',
+      firstName: formValue.guestFirstName || '',
+      middleName: formValue.guestMiddleName || '',
+      lastName: formValue.guestLastName || '',
+      designation: formValue.guestDesignation || '',
+      organization: formValue.guestOrganization || '',
+      email: formValue.guestEmail || '',
+      city: formValue.guestCity || '',
+      state: formValue.guestState || '',
+      personalNumber: formValue.guestPersonalNumber || '',
+      contactPerson: formValue.guestContactPerson || '',
+      contactPersonNumber: formValue.guestContactPersonNumber || '',
+      referenceBranchId: formValue.guestReferenceBranchId || '',
+      referenceVolunteerId: formValue.guestReferenceVolunteerId || '',
+      referencePersonName: formValue.guestReferencePersonName || ''
+    };
+
+    // Update the existing entry
+    this.specialGuests[this.editingSpecialGuestIndex] = guest;
+    this.editingSpecialGuestIndex = null;
+
+    // Clear form
+    this.specialGuestsForm.reset();
+
+    // Trigger auto-save
+    this.autoSave('specialGuests', {
+      ...this.specialGuestsForm.value,
+      specialGuestsList: this.specialGuests
+    });
+
+    this.toastService.success('Special guest updated successfully', 'Success');
+  }
+
+  // Cancel editing special guest
+  cancelEditSpecialGuest(): void {
+    this.editingSpecialGuestIndex = null;
+    this.specialGuestsForm.reset();
+  }
+
+  // Get filtered special guest list
+  get filteredSpecialGuestList(): any[] {
+    if (!this.specialGuestSearchTerm.trim()) {
+      return this.specialGuests;
+    }
+    const searchLower = this.specialGuestSearchTerm.toLowerCase();
+    return this.specialGuests.filter(guest => 
+      (guest.firstName || '').toLowerCase().includes(searchLower) ||
+      (guest.lastName || '').toLowerCase().includes(searchLower) ||
+      (guest.designation || '').toLowerCase().includes(searchLower) ||
+      (guest.organization || '').toLowerCase().includes(searchLower) ||
+      (guest.email || '').toLowerCase().includes(searchLower) ||
+      (guest.city || '').toLowerCase().includes(searchLower)
+    );
+  }
+
   // Add volunteer functionality
   addVolunteer(): void {
+    // Check if we're in edit mode
+    if (this.editingVolunteerIndex !== null) {
+      this.updateVolunteer();
+      return;
+    }
+
     // Collect data from form
     const formValue = this.volunteersForm.value;
     const newVolunteer = {
@@ -2100,14 +2319,100 @@ export class AddEventComponent implements OnInit, OnDestroy {
     });
   }
 
-  removeVolunteer(index: number): void {
-    this.volunteers.splice(index, 1);
+  removeVolunteer(filteredIndex: number): void {
+    // Get the actual index from the filtered list
+    const filteredList = this.filteredVolunteerList;
+    const volunteer = filteredList[filteredIndex];
+    // Find the actual index in the original array
+    const actualIndex = this.volunteers.indexOf(volunteer);
+    
+    if (actualIndex === -1) return;
+    
+    this.volunteers.splice(actualIndex, 1);
 
     // Trigger auto-save after removal with current form values and updated volunteers list
     this.autoSave('volunteers', {
       ...this.volunteersForm.value,
       volunteersList: this.volunteers
     });
+  }
+
+  // Edit volunteer functionality
+  editVolunteer(filteredIndex: number): void {
+    // Get the actual index from the filtered list
+    const filteredList = this.filteredVolunteerList;
+    const volunteer = filteredList[filteredIndex];
+    // Find the actual index in the original array
+    const actualIndex = this.volunteers.indexOf(volunteer);
+    
+    if (actualIndex === -1) return;
+    
+    this.editingVolunteerIndex = actualIndex;
+    
+    // Populate form with existing data
+    this.volunteersForm.patchValue({
+      volBranchId: volunteer.branchId || '',
+      volSearchMember: volunteer.searchMember || '',
+      volName: volunteer.name || '',
+      volContact: volunteer.contact || '',
+      volDays: volunteer.days || 0,
+      volSeva: volunteer.seva || '',
+      volMentionSeva: volunteer.mentionSeva || ''
+    });
+
+    // Open modal for editing
+    this.openVolunteersModal();
+  }
+
+  // Update volunteer after editing
+  updateVolunteer(): void {
+    if (this.editingVolunteerIndex === null) return;
+
+    const formValue = this.volunteersForm.value;
+    const volunteer = {
+      branchId: formValue.volBranchId || '',
+      searchMember: formValue.volSearchMember || '',
+      name: formValue.volName || '',
+      contact: formValue.volContact || '',
+      days: formValue.volDays || 0,
+      seva: formValue.volSeva || '',
+      mentionSeva: formValue.volMentionSeva || ''
+    };
+
+    // Update the existing entry
+    this.volunteers[this.editingVolunteerIndex] = volunteer;
+    this.editingVolunteerIndex = null;
+
+    // Clear form
+    this.volunteersForm.reset();
+
+    // Trigger auto-save
+    this.autoSave('volunteers', {
+      ...this.volunteersForm.value,
+      volunteersList: this.volunteers
+    });
+
+    this.toastService.success('Volunteer updated successfully', 'Success');
+  }
+
+  // Cancel editing volunteer
+  cancelEditVolunteer(): void {
+    this.editingVolunteerIndex = null;
+    this.volunteersForm.reset();
+  }
+
+  // Get filtered volunteer list
+  get filteredVolunteerList(): any[] {
+    if (!this.volunteerSearchTerm.trim()) {
+      return this.volunteers;
+    }
+    const searchLower = this.volunteerSearchTerm.toLowerCase();
+    return this.volunteers.filter(vol => 
+      (vol.name || '').toLowerCase().includes(searchLower) ||
+      (vol.contact || '').toLowerCase().includes(searchLower) ||
+      (vol.seva || '').toLowerCase().includes(searchLower) ||
+      (vol.branchId || '').toLowerCase().includes(searchLower)
+    );
   }
 
   // Search volunteers for suggestions
@@ -2215,6 +2520,12 @@ export class AddEventComponent implements OnInit, OnDestroy {
 
   // Add event media functionality
   addEventMedia(): void {
+    // Check if we're in edit mode
+    if (this.editingEventMediaIndex !== null) {
+      this.updateEventMedia();
+      return;
+    }
+
     // Collect data from form - ensure we get the latest values
     const formValue = this.mediaPromotionForm.getRawValue();
     
@@ -2271,14 +2582,134 @@ export class AddEventComponent implements OnInit, OnDestroy {
     });
   }
 
-  removeEventMedia(index: number): void {
-    this.eventMediaList.splice(index, 1);
+  removeEventMedia(filteredIndex: number): void {
+    // Get the actual index from the filtered list
+    const filteredList = this.filteredEventMediaList;
+    const media = filteredList[filteredIndex];
+    // Find the actual index in the original array
+    const actualIndex = this.eventMediaList.indexOf(media);
+    
+    if (actualIndex === -1) return;
+    
+    this.eventMediaList.splice(actualIndex, 1);
 
     // Trigger auto-save after removal
     this.autoSave('mediaPromotion', {
       ...this.mediaPromotionForm.value,
       eventMediaList: this.eventMediaList
     });
+  }
+
+  // Edit event media functionality
+  editEventMedia(filteredIndex: number): void {
+    // Get the actual index from the filtered list
+    const filteredList = this.filteredEventMediaList;
+    const media = filteredList[filteredIndex];
+    // Find the actual index in the original array
+    const actualIndex = this.eventMediaList.indexOf(media);
+    
+    if (actualIndex === -1) return;
+    
+    this.editingEventMediaIndex = actualIndex;
+    
+    // Populate form with existing data
+    this.mediaPromotionForm.patchValue({
+      mediaCoverageType: media.mediaCoverageType || '',
+      companyName: media.companyName || '',
+      companyEmail: media.companyEmail || '',
+      companyWebsite: media.companyWebsite || '',
+      mediaGender: media.gender || '',
+      mediaPrefix: media.prefix || '',
+      mediaFirstName: media.firstName || '',
+      mediaMiddleName: media.middleName || '',
+      mediaLastName: media.lastName || '',
+      mediaDesignation: media.designation || '',
+      mediaContact: media.contact || '',
+      mediaEmail: media.email || '',
+      referenceBranchId: media.referenceBranchId || '',
+      referenceVolunteerId: media.referenceVolunteerId || '',
+      referencePersonName: media.referencePersonName || ''
+    });
+
+    // Open modal for editing
+    this.openMediaPromotionModal();
+  }
+
+  // Update event media after editing
+  updateEventMedia(): void {
+    if (this.editingEventMediaIndex === null) return;
+
+    const formValue = this.mediaPromotionForm.getRawValue();
+    const eventMedia = {
+      mediaCoverageType: (formValue.mediaCoverageType || '').trim(),
+      companyName: (formValue.companyName || '').trim(),
+      companyEmail: (formValue.companyEmail || '').trim(),
+      companyWebsite: (formValue.companyWebsite || '').trim(),
+      gender: (formValue.mediaGender || '').trim(),
+      prefix: (formValue.mediaPrefix || '').trim(),
+      firstName: (formValue.mediaFirstName || '').trim(),
+      middleName: (formValue.mediaMiddleName || '').trim(),
+      lastName: (formValue.mediaLastName || '').trim(),
+      designation: (formValue.mediaDesignation || '').trim(),
+      contact: (formValue.mediaContact || '').trim(),
+      email: (formValue.mediaEmail || '').trim(),
+      referenceBranchId: (formValue.referenceBranchId || '').trim(),
+      referenceVolunteerId: (formValue.referenceVolunteerId || '').trim(),
+      referencePersonName: (formValue.referencePersonName || '').trim()
+    };
+
+    // Update the existing entry
+    this.eventMediaList[this.editingEventMediaIndex] = eventMedia;
+    this.editingEventMediaIndex = null;
+
+    // Clear form
+    this.mediaPromotionForm.patchValue({
+      mediaCoverageType: '',
+      companyName: '',
+      companyEmail: '',
+      companyWebsite: '',
+      mediaGender: '',
+      mediaPrefix: '',
+      mediaFirstName: '',
+      mediaMiddleName: '',
+      mediaLastName: '',
+      mediaDesignation: '',
+      mediaContact: '',
+      mediaEmail: '',
+      referenceBranchId: '',
+      referenceVolunteerId: '',
+      referencePersonName: ''
+    }, { emitEvent: false });
+
+    // Trigger auto-save
+    this.autoSave('mediaPromotion', {
+      ...this.mediaPromotionForm.value,
+      eventMediaList: this.eventMediaList
+    });
+
+    this.toastService.success('Event media updated successfully', 'Success');
+  }
+
+  // Cancel editing event media
+  cancelEditEventMedia(): void {
+    this.editingEventMediaIndex = null;
+    this.mediaPromotionForm.reset();
+  }
+
+  // Get filtered event media list
+  get filteredEventMediaList(): any[] {
+    if (!this.eventMediaSearchTerm.trim()) {
+      return this.eventMediaList;
+    }
+    const searchLower = this.eventMediaSearchTerm.toLowerCase();
+    return this.eventMediaList.filter(media => 
+      (media.mediaCoverageType || '').toLowerCase().includes(searchLower) ||
+      (media.companyName || '').toLowerCase().includes(searchLower) ||
+      (media.companyEmail || '').toLowerCase().includes(searchLower) ||
+      (media.firstName || '').toLowerCase().includes(searchLower) ||
+      (media.lastName || '').toLowerCase().includes(searchLower) ||
+      (media.designation || '').toLowerCase().includes(searchLower)
+    );
   }
 
   // File upload functionality - stores files to upload after event creation

@@ -2,12 +2,19 @@
 // authentication.scss
 //
 
+@import "../../responsive-mixins";
 
 // authentication home icon
 .home-btn {
     position: absolute;
     top: 15px;
     right: 25px;
+    
+    @include respond-to('xs') {
+        top: 10px;
+        right: 15px;
+        @include tap-target(44px);
+    }
 }
 
 // auth 2
@@ -46,6 +53,10 @@
         height: 100vh;
     }
     
+    @include respond-to('xs') {
+        min-height: 100vh;
+        padding: 1rem;
+    }
 
     &::before{
         content: "";
@@ -53,6 +64,16 @@
         width: 300px;
         height: 300px;
         border-radius: 50%;
+        
+        @include respond-to('md') {
+            width: 200px;
+            height: 200px;
+        }
+        
+        @include respond-to('xs') {
+            width: 150px;
+            height: 150px;
+        }
     }
 
     .bg-overlay{
@@ -60,6 +81,11 @@
         background-size: cover;
         background-repeat: no-repeat;
         background-position: center;
+        
+        @include respond-to('xs') {
+            background-size: contain;
+            opacity: 0.7;
+        }
     }
 }
 
@@ -69,6 +95,11 @@
     @media (min-width: 1200px){
         min-height: 100vh;
     }
+    
+    @include respond-to('xs') {
+        min-height: 100vh;
+        padding: 1rem 0.5rem;
+    }
 }
 
 .auth-review-carousel{
@@ -77,6 +108,7 @@
             .owl-dot{
                 span{
                     background-color: rgba($primary, 0.25);
+                    @include smooth-transition(all);
                 }
                 &.active, &:hover{
                     span{
@@ -85,5 +117,170 @@
                 }
             }
         }
+    }
+}
+
+// ==========================================
+// Responsive Authentication Pages
+// ==========================================
+
+.account-pages {
+    padding: 2rem 0;
+    
+    @include respond-to('md') {
+        padding: 1.5rem 0;
+    }
+    
+    @include respond-to('xs') {
+        padding: 1rem 0;
+    }
+    
+    .card {
+        @include responsive-card;
+        
+        @include respond-to('xs') {
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+    }
+    
+    .card-body {
+        padding: 2rem;
+        
+        @include respond-to('md') {
+            padding: 1.5rem;
+        }
+        
+        @include respond-to('xs') {
+            padding: 1.25rem 1rem;
+        }
+    }
+    
+    // Form elements
+    .form-control,
+    .form-select {
+        @include respond-to('xs') {
+            font-size: 16px; // Prevent iOS zoom
+            min-height: 48px;
+            padding: 12px 16px;
+        }
+    }
+    
+    .form-label {
+        @include respond-to('xs') {
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+    }
+    
+    // Buttons
+    .btn {
+        @include respond-to('xs') {
+            @include tap-target(48px);
+            font-size: 16px;
+            font-weight: 600;
+        }
+    }
+    
+    .btn-primary {
+        @include smooth-transition(all);
+        
+        @media (hover: hover) {
+            &:hover:not(:disabled) {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.3);
+            }
+        }
+    }
+    
+    // Social login buttons
+    .social-list-item {
+        @include smooth-transition(all);
+        
+        @include respond-to('xs') {
+            @include tap-target(44px);
+            margin: 0 0.25rem;
+        }
+        
+        @media (hover: hover) {
+            &:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            }
+        }
+    }
+    
+    // Avatar/Logo
+    .avatar-md {
+        @include respond-to('xs') {
+            width: 3rem;
+            height: 3rem;
+        }
+    }
+    
+    .profile-user-wid {
+        @include respond-to('xs') {
+            margin-bottom: 1rem !important;
+        }
+    }
+    
+    // Text elements
+    h5, .h5 {
+        @include respond-to('xs') {
+            font-size: 1.125rem;
+        }
+    }
+    
+    p {
+        @include respond-to('xs') {
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+    }
+    
+    // Alert messages
+    alert, .alert {
+        @include respond-to('xs') {
+            font-size: 0.875rem;
+            padding: 0.75rem 1rem;
+        }
+    }
+}
+
+// Container responsiveness
+.container {
+    @include respond-to('xs') {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
+// Two-column auth layout (login-2 style)
+.auth-two-column {
+    @include respond-to('xs') {
+        flex-direction: column;
+        
+        .col-7, .col-5 {
+            width: 100%;
+            max-width: 100%;
+            flex: 0 0 100%;
+        }
+    }
+}
+
+// Responsive image handling
+.img-fluid {
+    @include respond-to('xs') {
+        max-width: 80%;
+        height: auto;
+    }
+}
+
+// Footer text
+.mt-5.text-center {
+    @include respond-to('xs') {
+        margin-top: 2rem !important;
+        font-size: 0.875rem;
+        padding: 0 1rem;
     }
 }

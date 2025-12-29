@@ -478,9 +478,15 @@
   
   <!-- Event Media Table -->
   <div class="common-stepper">
-    <h6 class="mt-4">List of Event Media ({{ eventMediaList.length }})</h6>
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
+      <h6 class="mb-0">List of Event Media ({{ filteredEventMediaList.length }})</h6>
+      <div class="search-box" style="width: 300px;">
+        <input type="text" class="form-control form-control-sm" placeholder="Search media..." 
+          [(ngModel)]="eventMediaSearchTerm" />
+      </div>
+    </div>
     <div class="event-table-container mt-3">
-      <p-table [value]="eventMediaList" 
+      <p-table [value]="filteredEventMediaList" 
         [paginator]="true"
         [rows]="eventMediaPagination.rows"
         [first]="eventMediaPagination.first"
@@ -488,7 +494,7 @@
         [tableStyle]="{ 'min-width': '100%' }">
         <ng-template pTemplate="header">
           <tr>
-            <th>Action</th>
+            <th style="width: 120px;">Actions</th>
             <th>Media Coverage Type</th>
             <th>Company Name</th>
             <th>Company Email</th>
@@ -501,7 +507,14 @@
         </ng-template>
         <ng-template pTemplate="body" let-media let-i="rowIndex">
           <tr>
-            <td><button class="btn btn-danger btn-sm" (click)="removeEventMedia(i)">Remove</button></td>
+            <td>
+              <button class="btn btn-primary btn-sm me-1" (click)="editEventMedia(i)" title="Edit">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-danger btn-sm" (click)="removeEventMedia(i)" title="Remove">
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
             <td>{{ media.mediaCoverageType }}</td>
             <td>{{ media.companyName }}</td>
             <td>{{ media.companyEmail }}</td>
@@ -529,9 +542,15 @@
         <i class="fas fa-plus me-2"></i>Add Material Type
       </button>
     </div>
-    <h6 class="mt-4">List of Promotional Materials ({{ getValidMaterialTypesCount() }})</h6>
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
+      <h6 class="mb-0">List of Promotional Materials ({{ getFilteredPromotionalMaterials().length }})</h6>
+      <div class="search-box" style="width: 300px;">
+        <input type="text" class="form-control form-control-sm" placeholder="Search materials..." 
+          [(ngModel)]="promotionalMaterialSearchTerm" />
+      </div>
+    </div>
     <div class="event-table-container mt-3">
-      <p-table [value]="getValidMaterialTypes()" 
+      <p-table [value]="getFilteredPromotionalMaterials()" 
         [paginator]="true"
         [rows]="promotionalMaterialPagination.rows"
         [first]="promotionalMaterialPagination.first"
@@ -539,7 +558,7 @@
         [tableStyle]="{ 'min-width': '100%' }">
         <ng-template pTemplate="header">
           <tr>
-            <th>Action</th>
+            <th style="width: 80px;">Actions</th>
             <th>Material Type</th>
             <th>Quantity</th>
             <th>Size</th>
@@ -548,7 +567,11 @@
         </ng-template>
         <ng-template pTemplate="body" let-material let-i="rowIndex">
           <tr>
-            <td><button class="btn btn-danger btn-sm" (click)="removeMaterialTypeByValidIndex(i)">Remove</button></td>
+            <td>
+              <button class="btn btn-danger btn-sm" (click)="removeMaterialTypeByValidIndex(i)" title="Remove">
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
             <td>{{ material.materialType }}</td>
             <td>{{ material.quantity }}</td>
             <td>{{ material.size }}</td>
@@ -615,9 +638,15 @@
 
   <!-- Special Guest Table -->
   <div class="common-stepper">
-    <h6 class="mt-4">List of Special Guests ({{ specialGuestList.length }})</h6>
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
+      <h6 class="mb-0">List of Special Guests ({{ filteredSpecialGuestList.length }})</h6>
+      <div class="search-box" style="width: 300px;">
+        <input type="text" class="form-control form-control-sm" placeholder="Search guests..." 
+          [(ngModel)]="specialGuestSearchTerm" />
+      </div>
+    </div>
     <div class="event-table-container mt-3">
-      <p-table [value]="specialGuestList" 
+      <p-table [value]="filteredSpecialGuestList" 
         [paginator]="true"
         [rows]="specialGuestPagination.rows"
         [first]="specialGuestPagination.first"
@@ -625,7 +654,7 @@
         [tableStyle]="{ 'min-width': '100%' }">
         <ng-template pTemplate="header">
           <tr>
-            <th>Action</th>
+            <th style="width: 120px;">Actions</th>
             <th>Name (Phone no.)</th>
             <th>Gender</th>
             <th>Designation</th>
@@ -639,7 +668,14 @@
         </ng-template>
         <ng-template pTemplate="body" let-guest let-i="rowIndex">
           <tr>
-            <td><button class="btn btn-danger btn-sm" (click)="removeSpecialGuest(i)">Remove</button></td>
+            <td>
+              <button class="btn btn-primary btn-sm me-1" (click)="editSpecialGuest(i)" title="Edit">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-danger btn-sm" (click)="removeSpecialGuest(i)" title="Remove">
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
             <td>{{ guest.firstName }} {{ guest.lastName }} ({{ guest.personalNumber }})</td>
             <td>{{ guest.gender }}</td>
             <td>{{ guest.designation }}</td>
@@ -684,9 +720,15 @@
 
   <!-- Volunteer List Table -->
   <div class="common-stepper">
-    <h6 class="mt-4">List of Volunteers ({{ volunteerList.length }})</h6>
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
+      <h6 class="mb-0">List of Volunteers ({{ filteredVolunteerList.length }})</h6>
+      <div class="search-box" style="width: 300px;">
+        <input type="text" class="form-control form-control-sm" placeholder="Search volunteers..." 
+          [(ngModel)]="volunteerSearchTerm" />
+      </div>
+    </div>
     <div class="event-table-container mt-3">
-      <p-table [value]="volunteerList" 
+      <p-table [value]="filteredVolunteerList" 
         [paginator]="true"
         [rows]="volunteerPagination.rows"
         [first]="volunteerPagination.first"
@@ -694,7 +736,7 @@
         [tableStyle]="{ 'min-width': '100%' }">
         <ng-template pTemplate="header">
           <tr>
-            <th>Action</th>
+            <th style="width: 120px;">Actions</th>
             <th>Name</th>
             <th>Contact no.</th>
             <th>No. of Days</th>
@@ -704,7 +746,12 @@
         <ng-template pTemplate="body" let-vol let-i="rowIndex">
           <tr>
             <td>
-              <button class="btn btn-danger btn-sm" (click)="removeVolunteer(i)">Remove</button>
+              <button class="btn btn-primary btn-sm me-1" (click)="editVolunteer(i)" title="Edit">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-danger btn-sm" (click)="removeVolunteer(i)" title="Remove">
+                <i class="fas fa-trash"></i>
+              </button>
             </td>
             <td>{{ vol.name }}</td>
             <td>{{ vol.contact }}</td>

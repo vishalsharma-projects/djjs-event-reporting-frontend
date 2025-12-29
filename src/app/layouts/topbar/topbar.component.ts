@@ -256,4 +256,70 @@ export class TopbarComponent implements OnInit {
       document.documentElement.setAttribute('data-layout', layout)
     })
   }
+
+  /**
+   * Get user display name (first name + last name or email)
+   */
+  getUserDisplayName(): string {
+    if (!this.currentUser) {
+      return ''; // Return empty string for guests - only icon will show
+    }
+
+    // Try to get name from currentUser
+    if (this.currentUser.name) {
+      return this.currentUser.name;
+    }
+
+    // Try to get first name and last name
+    if (this.currentUser.firstName && this.currentUser.lastName) {
+      return `${this.currentUser.firstName} ${this.currentUser.lastName}`;
+    }
+
+    // Try to get just first name
+    if (this.currentUser.firstName) {
+      return this.currentUser.firstName;
+    }
+
+    // Fallback to email
+    if (this.currentUser.email) {
+      return this.currentUser.email.split('@')[0];
+    }
+
+    return ''; // Return empty string if no identifiable info
+  }
+
+  /**
+   * Get user initials for avatar circle
+   */
+  getUserInitials(): string {
+    if (!this.currentUser) {
+      return ''; // Return empty for guests - icon will be shown instead
+    }
+
+    // Try to get initials from name
+    if (this.currentUser.name) {
+      const nameParts = this.currentUser.name.trim().split(' ');
+      if (nameParts.length >= 2) {
+        return (nameParts[0].charAt(0) + nameParts[nameParts.length - 1].charAt(0)).toUpperCase();
+      }
+      return this.currentUser.name.charAt(0).toUpperCase();
+    }
+
+    // Try to get initials from firstName and lastName
+    if (this.currentUser.firstName && this.currentUser.lastName) {
+      return (this.currentUser.firstName.charAt(0) + this.currentUser.lastName.charAt(0)).toUpperCase();
+    }
+
+    // Try to get initial from firstName only
+    if (this.currentUser.firstName) {
+      return this.currentUser.firstName.charAt(0).toUpperCase();
+    }
+
+    // Fallback to email initial
+    if (this.currentUser.email) {
+      return this.currentUser.email.charAt(0).toUpperCase();
+    }
+
+    return ''; // Return empty if no identifiable info - icon will be shown
+  }
 }

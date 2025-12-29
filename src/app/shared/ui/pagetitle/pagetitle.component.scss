@@ -1,0 +1,56 @@
+// Import responsive mixins
+@import "../../../../assets/scss/responsive-mixins";
+
+.page-title-box {
+  @include smooth-transition(all);
+  
+  @include respond-to('xs') {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1rem;
+  }
+  
+  h4 {
+    margin-bottom: 0;
+    font-size: 1.125rem;
+    
+    @include respond-to('xs') {
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+    }
+  }
+  
+  .page-title-right {
+    @include respond-to('xs') {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+}
+
+.breadcrumb {
+  @include smooth-transition(all);
+  flex-wrap: wrap;
+  
+  @include respond-to('xs') {
+    font-size: 0.813rem;
+    padding: 0.5rem 0;
+  }
+  
+  .breadcrumb-item {
+    @include respond-to('xs') {
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    a {
+      @include respond-to('xs') {
+        @include tap-target(36px);
+      }
+    }
+  }
+}
+

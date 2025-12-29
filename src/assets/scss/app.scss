@@ -17,6 +17,12 @@ File: Main Css File
 @import "variables-dark";
 @import "./node_modules/bootstrap/scss/mixins";
 
+// Responsive mixins and utilities (must be imported after Bootstrap)
+@import "responsive-mixins";
+@import "responsive-utilities";
+@import "shared-components-responsive"; // NEW: Shared component responsive styles
+@import "auth-shared-responsive"; // NEW: Authentication shared responsive styles
+
 // Structure
 @import "custom/structure/general";
 @import "custom/structure/topbar";
