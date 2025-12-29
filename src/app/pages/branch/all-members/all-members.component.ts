@@ -39,6 +39,11 @@ export class AllMembersComponent implements OnInit {
   searchTerm: string = '';
   breadCrumbItems: Array<{}> = [];
 
+  // Pagination
+  first = 0;
+  rows = 10;
+  rowsPerPageOptions = [5, 10, 20, 50];
+
   // Add Member Modal
   showAddMemberModal: boolean = false;
   memberForm: FormGroup;

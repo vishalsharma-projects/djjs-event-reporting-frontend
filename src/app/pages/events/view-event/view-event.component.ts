@@ -176,11 +176,36 @@ export class ViewEventComponent implements OnInit {
 
         // Map donations
         if (response.donations && response.donations.length > 0) {
-          this.eventData.donations = response.donations.map((donation: any) => ({
-            type: donation.donation_type || 'N/A',
-            details: donation.kindtype || '-',
-            amount: donation.amount || 0
-          }));
+          this.eventData.donations = response.donations.map((donation: any) => {
+            let details = '-';
+            // Parse kindtype if it's a JSON array string
+            if (donation.kindtype) {
+              if (typeof donation.kindtype === 'string') {
+                try {
+                  const parsed = JSON.parse(donation.kindtype);
+                  if (Array.isArray(parsed)) {
+                    // Clean up each tag - remove markdown syntax and escaped characters
+                    const cleanedTags = parsed.map((tag: string) => this.cleanTag(tag));
+                    details = cleanedTags.join(', ');
+                  } else {
+                    details = this.cleanTag(donation.kindtype);
+                  }
+                } catch (e) {
+                  details = this.cleanTag(donation.kindtype);
+                }
+              } else if (Array.isArray(donation.kindtype)) {
+                const cleanedTags = donation.kindtype.map((tag: string) => this.cleanTag(tag));
+                details = cleanedTags.join(', ');
+              } else {
+                details = this.cleanTag(donation.kindtype.toString());
+              }
+            }
+            return {
+              type: donation.donation_type || 'N/A',
+              details: details,
+              amount: donation.amount || 0
+            };
+          });
         } else {
           this.eventData.donations = [];
         }
@@ -302,6 +327,18 @@ export class ViewEventComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/events']);
+  }
+
+  /**
+   * Clean tag text - remove markdown syntax, escaped characters, and extra whitespace
+   */
+  private cleanTag(tag: string): string {
+    if (!tag) return '';
+    
+    return tag
+      .replace(/[\*\[\]\\]/g, '') // Remove *, [, ], and \ characters
+      .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+      .trim(); // Remove leading/trailing whitespace
   }
 
   getTotalDonations(): number {

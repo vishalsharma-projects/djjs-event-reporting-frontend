@@ -99,8 +99,8 @@ export class EventsListComponent implements OnInit, AfterViewChecked, OnDestroy 
 
   // Pagination
   first = 0;
-  rows = 20;
-  rowsPerPageOptions = [10, 20, 50];
+  rows = 10;
+  rowsPerPageOptions = [5, 10, 20, 50];
 
   // Sorting
   sortField: string = '';
@@ -455,15 +455,14 @@ export class EventsListComponent implements OnInit, AfterViewChecked, OnDestroy 
     return this.pinnedColumns.includes(column);
   }
 
-  // Update paginated events
+  // Update paginated events - with PrimeNG pagination, we pass full dataset
   updatePaginatedEvents(): void {
-    const start = this.first;
-    const end = this.first + this.rows;
     // Use filteredEventsData if filters are applied, otherwise use allEventsData
+    // PrimeNG will handle pagination automatically
     const sourceData = this.hasActiveFilters()
       ? this.filteredEventsData
       : this.allEventsData;
-    this.events = sourceData.slice(start, end);
+    this.events = sourceData;
   }
 
   /**
@@ -477,7 +476,7 @@ export class EventsListComponent implements OnInit, AfterViewChecked, OnDestroy 
   onPageChange(event: any): void {
     this.first = event.first;
     this.rows = event.rows || this.rows; // Keep current rows if not provided
-    this.updatePaginatedEvents();
+    // No need to call updatePaginatedEvents() as PrimeNG handles pagination automatically
   }
 
   // Get total records for pagination component

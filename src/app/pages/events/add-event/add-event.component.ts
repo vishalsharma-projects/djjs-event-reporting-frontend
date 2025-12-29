@@ -340,6 +340,12 @@ export class AddEventComponent implements OnInit, OnDestroy {
   showVolunteerSuggestions: boolean = false;
   searchingVolunteers: boolean = false;
 
+  // Pagination for lists
+  eventMediaPagination = { first: 0, rows: 5, rowsPerPageOptions: [5, 10, 20] };
+  promotionalMaterialPagination = { first: 0, rows: 5, rowsPerPageOptions: [5, 10, 20] };
+  specialGuestPagination = { first: 0, rows: 5, rowsPerPageOptions: [5, 10, 20] };
+  volunteerPagination = { first: 0, rows: 5, rowsPerPageOptions: [5, 10, 20] };
+
   // Getters for template compatibility
   get specialGuestList(): any[] {
     return this.specialGuests;
@@ -748,18 +754,18 @@ export class AddEventComponent implements OnInit, OnDestroy {
 
     // Media & Promotion Form
     this.mediaPromotionForm = this.fb.group({
-      mediaCoverageType: [''],
-      companyName: [''],
-      companyEmail: [''],
+      mediaCoverageType: ['', Validators.required],
+      companyName: ['', Validators.required],
+      companyEmail: ['', [Validators.required, Validators.email]],
       companyWebsite: [''],
-      mediaGender: [''],
-      mediaPrefix: [''],
-      mediaFirstName: [''],
+      mediaGender: ['', Validators.required],
+      mediaPrefix: ['', Validators.required],
+      mediaFirstName: ['', Validators.required],
       mediaMiddleName: [''],
-      mediaLastName: [''],
+      mediaLastName: ['', Validators.required],
       mediaDesignation: [''],
-      mediaContact: [''],
-      mediaEmail: [''],
+      mediaContact: ['', Validators.required],
+      mediaEmail: ['', [Validators.required, Validators.email]],
       referenceBranchId: [''],
       referenceVolunteerId: [''],
       referencePersonName: [''],
@@ -3037,14 +3043,26 @@ export class AddEventComponent implements OnInit, OnDestroy {
       this.donationTypes = response.donations.map((donation: any) => {
         const donationType = donation.donation_type?.toLowerCase() || 'cash';
         if (donationType === 'in-kind' || donation.kindtype) {
-          // Parse in-kind items - if kindtype is a string, try to split it
+          // Parse in-kind items - kindtype is stored as JSON string
           let tags: string[] = [];
           if (donation.kindtype) {
             if (typeof donation.kindtype === 'string') {
-              // Try to parse as comma-separated or array
-              tags = donation.kindtype.split(',').map((t: string) => t.trim()).filter((t: string) => t);
+              try {
+                // Try to parse as JSON array first (stored format from backend)
+                const parsed = JSON.parse(donation.kindtype);
+                if (Array.isArray(parsed)) {
+                  // Clean up each tag - remove markdown syntax and escaped characters
+                  tags = parsed.map((tag: string) => this.cleanTag(tag));
+                } else {
+                  // Fallback to comma-separated parsing
+                  tags = donation.kindtype.split(',').map((t: string) => this.cleanTag(t)).filter((t: string) => t);
+                }
+              } catch (e) {
+                // If JSON parsing fails, try comma-separated
+                tags = donation.kindtype.split(',').map((t: string) => this.cleanTag(t)).filter((t: string) => t);
+              }
             } else if (Array.isArray(donation.kindtype)) {
-              tags = donation.kindtype;
+              tags = donation.kindtype.map((tag: string) => this.cleanTag(tag));
             }
           }
           return {
@@ -3745,6 +3763,18 @@ export class AddEventComponent implements OnInit, OnDestroy {
     if (this.donationTypes.length > 1) {
       this.donationTypes.splice(index, 1);
     }
+  }
+
+  /**
+   * Clean tag text - remove markdown syntax, escaped characters, and extra whitespace
+   */
+  private cleanTag(tag: string): string {
+    if (!tag) return '';
+    
+    return tag
+      .replace(/[\*\[\]\\]/g, '') // Remove *, [, ], and \ characters
+      .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+      .trim(); // Remove leading/trailing whitespace
   }
 
   /**

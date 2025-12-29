@@ -62,7 +62,8 @@
     <!-- PrimeNG Events Table -->
     <p-toast />
     <div class="table-container">
-      <p-table #dt [value]="events" dataKey="id" [rowHover]="true" [paginator]="false" [rows]="rows" [first]="first"
+      <p-table #dt [value]="events" dataKey="id" [rowHover]="true" [paginator]="true" 
+        [rows]="rows" [first]="first" [rowsPerPageOptions]="rowsPerPageOptions"
         (onPageChange)="onPageChange($event)" (onSort)="onSort($event)"
         [sortMode]="'single'" [tableStyle]="{ 'min-width': '100%' }">
 
@@ -554,14 +555,6 @@
         </ng-template>
       </p-table>
     </div>
-
-    <!-- Custom Pagination Component -->
-    <app-pagination
-      [first]="first"
-      [rows]="rows"
-      [totalRecords]="getTotalRecords()"
-      (pageChange)="onPageChange($event)">
-    </app-pagination>
   </div>
 </div>
 

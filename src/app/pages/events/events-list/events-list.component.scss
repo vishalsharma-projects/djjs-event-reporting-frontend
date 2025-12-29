@@ -53,14 +53,12 @@
     display: block !important;
     overflow: visible !important;
 
-    // Enable horizontal scroll on mobile
-    @media (max-width: 768px) {
-      overflow-x: auto !important;
-      overflow-y: visible !important;
-      -webkit-overflow-scrolling: touch !important;
-      width: 100% !important;
-      display: block !important;
-    }
+    // Enable horizontal scroll when content overflows
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
+    display: block !important;
 
     // Remove all wrapper constraints
     > * {
@@ -75,45 +73,36 @@
       width: 100% !important;
       max-width: 100% !important;
       display: block !important;
-      overflow: visible !important;
+      overflow-x: auto !important;
+      overflow-y: visible !important;
+      -webkit-overflow-scrolling: touch !important;
       max-height: none !important;
       height: auto !important;
-
-      // Enable horizontal scroll on mobile
-      @media (max-width: 768px) {
-        overflow-x: auto !important;
-        overflow-y: visible !important;
-        -webkit-overflow-scrolling: touch !important;
-      }
     }
 
     .p-datatable-scrollable-wrapper {
       width: 100% !important;
       max-width: 100% !important;
       display: block !important;
-      overflow: visible !important;
+      overflow-x: auto !important;
+      overflow-y: visible !important;
+      -webkit-overflow-scrolling: touch !important;
       max-height: none !important;
       height: auto !important;
     }
 
     .p-datatable-scrollable-body {
-      overflow: visible !important;
+      overflow-x: auto !important;
+      overflow-y: visible !important;
+      -webkit-overflow-scrolling: touch !important;
       display: block !important;
       max-height: none !important;
       height: auto !important;
-
-      // Enable horizontal scroll on mobile
-      @media (max-width: 768px) {
-        overflow-x: auto !important;
-        overflow-y: visible !important;
-        -webkit-overflow-scrolling: touch !important;
-      }
     }
 
     .p-datatable-table {
-      width: 100% !important;
+      width: auto !important;
       min-width: 100% !important;
-      max-width: 100% !important;
       table-layout: auto;
       display: table !important;
       
@@ -121,29 +110,19 @@
       th, td {
         width: auto;
         min-width: auto;
-      }
-
-      // On mobile, set minimum width to enable horizontal scroll
-      @media (max-width: 768px) {
-        min-width: 800px !important; // Minimum width to enable horizontal scroll
-        width: auto !important;
+        white-space: nowrap;
       }
     }
 
     .p-datatable-scrollable-view {
       width: 100% !important;
       max-width: 100% !important;
-      overflow: visible !important;
+      overflow-x: auto !important;
+      overflow-y: visible !important;
+      -webkit-overflow-scrolling: touch !important;
       display: block !important;
       max-height: none !important;
       height: auto !important;
-
-      // Enable horizontal scroll on mobile
-      @media (max-width: 768px) {
-        overflow-x: auto !important;
-        overflow-y: visible !important;
-        -webkit-overflow-scrolling: touch !important;
-      }
     }
 
     // Remove scrollable wrapper constraints
@@ -345,9 +324,21 @@
       background-color: #f8f9fa;
     }
 
-    // Hide default PrimeNG paginator
+    // Paginator styling - match branch component
     .p-paginator {
-      display: none;
+      justify-content: flex-end;
+      padding: 10px;
+    }
+
+    .p-paginator .p-paginator-pages .p-paginator-page {
+      min-width: 32px;
+      height: 32px;
+      border-radius: 4px;
+    }
+
+    .p-paginator .p-paginator-pages .p-paginator-page.p-highlight {
+      background-color: #ff6b35;
+      color: #fff;
     }
 
     // Force table to not use scrollable mode - remove all height constraints
@@ -909,48 +900,37 @@
   position: relative;
   width: 100%;
   display: block;
-  overflow: visible;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch; // Smooth scrolling on iOS
 
-  // Enable horizontal scroll on mobile devices
-  @media (max-width: 768px) {
-    overflow-x: auto;
-    overflow-y: visible;
-    -webkit-overflow-scrolling: touch; // Smooth scrolling on iOS
-    width: 100%;
-    position: relative;
-    
-    // Add scroll indicator shadow on the right
-    &::after {
-      content: '';
-      position: sticky;
-      top: 0;
-      right: 0;
-      width: 30px;
-      height: 100%;
-      background: linear-gradient(to left, rgba(0, 0, 0, 0.08), transparent);
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      z-index: 1;
-    }
-    
-    // Show shadow when scrollable and not at the end
-    &.scrollable::after {
-      opacity: 1;
-    }
+  // Add scroll indicator shadow on the right
+  &::after {
+    content: '';
+    position: sticky;
+    top: 0;
+    right: 0;
+    width: 30px;
+    height: 100%;
+    background: linear-gradient(to left, rgba(0, 0, 0, 0.08), transparent);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 1;
+  }
+  
+  // Show shadow when scrollable and not at the end
+  &.scrollable::after {
+    opacity: 1;
+  }
 
-    // Hide shadow when scrolled to the end
-    &.scrolled-to-end::after {
-      opacity: 0;
-    }
+  // Hide shadow when scrolled to the end
+  &.scrolled-to-end::after {
+    opacity: 0;
   }
 }
 
-// Pagination wrapper
-app-pagination {
-  flex-shrink: 0;
-  width: 100%;
-}
+// Pagination wrapper - removed as we're using PrimeNG paginator
 
 // Custom Compact Pagination
 .custom-pagination {

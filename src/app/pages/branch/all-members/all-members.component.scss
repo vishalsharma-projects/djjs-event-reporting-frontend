@@ -114,3 +114,47 @@ td {
   }
 }
 
+// PrimeNG table pagination styling - match branch component
+:host ::ng-deep {
+  .p-datatable {
+    .p-datatable-wrapper {
+      overflow-x: auto;
+    }
+
+    // Paginator styling
+    .p-paginator {
+      justify-content: flex-end;
+      padding: 10px;
+    }
+
+    .p-paginator .p-paginator-pages .p-paginator-page {
+      min-width: 32px;
+      height: 32px;
+      border-radius: 4px;
+    }
+
+    .p-paginator .p-paginator-pages .p-paginator-page.p-highlight {
+      background-color: #ff6b35;
+      color: #fff;
+    }
+
+    // Table styling
+    .p-datatable-thead > tr > th {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      font-weight: 600;
+      color: #495057;
+      padding: 0.75rem;
+    }
+
+    .p-datatable-tbody > tr > td {
+      border: 1px solid #dee2e6;
+      padding: 0.75rem;
+      vertical-align: middle;
+    }
+
+    .p-datatable-tbody > tr:hover {
+      background-color: #f8f9fa;
+    }
+  }
+}
