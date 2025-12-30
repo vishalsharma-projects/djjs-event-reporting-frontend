@@ -163,27 +163,6 @@
                   </p>
                 </div>
               </div>
-              <div class="col-md-6">
-                <div class="info-item">
-                  <label class="info-label">Status</label>
-                  <p class="info-value">
-                    <span class="badge" [ngClass]="branch.status ? 'bg-success' : 'bg-danger'">
-                      <i class="fas fa-circle me-1" style="font-size: 0.5rem;"></i>
-                      {{ branch.status ? 'Active' : 'Inactive' }}
-                    </span>
-                  </p>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="info-item">
-                  <label class="info-label">NCR</label>
-                  <p class="info-value">
-                    <span class="badge" [ngClass]="branch.ncr ? 'bg-info' : 'bg-secondary'">
-                      {{ branch.ncr ? 'Yes' : 'No' }}
-                    </span>
-                  </p>
-                </div>
-              </div>
               <div class="col-md-6" *ngIf="branch.region_id">
                 <div class="info-item">
                   <label class="info-label">Region ID</label>

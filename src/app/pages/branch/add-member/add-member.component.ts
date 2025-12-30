@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Location } from '@angular/common';
 import { LocationService } from 'src/app/core/services/location.service';
 import { ChildBranchService } from 'src/app/core/services/child-branch.service';
 import { MessageService } from 'primeng/api';
@@ -25,6 +26,7 @@ export class AddMemberComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
+    private location: Location,
     private fb: FormBuilder,
     private locationService: LocationService,
     private childBranchService: ChildBranchService,
@@ -258,15 +260,9 @@ export class AddMemberComponent implements OnInit {
 
 
   goBack() {
-    if (this.branchId) {
-      if (this.isChildBranch) {
-        this.router.navigate(['/branch/child-branch/view', this.branchId.toString()]);
-      } else {
-        this.router.navigate(['/branch/view', this.branchId.toString()]);
-      }
-    } else {
-      this.router.navigate(['/branch']);
-    }
+    // Use browser history to go back to previous page
+    // This will navigate to wherever the user came from
+    this.location.back();
   }
 }
 

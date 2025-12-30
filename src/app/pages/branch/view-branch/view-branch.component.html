@@ -91,22 +91,6 @@
             <label class="form-label fw-bold">End Time:</label>
             <span class="ms-2">{{ branch.daily_end_time || 'N/A' }}</span>
           </div>
-          <div class="col-md-4 mb-3">
-            <label class="form-label fw-bold">Status:</label>
-            <span class="ms-2">
-              <span class="badge" [ngClass]="branch.status ? 'bg-success' : 'bg-danger'">
-                {{ branch.status ? 'Active' : 'Inactive' }}
-              </span>
-            </span>
-          </div>
-          <div class="col-md-4 mb-3">
-            <label class="form-label fw-bold">NCR:</label>
-            <span class="ms-2">
-              <span class="badge" [ngClass]="branch.ncr ? 'bg-info' : 'bg-secondary'">
-                {{ branch.ncr ? 'Yes' : 'No' }}
-              </span>
-            </span>
-          </div>
           <div class="col-md-4 mb-3" *ngIf="branch.branch_code">
             <label class="form-label fw-bold">Branch Code:</label>
             <span class="ms-2">{{ branch.branch_code }}</span>

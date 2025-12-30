@@ -3575,28 +3575,42 @@ export class AddEventComponent implements OnInit, OnDestroy {
     // Populate donations
     if (response.donations && response.donations.length > 0) {
       this.donationTypes = response.donations.map((donation: any) => {
-        const donationType = donation.donation_type?.toLowerCase() || 'cash';
-        if (donationType === 'in-kind' || donation.kindtype) {
+        const donationType = donation.donation_type?.toLowerCase()?.trim() || '';
+        const isInKind = donationType === 'in-kind' || donationType === 'inkind' || donation.kindtype;
+        
+        if (isInKind) {
           // Parse in-kind items - kindtype is stored as JSON string
           let tags: string[] = [];
           if (donation.kindtype) {
-            if (typeof donation.kindtype === 'string') {
-              try {
-                // Try to parse as JSON array first (stored format from backend)
-                const parsed = JSON.parse(donation.kindtype);
-                if (Array.isArray(parsed)) {
-                  // Clean up each tag - remove markdown syntax and escaped characters
-                  tags = parsed.map((tag: string) => this.cleanTag(tag));
-                } else {
-                  // Fallback to comma-separated parsing
-                  tags = donation.kindtype.split(',').map((t: string) => this.cleanTag(t)).filter((t: string) => t);
+            // Handle empty string case
+            const kindtypeValue = typeof donation.kindtype === 'string' ? donation.kindtype.trim() : donation.kindtype;
+            
+            if (kindtypeValue && kindtypeValue.length > 0) {
+              if (typeof kindtypeValue === 'string') {
+                try {
+                  // Try to parse as JSON array first (stored format from backend)
+                  const parsed = JSON.parse(kindtypeValue);
+                  if (Array.isArray(parsed)) {
+                    // Clean up each tag - remove markdown syntax and escaped characters
+                    tags = parsed
+                      .map((tag: string) => this.cleanTag(tag))
+                      .filter((tag: string) => tag && tag.length > 0);
+                  } else if (typeof parsed === 'string' && parsed.length > 0) {
+                    // If parsed is a string, try comma-separated
+                    tags = parsed.split(',').map((t: string) => this.cleanTag(t)).filter((t: string) => t && t.length > 0);
+                  } else {
+                    // Fallback to comma-separated parsing
+                    tags = kindtypeValue.split(',').map((t: string) => this.cleanTag(t)).filter((t: string) => t && t.length > 0);
+                  }
+                } catch (e) {
+                  // If JSON parsing fails, try comma-separated
+                  tags = kindtypeValue.split(',').map((t: string) => this.cleanTag(t)).filter((t: string) => t && t.length > 0);
                 }
-              } catch (e) {
-                // If JSON parsing fails, try comma-separated
-                tags = donation.kindtype.split(',').map((t: string) => this.cleanTag(t)).filter((t: string) => t);
+              } else if (Array.isArray(kindtypeValue)) {
+                tags = kindtypeValue
+                  .map((tag: string) => this.cleanTag(tag))
+                  .filter((tag: string) => tag && tag.length > 0);
               }
-            } else if (Array.isArray(donation.kindtype)) {
-              tags = donation.kindtype.map((tag: string) => this.cleanTag(tag));
             }
           }
           return {
