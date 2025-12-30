@@ -40,13 +40,10 @@ import { CalendarComponent } from "./calendar/calendar.component";
 import { DashboardComponent } from "./dashboard/dashboard.component";
 import { MapsModule } from "./maps/maps.module";
 import { EventsModule } from "./events/events.module";
-import {
-  provideHttpClient,
-  withInterceptorsFromDi,
-} from "@angular/common/http";
 import { ChatComponent } from "./chat/chat.component";
-
 import { FilemanagerComponent } from "./filemanager/filemanager.component";
+import { RbacTestComponent } from "./rbac-test/rbac-test.component";
+import { RbacModule } from "../core/rbac.module";
 
 @NgModule({
   declarations: [
@@ -54,6 +51,7 @@ import { FilemanagerComponent } from "./filemanager/filemanager.component";
     ChatComponent,
     DashboardComponent,
     FilemanagerComponent,
+    RbacTestComponent,
   ],
   imports: [
     CommonModule,
@@ -90,7 +88,8 @@ import { FilemanagerComponent } from "./filemanager/filemanager.component";
     SimplebarAngularModule,
     LightboxModule,
     PickerModule,
+    RbacModule,
   ],
-  providers: [provideHttpClient(withInterceptorsFromDi())],
+  providers: [],
 })
 export class PagesModule {}

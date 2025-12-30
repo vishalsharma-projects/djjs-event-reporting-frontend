@@ -5,7 +5,7 @@
 <div class="modal-body">
   <form [formGroup]="specialGuestsForm">
     <div class="row">
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Gender <span class="text-danger">*</span></label>
         <ng-select formControlName="guestGender"
           [items]="['Male', 'Female', 'Other']"
@@ -18,7 +18,7 @@
           Gender is required
         </div>
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Prefix <span class="text-danger">*</span></label>
         <ng-select formControlName="guestPrefix"
           [items]="['Mr.', 'Mrs.', 'Ms.']"
@@ -31,7 +31,7 @@
           Prefix is required
         </div>
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">First name <span class="text-danger">*</span></label>
         <input type="text" class="form-control" formControlName="guestFirstName" placeholder="Enter first name"
           [ngClass]="{'is-invalid': specialGuestsForm.get('guestFirstName')?.invalid && specialGuestsForm.get('guestFirstName')?.touched}" />
@@ -39,11 +39,11 @@
           First name is required
         </div>
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Middle name</label>
         <input type="text" class="form-control" formControlName="guestMiddleName" placeholder="Enter middle name" />
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Last name <span class="text-danger">*</span></label>
         <input type="text" class="form-control" formControlName="guestLastName" placeholder="Enter last name"
           [ngClass]="{'is-invalid': specialGuestsForm.get('guestLastName')?.invalid && specialGuestsForm.get('guestLastName')?.touched}" />
@@ -51,15 +51,15 @@
           Last name is required
         </div>
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Designation</label>
         <input type="text" class="form-control" formControlName="guestDesignation" placeholder="Enter designation" />
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Organization</label>
         <input type="text" class="form-control" formControlName="guestOrganization" placeholder="Enter organization" />
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Email <span class="text-danger">*</span></label>
         <input type="email" class="form-control" formControlName="guestEmail" placeholder="Enter email"
           [ngClass]="{'is-invalid': specialGuestsForm.get('guestEmail')?.invalid && specialGuestsForm.get('guestEmail')?.touched}" />
@@ -68,7 +68,7 @@
           <span *ngIf="specialGuestsForm.get('guestEmail')?.errors?.['email']">Please enter a valid email</span>
         </div>
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">State</label>
         <ng-select formControlName="guestState"
           [items]="states"
@@ -77,7 +77,7 @@
           placeholder="Select State">
         </ng-select>
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">City</label>
         <ng-select formControlName="guestCity"
           [items]="filteredCities"
@@ -89,7 +89,7 @@
           [disabled]="filteredCities.length === 0">
         </ng-select>
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Personal number <span class="text-danger">*</span></label>
         <input type="text" class="form-control" formControlName="guestPersonalNumber" placeholder="Enter number"
           [ngClass]="{'is-invalid': specialGuestsForm.get('guestPersonalNumber')?.invalid && specialGuestsForm.get('guestPersonalNumber')?.touched}" />
@@ -97,23 +97,23 @@
           Personal number is required
         </div>
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Contact person</label>
         <input type="text" class="form-control" formControlName="guestContactPerson" placeholder="Enter contact person" />
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Contact person's number</label>
         <input type="text" class="form-control" formControlName="guestContactPersonNumber" placeholder="Enter contact person's number" />
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Reference branch ID</label>
         <input type="text" class="form-control" formControlName="guestReferenceBranchId" placeholder="Enter reference branch ID" />
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Reference volunteer ID</label>
         <input type="text" class="form-control" formControlName="guestReferenceVolunteerId" placeholder="Enter reference volunteer ID" />
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Reference person name</label>
         <input type="text" class="form-control" formControlName="guestReferencePersonName" placeholder="Enter reference person name" />
       </div>

@@ -6,7 +6,7 @@
   <form [formGroup]="mediaPromotionForm">
     <!-- Event Media Section -->
     <div class="row">
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Media Coverage Type <span class="text-danger">*</span></label>
         <ng-select formControlName="mediaCoverageType"
           [items]="mediaTypes"
@@ -19,7 +19,7 @@
           Media coverage type is required
         </div>
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Company name <span class="text-danger">*</span></label>
         <input type="text" class="form-control" formControlName="companyName" placeholder="Enter company name"
           [ngClass]="{'is-invalid': mediaPromotionForm.get('companyName')?.invalid && mediaPromotionForm.get('companyName')?.touched}" />
@@ -27,7 +27,7 @@
           Company name is required
         </div>
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Company email <span class="text-danger">*</span></label>
         <input type="email" class="form-control" formControlName="companyEmail" placeholder="Enter company email"
           [ngClass]="{'is-invalid': mediaPromotionForm.get('companyEmail')?.invalid && mediaPromotionForm.get('companyEmail')?.touched}" />
@@ -36,7 +36,7 @@
           <span *ngIf="mediaPromotionForm.get('companyEmail')?.errors?.['email']">Please enter a valid email</span>
         </div>
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Company website</label>
         <input type="url" class="form-control" formControlName="companyWebsite" placeholder="Enter company website" />
       </div>
@@ -44,7 +44,7 @@
 
     <!-- Provide Details of Media Person Section -->
     <div class="row">
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Gender <span class="text-danger">*</span></label>
         <ng-select formControlName="mediaGender"
           [items]="['Male', 'Female', 'Other']"
@@ -57,7 +57,7 @@
           Gender is required
         </div>
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Prefix <span class="text-danger">*</span></label>
         <ng-select formControlName="mediaPrefix"
           [items]="['Mr.', 'Mrs.', 'Ms.']"
@@ -70,7 +70,7 @@
           Prefix is required
         </div>
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">First name <span class="text-danger">*</span></label>
         <input type="text" class="form-control" formControlName="mediaFirstName" placeholder="Enter first name"
           [ngClass]="{'is-invalid': mediaPromotionForm.get('mediaFirstName')?.invalid && mediaPromotionForm.get('mediaFirstName')?.touched}" />
@@ -78,11 +78,11 @@
           First name is required
         </div>
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Middle name</label>
         <input type="text" class="form-control" formControlName="mediaMiddleName" placeholder="Enter middle name" />
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Last name <span class="text-danger">*</span></label>
         <input type="text" class="form-control" formControlName="mediaLastName" placeholder="Enter last name"
           [ngClass]="{'is-invalid': mediaPromotionForm.get('mediaLastName')?.invalid && mediaPromotionForm.get('mediaLastName')?.touched}" />
@@ -90,11 +90,11 @@
           Last name is required
         </div>
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Designation</label>
         <input type="text" class="form-control" formControlName="mediaDesignation" placeholder="Enter designation" />
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Contact <span class="text-danger">*</span></label>
         <input type="text" class="form-control" formControlName="mediaContact" placeholder="Enter phone number"
           [ngClass]="{'is-invalid': mediaPromotionForm.get('mediaContact')?.invalid && mediaPromotionForm.get('mediaContact')?.touched}" />
@@ -102,7 +102,7 @@
           Contact is required
         </div>
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Email <span class="text-danger">*</span></label>
         <input type="email" class="form-control" formControlName="mediaEmail" placeholder="Enter email"
           [ngClass]="{'is-invalid': mediaPromotionForm.get('mediaEmail')?.invalid && mediaPromotionForm.get('mediaEmail')?.touched}" />
@@ -114,20 +114,20 @@
     </div>
 
     <!-- Provide Details of Reference Person Section -->
-    <div class="row">
-      <div class="col-md-6 mb-3">
+    <!-- <div class="row">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Reference branch ID</label>
         <input type="text" class="form-control" formControlName="referenceBranchId" placeholder="Enter reference branch ID" />
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Reference volunteer ID</label>
         <input type="text" class="form-control" formControlName="referenceVolunteerId" placeholder="Enter reference volunteer ID" />
       </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-6 mb-2">
         <label class="form-label">Reference person's name</label>
         <input type="text" class="form-control" formControlName="referencePersonName" placeholder="Enter reference person's name" />
       </div>
-    </div>
+    </div> -->
   </form>
 </div>
 <div class="modal-footer">

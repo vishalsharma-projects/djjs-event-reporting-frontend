@@ -1,0 +1,135 @@
+<div class="container mt-4">
+  <h2>RBAC System Test</h2>
+  
+  <div class="card mb-3">
+    <div class="card-header">
+      <h5>Current User Information</h5>
+    </div>
+    <div class="card-body">
+      <p><strong>Role:</strong> {{ currentRole || 'Not loaded' }}</p>
+      <p><strong>Role ID:</strong> {{ currentRoleId || 'N/A' }}</p>
+      <p><strong>Permissions Count:</strong> {{ permissions.length }}</p>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header">
+      <h5>Permission Checks</h5>
+    </div>
+    <div class="card-body">
+      <table class="table table-sm">
+        <thead>
+          <tr>
+            <th>Permission</th>
+            <th>Has Access</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>users:create</td>
+            <td>{{ hasUserCreate ? '✅ Yes' : '❌ No' }}</td>
+          </tr>
+          <tr>
+            <td>users:read</td>
+            <td>{{ hasUserRead ? '✅ Yes' : '❌ No' }}</td>
+          </tr>
+          <tr>
+            <td>users:update</td>
+            <td>{{ hasUserUpdate ? '✅ Yes' : '❌ No' }}</td>
+          </tr>
+          <tr>
+            <td>users:delete</td>
+            <td>{{ hasUserDelete ? '✅ Yes' : '❌ No' }}</td>
+          </tr>
+          <tr>
+            <td>events:create</td>
+            <td>{{ hasEventCreate ? '✅ Yes' : '❌ No' }}</td>
+          </tr>
+          <tr>
+            <td>events:read</td>
+            <td>{{ hasEventRead ? '✅ Yes' : '❌ No' }}</td>
+          </tr>
+          <tr>
+            <td>branches:create</td>
+            <td>{{ hasBranchCreate ? '✅ Yes' : '❌ No' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header">
+      <h5>Role Checks</h5>
+    </div>
+    <div class="card-body">
+      <p>Is Super Admin: {{ isSuperAdmin ? '✅ Yes' : '❌ No' }}</p>
+      <p>Is Admin: {{ isAdmin ? '✅ Yes' : '❌ No' }}</p>
+      <p>Is Coordinator or Higher: {{ isCoordinatorOrHigher ? '✅ Yes' : '❌ No' }}</p>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header">
+      <h5>All Permissions ({{ permissions.length }})</h5>
+    </div>
+    <div class="card-body">
+      <div *ngIf="permissions.length === 0" class="alert alert-warning">
+        No permissions loaded. Make sure you are logged in.
+      </div>
+      <ul class="list-group" *ngIf="permissions.length > 0">
+        <li class="list-group-item" *ngFor="let perm of permissions">{{ perm }}</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header">
+      <h5>Directive Tests</h5>
+    </div>
+    <div class="card-body">
+      <p class="mb-2">
+        <button *hasPermission="{ resource: 'users', action: 'create' }" 
+                class="btn btn-success me-2">
+          Create User (visible if has users:create)
+        </button>
+        <span *ngIf="!hasUserCreate" class="text-muted">Button hidden - no permission</span>
+      </p>
+      
+      <p class="mb-2">
+        <button *hasPermission="{ resource: 'users', action: 'delete' }" 
+                class="btn btn-danger me-2">
+          Delete User (visible if has users:delete)
+        </button>
+        <span *ngIf="!hasUserDelete" class="text-muted">Button hidden - no permission</span>
+      </p>
+      
+      <div *hasRole="'super_admin'" class="alert alert-warning mb-2">
+        Super Admin Only Content
+      </div>
+      
+      <div *hasRole="['admin', 'coordinator']" class="alert alert-info mb-2">
+        Admin or Coordinator Content
+      </div>
+      
+      <div *hasPermission="{ resource: 'events', action: 'create' }" class="alert alert-success mb-2">
+        Events Create Permission Content
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header">
+      <h5>Actions</h5>
+    </div>
+    <div class="card-body">
+      <button (click)="refreshPermissions()" class="btn btn-primary me-2">
+        Refresh Permissions from Backend
+      </button>
+      <button (click)="loadPermissions()" class="btn btn-secondary">
+        Reload from Cache
+      </button>
+    </div>
+  </div>
+</div>
+

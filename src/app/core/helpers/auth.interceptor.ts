@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Injector } from '@angular/core';
 import {
   HttpRequest,
   HttpHandler,
@@ -15,11 +15,26 @@ import { Router } from '@angular/router';
 export class AuthInterceptor implements HttpInterceptor {
   private isRefreshing = false;
   private refreshTokenSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
+  private authService: AuthenticationService | null = null;
+  private router: Router | null = null;
 
   constructor(
-    private authService: AuthenticationService,
-    private router: Router
+    private injector: Injector
   ) {}
+  
+  private getAuthService(): AuthenticationService {
+    if (!this.authService) {
+      this.authService = this.injector.get(AuthenticationService);
+    }
+    return this.authService;
+  }
+  
+  private getRouter(): Router {
+    if (!this.router) {
+      this.router = this.injector.get(Router);
+    }
+    return this.router;
+  }
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     // Skip auth header for ALL auth endpoints (login, register, refresh, etc.)
@@ -43,7 +58,7 @@ export class AuthInterceptor implements HttpInterceptor {
 
     // Get token from auth service synchronously (no async operations)
     // This reads directly from memory or localStorage - no race conditions
-    const token = this.authService.getToken();
+    const token = this.getAuthService().getToken();
 
     // Add authorization header if token exists
     if (token) {
@@ -76,8 +91,8 @@ export class AuthInterceptor implements HttpInterceptor {
           } else {
             console.warn(`[AuthInterceptor] 401 but no token available, cannot refresh`);
             // No token means user needs to login - don't try to refresh
-            this.authService.logout();
-            this.router.navigate(['/auth/login'], {
+            this.getAuthService().logout();
+            this.getRouter().navigate(['/auth/login'], {
               queryParams: { reason: 'session_expired' }
             });
             return throwError(() => error);
@@ -87,8 +102,8 @@ export class AuthInterceptor implements HttpInterceptor {
         // If 401 on refresh itself, logout immediately (no retry)
         if (error.status === 401 && this.isRefreshRequest(request)) {
           console.error(`[AuthInterceptor] Refresh failed with 401, logging out`);
-          this.authService.logout();
-          this.router.navigate(['/auth/login'], {
+          this.getAuthService().logout();
+          this.getRouter().navigate(['/auth/login'], {
             queryParams: { reason: 'session_expired' }
           });
           return throwError(() => error);
@@ -100,8 +115,8 @@ export class AuthInterceptor implements HttpInterceptor {
           // If refresh fails with 403, logout immediately (no retry)
           if (this.isRefreshRequest(request)) {
             console.error(`[AuthInterceptor] Refresh failed with 403, logging out`);
-            this.authService.logout();
-            this.router.navigate(['/auth/login'], {
+            this.getAuthService().logout();
+            this.getRouter().navigate(['/auth/login'], {
               queryParams: { reason: 'csrf_error' }
             });
             return throwError(() => error);
@@ -127,7 +142,7 @@ export class AuthInterceptor implements HttpInterceptor {
       this.refreshTokenSubject.next(null);
 
       console.log(`[AuthInterceptor] Starting token refresh`);
-      return this.authService.refreshToken().pipe(
+      return this.getAuthService().refreshToken().pipe(
         switchMap((token: string) => {
           this.isRefreshing = false;
           this.refreshTokenSubject.next(token);
@@ -136,8 +151,8 @@ export class AuthInterceptor implements HttpInterceptor {
           // Verify token is valid before retrying
           if (!token || token.length === 0) {
             console.error(`[AuthInterceptor] Refreshed token is empty!`);
-            this.authService.logout();
-            this.router.navigate(['/auth/login'], {
+            this.getAuthService().logout();
+            this.getRouter().navigate(['/auth/login'], {
               queryParams: { reason: 'session_expired' }
             });
             return throwError(() => new Error('Empty token after refresh'));
@@ -156,8 +171,8 @@ export class AuthInterceptor implements HttpInterceptor {
           console.error(`[AuthInterceptor] Token refresh FAILED (${status}), logging out`);
           
           // Refresh failed definitively - logout and stop (no retry)
-          this.authService.logout();
-          this.router.navigate(['/auth/login'], {
+          this.getAuthService().logout();
+          this.getRouter().navigate(['/auth/login'], {
             queryParams: { reason: 'session_expired' }
           });
           
@@ -178,8 +193,8 @@ export class AuthInterceptor implements HttpInterceptor {
         catchError((err) => {
           // If the refresh that we were waiting for failed, logout
           console.error(`[AuthInterceptor] Refresh failed while waiting, logging out`);
-          this.authService.logout();
-          this.router.navigate(['/auth/login'], {
+          this.getAuthService().logout();
+          this.getRouter().navigate(['/auth/login'], {
             queryParams: { reason: 'session_expired' }
           });
           return throwError(() => err);

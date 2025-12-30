@@ -17,6 +17,7 @@ import { VerticalComponent } from './vertical/vertical.component';
 import { HorizontaltopbarComponent } from './horizontaltopbar/horizontaltopbar.component';
 import { LanguageService } from '../core/services/language.service';
 import { TranslateModule } from '@ngx-translate/core';
+import { RbacModule } from '../core/rbac.module';
 
 @NgModule({
   // tslint:disable-next-line: max-line-length
@@ -28,7 +29,8 @@ import { TranslateModule } from '@ngx-translate/core';
     BsDropdownModule.forRoot(),
     ToastModule,
     UIModule,
-    SimplebarAngularModule
+    SimplebarAngularModule,
+    RbacModule
   ],
   providers: [LanguageService]
 })

@@ -947,11 +947,13 @@ export class AddEventComponent implements OnInit, OnDestroy {
         donationTypes: this.donationTypes || []
       };
     }
-    // Include materialTypes when auto-saving mediaPromotion (only save valid ones)
+    // Include materialTypes, eventMediaList, and fileMetadata when auto-saving mediaPromotion
     if (step === 'mediaPromotion') {
       value = {
         ...value,
-        materialTypes: this.getValidMaterialTypes() || []
+        materialTypes: this.getValidMaterialTypes() || [],
+        eventMediaList: this.eventMediaList || [],
+        fileMetadata: this.fileMetadata || {}
       };
     }
     
@@ -1033,6 +1035,7 @@ export class AddEventComponent implements OnInit, OnDestroy {
 
   /**
    * Populate all forms with draft data
+   * Note: This is called when NOT editing an existing event
    */
   populateFormsFromDraft(draftData: any): void {
     // Populate general details form
@@ -1198,6 +1201,8 @@ export class AddEventComponent implements OnInit, OnDestroy {
       const fileMetadata = draftData.mediaPromotion.fileMetadata;
       const formData = { ...draftData.mediaPromotion };
       delete formData.fileMetadata; // Remove fileMetadata from form data
+      delete formData.eventMediaList; // Remove eventMediaList from form data (handled separately)
+      delete formData.materialTypes; // Remove materialTypes from form data (handled separately)
 
       this.mediaPromotionForm.patchValue(formData);
 
@@ -1232,6 +1237,14 @@ export class AddEventComponent implements OnInit, OnDestroy {
           referenceVolunteerId: media.referenceVolunteerId || '',
           referencePersonName: media.referencePersonName || ''
         }));
+        // Create new array reference to trigger change detection
+        this.eventMediaList = [...this.eventMediaList];
+      } else {
+        // Ensure eventMediaList is initialized as empty array if not in draft
+        // Only reset if it's currently empty (don't overwrite if already populated from event)
+        if (this.eventMediaList.length === 0) {
+          this.eventMediaList = [];
+        }
       }
 
       // Load material types if they exist
@@ -2556,6 +2569,12 @@ export class AddEventComponent implements OnInit, OnDestroy {
     
     this.eventMediaList.push(eventMedia);
 
+    // Create a new array reference to trigger change detection
+    this.eventMediaList = [...this.eventMediaList];
+
+    // Show success message
+    this.toastService.success('Media details added successfully!', 'Success');
+
     // Clear only the event media related fields after adding
     this.mediaPromotionForm.patchValue({
       mediaCoverageType: '',
@@ -2580,6 +2599,11 @@ export class AddEventComponent implements OnInit, OnDestroy {
       ...this.mediaPromotionForm.value,
       eventMediaList: this.eventMediaList
     });
+
+    // Close the modal after successfully adding
+    if (this.mediaPromotionModalRef) {
+      this.mediaPromotionModalRef.hide();
+    }
   }
 
   removeEventMedia(filteredIndex: number): void {
@@ -2592,6 +2616,9 @@ export class AddEventComponent implements OnInit, OnDestroy {
     if (actualIndex === -1) return;
     
     this.eventMediaList.splice(actualIndex, 1);
+    
+    // Create a new array reference to trigger change detection
+    this.eventMediaList = [...this.eventMediaList];
 
     // Trigger auto-save after removal
     this.autoSave('mediaPromotion', {
@@ -2662,6 +2689,12 @@ export class AddEventComponent implements OnInit, OnDestroy {
     this.eventMediaList[this.editingEventMediaIndex] = eventMedia;
     this.editingEventMediaIndex = null;
 
+    // Create a new array reference to trigger change detection
+    this.eventMediaList = [...this.eventMediaList];
+
+    // Show success message
+    this.toastService.success('Media details updated successfully!', 'Success');
+
     // Clear form
     this.mediaPromotionForm.patchValue({
       mediaCoverageType: '',
@@ -2687,7 +2720,10 @@ export class AddEventComponent implements OnInit, OnDestroy {
       eventMediaList: this.eventMediaList
     });
 
-    this.toastService.success('Event media updated successfully', 'Success');
+    // Close the modal after successfully updating
+    if (this.mediaPromotionModalRef) {
+      this.mediaPromotionModalRef.hide();
+    }
   }
 
   // Cancel editing event media
@@ -2999,6 +3035,8 @@ export class AddEventComponent implements OnInit, OnDestroy {
       testimonials: [],
       allFiles: []
     };
+    // Update draft to reflect that files have been cleared/uploaded
+    this.saveFileMetadataToDraft();
   }
 
   nextStep(): void {
@@ -3203,6 +3241,11 @@ export class AddEventComponent implements OnInit, OnDestroy {
       next: (response: EventWithRelatedData) => {
         this.populateFormsFromEvent(response);
         this.loadingEvent = false;
+        
+        // After loading event data, also check for draft data and merge it
+        // This ensures any unsaved draft changes (like newly added media) are preserved
+        this.loadDraftDataAfterEventLoad();
+        
         // this.toastService.info('Event data loaded. You can continue editing.', 'Event Loaded');
       },
       error: (error) => {
@@ -3227,6 +3270,64 @@ export class AddEventComponent implements OnInit, OnDestroy {
         }, 2000);
       }
     });
+  }
+
+  /**
+   * Load draft data after event is loaded (for editing scenario)
+   * This merges draft data with event data, with draft taking precedence for unsaved changes
+   */
+  loadDraftDataAfterEventLoad(): void {
+    const storedDraftId = this.eventDraftService.getDraftIdFromStorage();
+    if (storedDraftId) {
+      this.draftId = parseInt(storedDraftId, 10);
+      this.eventDraftService.getDraft(storedDraftId).subscribe({
+        next: (draftData) => {
+          // Merge draft data with event data, prioritizing draft for mediaPromotion
+          if (draftData.mediaPromotion) {
+            // Restore eventMediaList if it exists in draft
+            if (draftData.mediaPromotion.eventMediaList && 
+                Array.isArray(draftData.mediaPromotion.eventMediaList) && 
+                draftData.mediaPromotion.eventMediaList.length > 0) {
+              // If draft has eventMediaList, use it (it may contain newly added items not yet saved to event)
+              this.eventMediaList = draftData.mediaPromotion.eventMediaList.map((media: any) => ({
+                mediaCoverageType: media.mediaCoverageType || media.mediaType || '',
+                companyName: media.companyName || '',
+                companyEmail: media.companyEmail || '',
+                companyWebsite: media.companyWebsite || '',
+                gender: media.gender || '',
+                prefix: media.prefix || '',
+                firstName: media.firstName || '',
+                middleName: media.middleName || '',
+                lastName: media.lastName || '',
+                designation: media.designation || '',
+                contact: media.contact || '',
+                email: media.email || '',
+                referenceBranchId: media.referenceBranchId || '',
+                referenceVolunteerId: media.referenceVolunteerId || '',
+                referencePersonName: media.referencePersonName || ''
+              }));
+              // Create new array reference to trigger change detection
+              this.eventMediaList = [...this.eventMediaList];
+            }
+            
+            // Restore fileMetadata if it exists in draft
+            if (draftData.mediaPromotion.fileMetadata) {
+              this.fileMetadata = {
+                eventPhotos: draftData.mediaPromotion.fileMetadata.eventPhotos || [],
+                videoCoverage: draftData.mediaPromotion.fileMetadata.videoCoverage || null,
+                pressRelease: draftData.mediaPromotion.fileMetadata.pressRelease || [],
+                testimonials: draftData.mediaPromotion.fileMetadata.testimonials || [],
+                allFiles: draftData.mediaPromotion.fileMetadata.allFiles || []
+              };
+            }
+          }
+        },
+        error: (error) => {
+          // Draft not found or error loading - that's okay, continue with event data
+          console.log('No draft found or error loading draft:', error);
+        }
+      });
+    }
   }
 
   /**
@@ -3465,6 +3566,8 @@ export class AddEventComponent implements OnInit, OnDestroy {
         referenceVolunteerId: '', // Not stored in EventMedia model
         referencePersonName: '' // Not stored in EventMedia model
       }));
+      // Create new array reference to trigger change detection
+      this.eventMediaList = [...this.eventMediaList];
     } else {
       this.eventMediaList = [];
     }

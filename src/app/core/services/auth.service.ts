@@ -14,6 +14,7 @@ import {
 import { LoginRequest, LoginResponse, User } from '../../store/Authentication/auth.models';
 import { RootReducerState } from '../../store/index';
 import { Router } from '@angular/router';
+import { RoleService } from './role.service';
 
 // New API response interfaces
 interface NewLoginResponse {
@@ -50,7 +51,8 @@ export class AuthenticationService {
   constructor(
     private http: HttpClient,
     private store: Store<RootReducerState>,
-    private router: Router
+    private router: Router,
+    private roleService: RoleService
   ) {
     // Restore token from localStorage on service initialization
     this.restoreAuthData();
@@ -171,6 +173,19 @@ export class AuthenticationService {
         // Persist user to localStorage
         localStorage.setItem(this.USER_KEY, JSON.stringify(this.currentUser));
 
+        // Load user permissions after successful login
+        // Defer to next tick to avoid circular dependency issues
+        setTimeout(() => {
+          this.roleService.fetchMyPermissions().subscribe({
+            next: () => {
+              console.log('[AuthService] Permissions loaded successfully');
+            },
+            error: (err) => {
+              console.error('[AuthService] Failed to load permissions:', err);
+            }
+          });
+        }, 0);
+
         // Dispatch success action (this updates the store)
         this.store.dispatch(loginSuccess({ 
           response, 
@@ -205,6 +220,9 @@ export class AuthenticationService {
 
     // Clear data immediately to prevent further API calls
     this.clearAuthData();
+    
+    // Clear role and permissions
+    this.roleService.clearPermissions();
 
     // Dispatch logout action
     this.store.dispatch(logout());

@@ -5,6 +5,7 @@ import { CalendarComponent } from "./calendar/calendar.component";
 import { ChatComponent } from "./chat/chat.component";
 import { FilemanagerComponent } from "./filemanager/filemanager.component";
 import { DashboardComponent } from "./dashboard/dashboard.component";
+import { RbacTestComponent } from "./rbac-test/rbac-test.component";
 
 const routes: Routes = [
   // { path: '', redirectTo: 'dashboard' },
@@ -16,6 +17,7 @@ const routes: Routes = [
   { path: "calendar", component: CalendarComponent },
   { path: "chat", component: ChatComponent },
   { path: "filemanager", component: FilemanagerComponent },
+  { path: "rbac-test", component: RbacTestComponent },
   {
     path: "dashboards",
     loadChildren: () =>
@@ -185,6 +187,11 @@ const routes: Routes = [
     path: "districts",
     loadChildren: () =>
       import("./districts/districts.module").then((m) => m.DistrictModule),
+  },
+  {
+    path: "settings",
+    loadChildren: () =>
+      import("./settings/settings.module").then((m) => m.SettingsModule),
   },
 ];
 

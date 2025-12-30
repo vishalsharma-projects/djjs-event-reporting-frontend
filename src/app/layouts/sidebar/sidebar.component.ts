@@ -10,6 +10,7 @@ import { MENU } from './menu';
 import { MenuItem } from './menu.model';
 import { TranslateService } from '@ngx-translate/core';
 import { BreakpointService } from '../../core/services/breakpoint.service';
+import { RoleService, RoleType } from '../../core/services/role.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -38,7 +39,8 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnChanges, OnDes
     private router: Router, 
     public translate: TranslateService, 
     private http: HttpClient,
-    private breakpointService: BreakpointService
+    private breakpointService: BreakpointService,
+    private roleService: RoleService
   ) {
     router.events.forEach((event) => {
       if (event instanceof NavigationEnd) {
@@ -129,6 +131,21 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnChanges, OnDes
           document.body.style.width = '';
           document.body.style.height = '';
         }
+      });
+    
+    // Subscribe to role and permissions changes to update menu reactively
+    // This ensures Settings menu appears when role/permissions are loaded
+    this.roleService.role$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.updateMenu();
+      });
+    
+    // Also subscribe to permissions in case role loads before permissions
+    this.roleService.permissions$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.updateMenu();
       });
   }
 
@@ -229,7 +246,86 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnChanges, OnDes
    * Initialize
    */
   initialize(): void {
-    this.menuItems = MENU;
+    this.updateMenu();
+  }
+
+  /**
+   * Update menu items based on current role and permissions
+   */
+  private updateMenu(): void {
+    // Get current permissions and role
+    const currentPermissions = this.roleService.getCurrentPermissions();
+    const currentRole = this.roleService.getCurrentRole();
+    
+    // Filter menu items based on user permissions
+    const filteredMenu = this.filterMenuItems(MENU, currentPermissions, currentRole);
+    
+    // Only update if menu items actually changed
+    const menuChanged = JSON.stringify(this.menuItems) !== JSON.stringify(filteredMenu);
+    if (menuChanged) {
+      this.menuItems = filteredMenu;
+      
+      // Reinitialize MetisMenu after menu items change
+      if (this.sideMenu) {
+        setTimeout(() => {
+          if (this.menu) {
+            this.menu.dispose();
+          }
+          this.menu = new MetisMenu(this.sideMenu.nativeElement);
+          this._activateMenuDropdown();
+        }, 100);
+      }
+    }
+  }
+
+  /**
+   * Recursively filter menu items based on permissions and role
+   */
+  private filterMenuItems(items: MenuItem[], permissions: string[], role: string): MenuItem[] {
+    return items
+      .filter(item => {
+        // Always show titles
+        if (item.isTitle) {
+          return true;
+        }
+
+        // Check role requirement
+        if (item.requiredRole) {
+          return role === item.requiredRole;
+        }
+
+        // Check permission requirement
+        if (item.permission) {
+          const requiredPermission = `${item.permission.resource}:${item.permission.action}`;
+          // Super admin has all permissions
+          if (role === RoleType.SUPER_ADMIN) {
+            return true;
+          }
+          return permissions.includes(requiredPermission);
+        }
+
+        // No permission/role requirement - show by default
+        return true;
+      })
+      .map(item => {
+        // Recursively filter sub-items
+        if (item.subItems && item.subItems.length > 0) {
+          const filteredSubItems = this.filterMenuItems(item.subItems, permissions, role);
+          // Only include parent if it has visible children
+          return {
+            ...item,
+            subItems: filteredSubItems.length > 0 ? filteredSubItems : undefined
+          };
+        }
+        return item;
+      })
+      .filter(item => {
+        // Remove parent items that have no visible children
+        if (!item.isTitle && item.subItems && item.subItems.length === 0) {
+          return false;
+        }
+        return true;
+      });
   }
 
   /**

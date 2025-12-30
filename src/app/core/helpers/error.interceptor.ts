@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Injector } from '@angular/core';
 import { 
   HttpRequest, 
   HttpHandler, 
@@ -29,11 +29,18 @@ export class ErrorInterceptor implements HttpInterceptor {
   
   // Track recent error messages to prevent spam
   private recentErrors: Map<string, number> = new Map();
+  private toastService: ToastService | null = null;
 
   constructor(
-    private authenticationService: AuthenticationService,
-    private toastService: ToastService
+    private injector: Injector
   ) {}
+  
+  private getToastService(): ToastService {
+    if (!this.toastService) {
+      this.toastService = this.injector.get(ToastService);
+    }
+    return this.toastService;
+  }
 
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     // Generate request ID if not already present
@@ -148,19 +155,20 @@ export class ErrorInterceptor implements HttpInterceptor {
     // Show appropriate toast based on error severity
     const severity = this.getErrorSeverity(appError);
     const message = this.getUserFriendlyMessage(appError);
+    const toastService = this.getToastService();
     
     switch (severity) {
       case 'error':
-        this.toastService.error(message, 'Error', 5000);
+        toastService.error(message, 'Error', 5000);
         break;
       case 'warn':
-        this.toastService.warning(message, 'Warning', 4000);
+        toastService.warning(message, 'Warning', 4000);
         break;
       case 'info':
-        this.toastService.info(message, 'Info', 3000);
+        toastService.info(message, 'Info', 3000);
         break;
       default:
-        this.toastService.error(message, 'Error', 5000);
+        toastService.error(message, 'Error', 5000);
     }
   }
 

@@ -51,6 +51,7 @@ import { tasklistEffects } from './store/Tasks/tasks.effect';
 import { OrdersEffects } from './store/Crypto/crypto.effects';
 import { CustomerEffects } from './store/customer/customer.effects';
 import { MailEffects } from './store/Email/email.effects';
+import { RbacModule } from './core/rbac.module';
 
 if (environment.defaultauth === 'firebase') {
   initFirebaseBackend(environment.firebaseConfig);
@@ -79,6 +80,7 @@ export function createTranslateLoader(http: HttpClient): any {
         LayoutsModule,
         AppRoutingModule,
         ExtrapagesModule,
+        RbacModule,
         AccordionModule.forRoot(),
         TabsModule.forRoot(),
         TooltipModule.forRoot(),
@@ -110,7 +112,6 @@ export function createTranslateLoader(http: HttpClient): any {
         ])], providers: [
         { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
         { provide: HTTP_INTERCEPTORS, useClass: ErrorInterceptor, multi: true },
-        HttpClientModule,
         MessageService, // PrimeNG MessageService for ToastService
     ] })
 export class AppModule { }
