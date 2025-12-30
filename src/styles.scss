@@ -1984,3 +1984,18 @@ iframe {
     }
   }
 }
+
+// Bootstrap Modal Backdrop Styling
+.modal-backdrop {
+  z-index: 1040 !important;
+}
+
+.modal {
+  z-index: 1050 !important;
+}
+
+// Dark backdrop for export modal
+.modal-backdrop.export-modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.8) !important;
+  opacity: 1 !important;
+}

@@ -970,7 +970,7 @@
 
 <!-- Export to Excel Modal -->
 <div class="modal fade" id="exportExcelModal" tabindex="-1" aria-labelledby="exportExcelModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exportExcelModalLabel">
@@ -979,65 +979,59 @@
         <button type="button" class="btn-close" (click)="closeExportModal()" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <!-- Info about filter type -->
-        <div class="alert alert-info mb-4">
-          <i class="pi pi-info-circle me-2"></i>
-          <strong>Filtering by:</strong> Created Date (when the event was created)
-        </div>
-
         <!-- Quick Date Range Selection -->
-        <div class="mb-4">
-          <label class="form-label fw-bold mb-3">Quick Date Range Selection</label>
-          <div class="row g-2">
-            <div class="col-md-4 col-sm-6">
-              <button type="button" class="btn btn-outline-secondary w-100" (click)="setQuickDateRange('lastWeek')">
+        <div class="export-quick-range mb-1">
+          <label class="form-label fw-semibold mb-1 d-block">Quick Date Range Selection</label>
+          <div class="row g-1">
+            <div class="col-6 col-sm-4">
+              <button type="button" class="btn btn-outline-secondary w-100 btn-sm" (click)="setQuickDateRange('lastWeek')">
                 <i class="pi pi-calendar me-1"></i>Last Week
               </button>
             </div>
-            <div class="col-md-4 col-sm-6">
-              <button type="button" class="btn btn-outline-secondary w-100" (click)="setQuickDateRange('lastMonth')">
+            <div class="col-6 col-sm-4">
+              <button type="button" class="btn btn-outline-secondary w-100 btn-sm" (click)="setQuickDateRange('lastMonth')">
                 <i class="pi pi-calendar me-1"></i>Last Month
               </button>
             </div>
-            <div class="col-md-4 col-sm-6">
-              <button type="button" class="btn btn-outline-secondary w-100" (click)="setQuickDateRange('last3Months')">
+            <div class="col-6 col-sm-4">
+              <button type="button" class="btn btn-outline-secondary w-100 btn-sm" (click)="setQuickDateRange('last3Months')">
                 <i class="pi pi-calendar me-1"></i>Last 3 Months
               </button>
             </div>
-            <div class="col-md-4 col-sm-6">
-              <button type="button" class="btn btn-outline-secondary w-100" (click)="setQuickDateRange('last6Months')">
+            <div class="col-6 col-sm-4">
+              <button type="button" class="btn btn-outline-secondary w-100 btn-sm" (click)="setQuickDateRange('last6Months')">
                 <i class="pi pi-calendar me-1"></i>Last 6 Months
               </button>
             </div>
-            <div class="col-md-4 col-sm-6">
-              <button type="button" class="btn btn-outline-secondary w-100" (click)="setQuickDateRange('lastYear')">
+            <div class="col-6 col-sm-4">
+              <button type="button" class="btn btn-outline-secondary w-100 btn-sm" (click)="setQuickDateRange('lastYear')">
                 <i class="pi pi-calendar me-1"></i>Last Year
               </button>
             </div>
-            <div class="col-md-4 col-sm-6">
-              <button type="button" class="btn btn-outline-secondary w-100" (click)="setQuickDateRange('last2Years')">
+            <div class="col-6 col-sm-4">
+              <button type="button" class="btn btn-outline-secondary w-100 btn-sm" (click)="setQuickDateRange('last2Years')">
                 <i class="pi pi-calendar me-1"></i>Last 2 Years
               </button>
             </div>
-            <div class="col-md-4 col-sm-6">
-              <button type="button" class="btn btn-outline-secondary w-100" (click)="setQuickDateRange('all')">
+            <div class="col-6 col-sm-4">
+              <button type="button" class="btn btn-outline-secondary w-100 btn-sm" (click)="setQuickDateRange('all')">
                 <i class="pi pi-calendar me-1"></i>All Events
               </button>
             </div>
           </div>
         </div>
 
-        <hr class="my-4">
+        <hr class="my-2">
 
         <!-- Custom Date Range Selection -->
-        <div class="mb-3">
-          <label class="form-label fw-bold mb-3">Custom Date Range</label>
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label for="modalExportStartDate" class="form-label">From Date</label>
+        <div class="export-custom-range mb-2">
+          <label class="form-label fw-semibold mb-1 d-block">Custom Date Range</label>
+          <div class="row g-1">
+            <div class="col-12 col-sm-6">
+              <label for="modalExportStartDate" class="form-label small text-muted">From Date</label>
               <input 
                 type="date" 
-                class="form-control" 
+                class="form-control form-control-sm" 
                 id="modalExportStartDate"
                 [value]="getDateInputValue(exportStartDate)"
                 (change)="onStartDateChange($event)"
@@ -1045,11 +1039,11 @@
                 placeholder="Select start date"
                 autocomplete="off">
             </div>
-            <div class="col-md-6">
-              <label for="modalExportEndDate" class="form-label">To Date</label>
+            <div class="col-12 col-sm-6">
+              <label for="modalExportEndDate" class="form-label small text-muted">To Date</label>
               <input 
                 type="date" 
-                class="form-control" 
+                class="form-control form-control-sm" 
                 id="modalExportEndDate"
                 [value]="getDateInputValue(exportEndDate)"
                 (change)="onEndDateChange($event)"
@@ -1061,26 +1055,32 @@
         </div>
 
         <!-- Selected Date Range Display -->
-        <div class="alert alert-info mt-3">
-          <i class="pi pi-info-circle me-2"></i>
-          <strong>Selected Range (Created Date):</strong>
-          <span *ngIf="exportStartDate && exportEndDate">
-            {{ exportStartDate | date:'mediumDate' }} to {{ exportEndDate | date:'mediumDate' }}
-          </span>
-          <span *ngIf="exportStartDate && !exportEndDate">
-            From {{ exportStartDate | date:'mediumDate' }}
-          </span>
-          <span *ngIf="!exportStartDate && exportEndDate">
-            Until {{ exportEndDate | date:'mediumDate' }}
-          </span>
-          <span *ngIf="!exportStartDate && !exportEndDate">
-            All Events
-          </span>
+        <div class="alert alert-info mb-0 py-1 px-2">
+          <div class="d-flex align-items-center">
+            <i class="pi pi-info-circle me-2"></i>
+            <div class="flex-grow-1">
+              <strong class="d-block small mb-0">Selected Range:</strong>
+              <span class="small">
+                <span *ngIf="exportStartDate && exportEndDate">
+                  {{ exportStartDate | date:'mediumDate' }} to {{ exportEndDate | date:'mediumDate' }}
+                </span>
+                <span *ngIf="exportStartDate && !exportEndDate">
+                  From {{ exportStartDate | date:'mediumDate' }}
+                </span>
+                <span *ngIf="!exportStartDate && exportEndDate">
+                  Until {{ exportEndDate | date:'mediumDate' }}
+                </span>
+                <span *ngIf="!exportStartDate && !exportEndDate">
+                  All Events
+                </span>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="closeExportModal()">Cancel</button>
-        <button type="button" class="btn btn-success" (click)="exportEventsToExcel()" [disabled]="exporting || !isExportDateRangeValid()">
+        <button type="button" class="btn btn-secondary btn-sm" (click)="closeExportModal()">Cancel</button>
+        <button type="button" class="btn btn-success btn-sm" (click)="exportEventsToExcel()" [disabled]="exporting || !isExportDateRangeValid()">
           <i class="pi pi-file-excel me-1"></i>
           <span *ngIf="!exporting">Export to Excel</span>
           <span *ngIf="exporting">Exporting...</span>

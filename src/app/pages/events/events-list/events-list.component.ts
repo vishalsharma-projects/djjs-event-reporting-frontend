@@ -6,6 +6,22 @@ import { ConfirmationDialogService } from 'src/app/core/services/confirmation-di
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
+// Bootstrap 5 Modal type declaration
+declare const bootstrap: {
+  Modal: {
+    getOrCreateInstance: (element: HTMLElement | string, options?: { backdrop?: boolean | string; keyboard?: boolean; focus?: boolean }) => {
+      show: () => void;
+      hide: () => void;
+      dispose: () => void;
+    };
+    getInstance: (element: HTMLElement | string) => {
+      show: () => void;
+      hide: () => void;
+      dispose: () => void;
+    } | null;
+  };
+};
+
 interface EventData {
   id: string;
   eventType: string;
@@ -1126,25 +1142,60 @@ export class EventsListComponent implements OnInit, AfterViewChecked, OnDestroy 
   }
 
   /**
-   * Open export modal
+   * Open export modal using Bootstrap 5 Modal API
    */
   openExportModal(): void {
     this.isExportModalOpen = true;
-    this.openModal('exportExcelModal');
+    const modalElement = document.getElementById('exportExcelModal');
+    if (!modalElement) {
+      return;
+    }
+
+    // Use Bootstrap 5 Modal API
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElement, { backdrop: true });
+    
+    // Add one-time event listener for when modal is shown
+    const handleShown = () => {
+      // Find the latest visible backdrop and add class
+      const backdrops = document.querySelectorAll('.modal-backdrop.show');
+      if (backdrops.length > 0) {
+        const latestBackdrop = backdrops[backdrops.length - 1] as HTMLElement;
+        latestBackdrop.classList.add('export-modal-backdrop');
+      }
+      // Force change detection for calendar components
+      this.cdr.detectChanges();
+    };
+    
+    modalElement.addEventListener('shown.bs.modal', handleShown, { once: true });
+    modal.show();
+    
     // Force change detection to ensure calendar components are initialized
     this.cdr.detectChanges();
-    // Small delay to ensure modal is fully rendered before calendar can attach
-    setTimeout(() => {
-      this.cdr.detectChanges();
-    }, 100);
   }
 
   /**
-   * Close export modal
+   * Close export modal using Bootstrap 5 Modal API
    */
   closeExportModal(): void {
-    this.closeModal('exportExcelModal');
+    const modalElement = document.getElementById('exportExcelModal');
+    if (!modalElement) {
+      return;
+    }
+
+    // Use Bootstrap 5 Modal API to hide
+    const modal = bootstrap.Modal.getInstance(modalElement);
+    if (modal) {
+      modal.hide();
+    }
+
     this.isExportModalOpen = false;
+    
+    // Clean up: remove export-modal-backdrop class from any remaining backdrops
+    const backdrops = document.querySelectorAll('.modal-backdrop.export-modal-backdrop');
+    backdrops.forEach(backdrop => {
+      backdrop.classList.remove('export-modal-backdrop');
+    });
+    
     // Reset dates
     this.exportStartDate = null;
     this.exportEndDate = null;
