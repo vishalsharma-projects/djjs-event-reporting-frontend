@@ -1,12 +1,14 @@
-import { Component, OnInit, ViewChild } from "@angular/core";
+import { Component, OnInit, OnDestroy, ViewChild } from "@angular/core";
 import { ChartComponent } from "ng-apexcharts";
 import { ApexOptions } from "ng-apexcharts";
 import { EventApiService, EventDetails } from "src/app/core/services/event-api.service";
 import { LocationService, Branch } from "src/app/core/services/location.service";
+import { AuthenticationService } from "src/app/core/services/auth.service";
+import { RoleService, ResourceType, ActionType, RoleType } from "src/app/core/services/role.service";
 import { HttpClient } from "@angular/common/http";
 import { environment } from "src/environments/environment";
-import { forkJoin, Observable, of } from "rxjs";
-import { catchError } from "rxjs/operators";
+import { forkJoin, Observable, of, Subject } from "rxjs";
+import { catchError, takeUntil } from "rxjs/operators";
 
 interface Volunteer {
   id?: number;
@@ -27,8 +29,10 @@ interface Donation {
   templateUrl: "./dashboard.component.html",
   styleUrls: ["./dashboard.component.scss"],
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   @ViewChild("eventsDonutChart") chart!: ChartComponent;
+
+  private destroy$ = new Subject<void>();
 
   selectedTimeFilter: string = "Year";
   selectedYear: number = new Date().getFullYear();
@@ -42,6 +46,23 @@ export class DashboardComponent implements OnInit {
   branches: Branch[] = [];
   events: EventDetails[] = [];
   volunteers: Volunteer[] = [];
+
+  // User information
+  currentUser: any = null;
+  userName: string = "";
+  userRole: string = "";
+  roleDisplayName: string = "";
+
+  // Permission flags
+  canViewBranches: boolean = false;
+  canViewEvents: boolean = false;
+  canViewVolunteers: boolean = false;
+  canViewDonations: boolean = false;
+  hasAnyPermission: boolean = false;
+
+  // Expose enums to template
+  ResourceType = ResourceType;
+  ActionType = ActionType;
   
   
   // Statistics
@@ -78,7 +99,7 @@ export class DashboardComponent implements OnInit {
       width: 240,
     },
     labels: [],
-    colors: ["#28a745", "#dc3545", "#007bff", "#ffc107"],
+    colors: ["#28a745", "#dc3545", "#fd7e14", "#ffc107"],
     plotOptions: {
       pie: {
         donut: {
@@ -124,7 +145,7 @@ export class DashboardComponent implements OnInit {
       width: 240,
     },
     labels: ["Male", "Female", "Kids"],
-    colors: ["#28a745", "#dc3545", "#007bff"],
+    colors: ["#28a745", "#dc3545", "#fd7e14"],
     plotOptions: {
       pie: {
         donut: {
@@ -322,7 +343,9 @@ export class DashboardComponent implements OnInit {
   constructor(
     private eventApiService: EventApiService,
     private locationService: LocationService,
-    private http: HttpClient
+    private http: HttpClient,
+    private authService: AuthenticationService,
+    private roleService: RoleService
   ) {
     // Generate available years (current year and 4 previous years)
     const currentYear = new Date().getFullYear();
@@ -337,7 +360,110 @@ export class DashboardComponent implements OnInit {
     this.branches = [];
     this.events = [];
     this.volunteers = [];
-    this.loadDashboardData();
+    
+    // Load user information
+    this.loadUserInfo();
+    
+    // Load permissions (which will trigger dashboard data load)
+    this.loadPermissions();
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  /**
+   * Load current user information
+   */
+  loadUserInfo() {
+    this.authService.getCurrentUser()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(user => {
+        this.currentUser = user;
+        if (user) {
+          // User type from auth.models.ts has firstName, lastName, email, username
+          // Try firstName + lastName, then firstName, then username, then email
+          if (user.firstName && user.lastName) {
+            this.userName = `${user.firstName} ${user.lastName}`;
+          } else if (user.firstName) {
+            this.userName = user.firstName;
+          } else if (user.username) {
+            this.userName = user.username;
+          } else if (user.email) {
+            this.userName = user.email.split('@')[0];
+          } else {
+            this.userName = 'User';
+          }
+        }
+      });
+
+    // Subscribe to role changes
+    this.roleService.role$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(role => {
+        this.userRole = role;
+        this.roleDisplayName = this.getRoleDisplayName(role);
+      });
+  }
+
+  /**
+   * Load and check permissions
+   */
+  loadPermissions() {
+    // Fetch permissions if not already loaded
+    this.roleService.fetchMyPermissions()
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError(err => {
+          console.error('Error loading permissions:', err);
+          // Still update flags with empty permissions
+          this.updatePermissionFlags();
+          return of(null);
+        })
+      )
+      .subscribe(() => {
+        this.updatePermissionFlags();
+        // Load dashboard data after permissions are loaded
+        this.loadDashboardData();
+      });
+
+    // Also subscribe to permission changes
+    this.roleService.permissions$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.updatePermissionFlags();
+      });
+  }
+
+  /**
+   * Update permission flags based on current permissions
+   */
+  updatePermissionFlags() {
+    this.canViewBranches = this.roleService.hasPermission(ResourceType.BRANCHES, ActionType.LIST) ||
+                          this.roleService.hasPermission(ResourceType.BRANCHES, ActionType.READ);
+    this.canViewEvents = this.roleService.hasPermission(ResourceType.EVENTS, ActionType.LIST) ||
+                        this.roleService.hasPermission(ResourceType.EVENTS, ActionType.READ);
+    this.canViewVolunteers = this.roleService.hasPermission(ResourceType.VOLUNTEERS, ActionType.LIST) ||
+                            this.roleService.hasPermission(ResourceType.VOLUNTEERS, ActionType.READ);
+    this.canViewDonations = this.roleService.hasPermission(ResourceType.DONATIONS, ActionType.LIST) ||
+                           this.roleService.hasPermission(ResourceType.DONATIONS, ActionType.READ);
+    
+    this.hasAnyPermission = this.canViewBranches || this.canViewEvents || 
+                           this.canViewVolunteers || this.canViewDonations;
+  }
+
+  /**
+   * Get display name for role
+   */
+  getRoleDisplayName(role: string): string {
+    const roleMap: { [key: string]: string } = {
+      [RoleType.SUPER_ADMIN]: 'Super Administrator',
+      [RoleType.ADMIN]: 'Administrator',
+      [RoleType.COORDINATOR]: 'Coordinator',
+      [RoleType.STAFF]: 'Staff'
+    };
+    return roleMap[role] || role || 'User';
   }
 
   // Method to handle time filter selection
@@ -362,24 +488,52 @@ export class DashboardComponent implements OnInit {
   loadDashboardData() {
     this.loading = true;
     
-    const requests: Observable<any>[] = [
-      this.locationService.getAllBranches().pipe(catchError((err) => {
-        console.error('Error loading branches:', err);
-        return of([]);
-      })),
-      this.eventApiService.getEvents().pipe(catchError((err) => {
-        console.error('Error loading events:', err);
-        return of([]);
-      })),
-      this.http.get<Volunteer[]>(`${this.apiBaseUrl}/api/volunteers`).pipe(catchError((err) => {
-        console.error('Error loading volunteers:', err);
-        return of([]);
-      })),
-      this.http.get<Donation[]>(`${this.apiBaseUrl}/api/donations`).pipe(catchError((err) => {
-        console.error('Error loading donations:', err);
-        return of([]);
-      }))
-    ];
+    const requests: Observable<any>[] = [];
+    
+    // Only load data user has permission to view
+    if (this.canViewBranches) {
+      requests.push(
+        this.locationService.getAllBranches().pipe(catchError((err) => {
+          console.error('Error loading branches:', err);
+          return of([]);
+        }))
+      );
+    } else {
+      requests.push(of([]));
+    }
+
+    if (this.canViewEvents) {
+      requests.push(
+        this.eventApiService.getEvents().pipe(catchError((err) => {
+          console.error('Error loading events:', err);
+          return of([]);
+        }))
+      );
+    } else {
+      requests.push(of([]));
+    }
+
+    if (this.canViewVolunteers) {
+      requests.push(
+        this.http.get<Volunteer[]>(`${this.apiBaseUrl}/api/volunteers`).pipe(catchError((err) => {
+          console.error('Error loading volunteers:', err);
+          return of([]);
+        }))
+      );
+    } else {
+      requests.push(of([]));
+    }
+
+    if (this.canViewDonations) {
+      requests.push(
+        this.http.get<Donation[]>(`${this.apiBaseUrl}/api/donations`).pipe(catchError((err) => {
+          console.error('Error loading donations:', err);
+          return of([]);
+        }))
+      );
+    } else {
+      requests.push(of([]));
+    }
 
     forkJoin(requests).subscribe({
       next: ([branches, events, volunteers, donations]) => {
@@ -725,7 +879,7 @@ export class DashboardComponent implements OnInit {
     const colorMap: { [key: string]: string } = {
       'Spiritual': '#28a745',
       'Cultural': '#dc3545',
-      'Peace procession': '#007bff',
+      'Peace procession': '#fd7e14',
       'Peace assembly': '#ffc107'
     };
     
@@ -735,7 +889,7 @@ export class DashboardComponent implements OnInit {
     }
     
     // Default color rotation
-    const colors = ['#28a745', '#dc3545', '#007bff', '#ffc107', '#6f42c1', '#e83e8c'];
+    const colors = ['#28a745', '#dc3545', '#fd7e14', '#ffc107', '#6f42c1', '#e83e8c'];
     const index = Object.keys(this.eventsByType).indexOf(typeName) % colors.length;
     return colors[index];
   }

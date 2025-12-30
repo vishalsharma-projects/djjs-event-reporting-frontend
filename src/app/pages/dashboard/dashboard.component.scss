@@ -1,84 +1,681 @@
-// Dashboard Styles
-.card {
-  border: none;
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-  border-radius: 0.5rem;
-  height: 100%; // Ensure all cards have the same height
-}
+// ==========================================
+// Dashboard Container
+// ==========================================
 
-.card-body {
+.dashboard-container {
   padding: 1.5rem;
-  height: 100%; // Make card body fill the full height
-  display: flex;
-  flex-direction: column;
+  max-width: 100%;
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
 }
 
-// KPI Cards Section - ensure equal height and full width
-.row.d-flex.align-items-stretch {
-  .col-lg-3,
-  .col-lg-4,
-  .col-md-4,
-  .col-md-6 {
+// ==========================================
+// Dashboard Header
+// ==========================================
+
+.dashboard-header {
+  margin-bottom: 2rem;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 1.5rem;
+  }
+  
+  .header-content {
     display: flex;
-    flex-direction: column;
-
-    .card {
-      flex: 1; // Make card stretch to fill available height
-      display: flex;
-      flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  .greeting-section {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .dashboard-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    color: var(--bs-dark, #212529);
+    line-height: 1.2;
+    
+    @media (max-width: 768px) {
+      font-size: 1.5rem;
     }
-
-    .card-body {
-      flex: 1; // Make card body stretch to fill card height
-      display: flex;
-      flex-direction: column;
+    
+    .greeting-text {
+      color: var(--bs-secondary, #6c757d);
+      font-weight: 400;
+    }
+    
+    .user-name {
+      color: var(--bs-warning, #fd7e14);
+      font-weight: 700;
+    }
+  }
+  
+  .dashboard-subtitle {
+    margin: 0;
+    font-size: 0.9375rem;
+    color: var(--bs-secondary, #6c757d);
+    
+    .role-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      background: linear-gradient(135deg, var(--bs-warning, #fd7e14) 0%, #ff9f4d 100%);
+      color: white;
+      border-radius: 1rem;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      text-transform: capitalize;
+      box-shadow: 0 2px 4px rgba(253, 126, 20, 0.2);
     }
   }
 }
 
-// Chart Legend Styles
+// ==========================================
+// Dashboard Filters
+// ==========================================
+
+.dashboard-filters {
+  background: var(--bs-secondary-bg, #f8f9fa);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .filters-container {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    
+    @media (max-width: 768px) {
+      flex-direction: column;
+      gap: 1rem;
+      align-items: stretch;
+    }
+  }
+  
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 150px;
+    
+    @media (max-width: 768px) {
+      width: 100%;
+      min-width: 100%;
+    }
+    
+    .filter-label {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--bs-secondary, #6c757d);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 0;
+    }
+    
+    .filter-buttons {
+      display: flex;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      
+      .btn-filter {
+        border: none;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--bs-secondary, #6c757d);
+        background: white;
+        transition: all 0.2s ease;
+        
+        &:hover {
+          background: var(--bs-warning, #fd7e14);
+          color: white;
+        }
+        
+        &.active {
+          background: var(--bs-warning, #fd7e14);
+          color: white;
+          box-shadow: 0 2px 4px rgba(253, 126, 20, 0.3);
+        }
+      }
+    }
+    
+    .filter-select {
+      border: 1px solid var(--bs-border-color, #dee2e6);
+      border-radius: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+      background: white;
+      transition: all 0.2s ease;
+      
+      &:focus {
+        border-color: var(--bs-warning, #fd7e14);
+        box-shadow: 0 0 0 0.2rem rgba(253, 126, 20, 0.25);
+        outline: none;
+      }
+    }
+  }
+}
+
+// ==========================================
+// Loading & Empty States
+// ==========================================
+
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  
+  .spinner-container {
+    text-align: center;
+    
+    .spinner-border {
+      width: 3rem;
+      height: 3rem;
+      border-width: 0.3rem;
+    }
+    
+    .loading-text {
+      margin-top: 1rem;
+      color: var(--bs-secondary, #6c757d);
+      font-size: 0.9375rem;
+    }
+  }
+}
+
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  padding: 2rem;
+  
+  .empty-state-content {
+    text-align: center;
+    max-width: 500px;
+    
+    .empty-state-icon {
+      font-size: 4rem;
+      color: var(--bs-secondary, #6c757d);
+      opacity: 0.5;
+      margin-bottom: 1.5rem;
+    }
+    
+    .empty-state-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--bs-dark, #212529);
+      margin-bottom: 0.75rem;
+    }
+    
+    .empty-state-message {
+      color: var(--bs-secondary, #6c757d);
+      font-size: 0.9375rem;
+      line-height: 1.6;
+      margin: 0;
+    }
+  }
+}
+
+// ==========================================
+// KPI Cards
+// ==========================================
+
+.dashboard-kpis {
+  margin-bottom: 2rem;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 1.5rem;
+  }
+  
+  .kpi-card {
+    background: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+    
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--bs-primary, #556ee6), #7c8ef0);
+    }
+    
+    &.branches-card::before {
+      background: linear-gradient(90deg, #fd7e14, #ff9f4d);
+    }
+    
+    &.preachers-card::before {
+      background: linear-gradient(90deg, #28a745, #48c765);
+    }
+    
+    &.events-card::before {
+      background: linear-gradient(90deg, #dc3545, #e85d75);
+    }
+    
+    &.initiation-card::before {
+      background: linear-gradient(90deg, #ffc107, #ffd54f);
+    }
+    
+    .kpi-card-body {
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      
+      @media (max-width: 768px) {
+        padding: 1.25rem;
+        gap: 1rem;
+      }
+      
+      .kpi-icon {
+        flex-shrink: 0;
+        width: 60px;
+        height: 60px;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+        background: linear-gradient(135deg, rgba(253, 126, 20, 0.1), rgba(255, 159, 77, 0.1));
+        color: var(--bs-warning, #fd7e14);
+        
+        @media (max-width: 768px) {
+          width: 50px;
+          height: 50px;
+          font-size: 1.5rem;
+        }
+        
+        i {
+          display: block;
+        }
+      }
+      
+      .preachers-card & .kpi-icon {
+        background: linear-gradient(135deg, rgba(40, 167, 69, 0.1), rgba(72, 199, 101, 0.1));
+        color: #28a745;
+      }
+      
+      .events-card & .kpi-icon {
+        background: linear-gradient(135deg, rgba(220, 53, 69, 0.1), rgba(232, 93, 117, 0.1));
+        color: #dc3545;
+      }
+      
+      .initiation-card & .kpi-icon {
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 213, 79, 0.1));
+        color: #ffc107;
+      }
+      
+      .kpi-content {
+        flex: 1;
+        min-width: 0;
+        
+        .kpi-label {
+          font-size: 0.8125rem;
+          font-weight: 600;
+          color: var(--bs-secondary, #6c757d);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin: 0 0 0.5rem 0;
+        }
+        
+        .kpi-value {
+          font-size: 2rem;
+          font-weight: 700;
+          color: var(--bs-dark, #212529);
+          margin: 0;
+          line-height: 1.2;
+          
+          @media (max-width: 768px) {
+            font-size: 1.75rem;
+          }
+        }
+      }
+    }
+  }
+}
+
+// ==========================================
+// Chart Cards
+// ==========================================
+
+.dashboard-charts {
+  .chart-card {
+    background: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    
+    &:hover {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    }
+    
+    &.chart-card-large {
+      min-height: 400px;
+      
+      @media (max-width: 768px) {
+        min-height: 300px;
+      }
+    }
+    
+    .chart-card-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--bs-border-color, #dee2e6);
+      
+      @media (max-width: 768px) {
+        padding: 1rem;
+      }
+      
+      .chart-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--bs-dark, #212529);
+        margin: 0;
+        
+        @media (max-width: 768px) {
+          font-size: 1rem;
+        }
+      }
+      
+      .chart-header-badge {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        
+        .badge-value {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: var(--bs-warning, #fd7e14);
+          line-height: 1.2;
+        }
+        
+        .badge-label {
+          font-size: 0.75rem;
+          color: var(--bs-secondary, #6c757d);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+      }
+    }
+    
+    .chart-card-body {
+      padding: 1.5rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      
+      @media (max-width: 768px) {
+        padding: 1rem;
+      }
+      
+      .chart-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 200px;
+      }
+      
+      .chart-container-large {
+        flex: 1;
+        min-height: 300px;
+        
+        @media (max-width: 768px) {
+          min-height: 250px;
+        }
+      }
+    }
+  }
+}
+
+// ==========================================
+// Chart Legend
+// ==========================================
+
 .chart-legend {
-  div {
+  margin-bottom: 1rem;
+  
+  .legend-item {
     display: flex;
     align-items: center;
-    margin-bottom: 0.5rem;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
     font-size: 0.875rem;
-    color: #6c757d;
-
+    
     .legend-color {
       width: 12px;
       height: 12px;
       border-radius: 50%;
-      margin-right: 0.5rem;
-      display: inline-block;
+      flex-shrink: 0;
+      
+      &.legend-success {
+        background: #28a745;
+      }
+      
+      &.legend-danger {
+        background: #dc3545;
+      }
+      
+      &.legend-primary {
+        background: #fd7e14;
+      }
+      
+      &.legend-warning {
+        background: #ffc107;
+      }
+    }
+    
+    .legend-label {
+      flex: 1;
+      color: var(--bs-dark, #212529);
+      font-weight: 500;
+    }
+    
+    .legend-value {
+      color: var(--bs-secondary, #6c757d);
+      font-weight: 600;
     }
   }
 }
 
-// Active state for time filter buttons
-.btn-group .btn.active {
-  background-color: #fd7e14;
-  border-color: #fd7e14;
-  color: white;
+// ==========================================
+// Volunteers Summary
+// ==========================================
+
+.volunteers-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  text-align: center;
+  
+  .summary-value {
+    margin-bottom: 1rem;
+    
+    .summary-number {
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--bs-warning, #fd7e14);
+      margin: 0;
+      line-height: 1.2;
+      
+      @media (max-width: 768px) {
+        font-size: 2.5rem;
+      }
+    }
+    
+    .summary-label {
+      font-size: 0.875rem;
+      color: var(--bs-secondary, #6c757d);
+      margin: 0.5rem 0 0 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  }
+  
+  .summary-trend {
+    .trend-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      font-size: 1.5rem;
+      
+      &.trend-up {
+        background: rgba(40, 167, 69, 0.1);
+        color: #28a745;
+      }
+      
+      &.trend-down {
+        background: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+      }
+    }
+  }
 }
 
-// Responsive adjustments
+// ==========================================
+// Responsive Adjustments
+// ==========================================
+
+@media (max-width: 992px) {
+  .dashboard-kpis {
+    .kpi-card {
+      .kpi-card-body {
+        .kpi-value {
+          font-size: 1.75rem;
+        }
+      }
+    }
+  }
+}
+
 @media (max-width: 768px) {
-  .d-flex.justify-content-between {
-    flex-direction: column;
-    gap: 1rem;
+  .dashboard-container {
+    padding: 0.75rem;
   }
-
-  .btn-group {
-    width: 100%;
+  
+  .dashboard-header {
+    .dashboard-title {
+      font-size: 1.375rem;
+    }
   }
-
-  .form-select {
-    width: 100% !important;
+  
+  .dashboard-filters {
+    .filters-container {
+      .filter-group {
+        .filter-buttons {
+          .btn-filter {
+            font-size: 0.8125rem;
+            padding: 0.4375rem 0.75rem;
+          }
+        }
+      }
+    }
+  }
+  
+  .chart-card {
+    .chart-card-body {
+      .chart-container-large {
+        min-height: 250px;
+      }
+    }
   }
 }
 
-// ApexCharts container styles
+@media (max-width: 576px) {
+  .dashboard-kpis {
+    .kpi-card {
+      .kpi-card-body {
+        flex-direction: column;
+        text-align: center;
+        
+        .kpi-icon {
+          margin: 0 auto;
+        }
+      }
+    }
+  }
+}
+
+// ==========================================
+// ApexCharts Overrides
+// ==========================================
+
 apx-chart {
   display: block;
+  width: 100%;
+  
+  ::ng-deep {
+    .apexcharts-canvas {
+      width: 100% !important;
+    }
+  }
+}
+
+// ==========================================
+// Animation Utilities
+// ==========================================
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dashboard-kpis .kpi-card,
+.dashboard-charts .chart-card {
+  animation: fadeIn 0.5s ease-out;
+}
+
+// ==========================================
+// Print Styles
+// ==========================================
+
+@media print {
+  .dashboard-filters,
+  .dashboard-header .dashboard-actions {
+    display: none;
+  }
+  
+  .kpi-card,
+  .chart-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 }

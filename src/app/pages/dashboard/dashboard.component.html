@@ -1,25 +1,30 @@
-<div class="container-fluid">
-  <!-- Header Section -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <!-- Row 1: Greeting -->
-      <div>
-        <h2 class="mb-1">JMJK, Welcome Back!</h2>
+<div class="dashboard-container">
+  <!-- Header Section with Greeting -->
+  <div class="dashboard-header mb-2">
+    <div class="header-content">
+      <div class="greeting-section">
+        <h1 class="dashboard-title">
+          <span class="greeting-text">JMJK,</span>
+          <!-- <span class="user-name" *ngIf="userName">{{ userName }}!</span> -->
+          <span class="user-name" >Welcome Back!</span>
+        </h1>
+        <p class="dashboard-subtitle" *ngIf="roleDisplayName">
+          <span class="role-badge">{{ roleDisplayName }}</span>
+        </p>
       </div>
     </div>
   </div>
 
-  <div class="row mb-4">
-    <div class="col-11">
-      <!-- Row 2: Filters -->
-      <div
-        class="d-flex align-items-center justify-content-center gap-3 filters"
-      >
-        <!-- Time Filter -->
-        <div class="btn-group" role="group">
+  <!-- Filters Section - Only show if user has relevant permissions -->
+  <div class="dashboard-filters mb-4" *ngIf="canViewEvents || canViewBranches">
+    <div class="filters-container">
+      <!-- Time Filter -->
+      <div class="filter-group" *ngIf="canViewEvents">
+        <label class="filter-label">Time Period</label>
+        <div class="btn-group filter-buttons" role="group">
           <button
             type="button"
-            class="btn btn-outline-secondary"
+            class="btn btn-filter"
             [class.active]="selectedTimeFilter === 'Week'"
             (click)="selectTimeFilter('Week')"
           >
@@ -27,7 +32,7 @@
           </button>
           <button
             type="button"
-            class="btn btn-outline-secondary"
+            class="btn btn-filter"
             [class.active]="selectedTimeFilter === 'Month'"
             (click)="selectTimeFilter('Month')"
           >
@@ -35,121 +40,164 @@
           </button>
           <button
             type="button"
-            class="btn btn-outline-secondary"
+            class="btn btn-filter"
             [class.active]="selectedTimeFilter === 'Year'"
             (click)="selectTimeFilter('Year')"
           >
             Year
           </button>
         </div>
+      </div>
 
-        <!-- Year Dropdown -->
+      <!-- Year Dropdown -->
+      <div class="filter-group" *ngIf="canViewEvents && availableYears && availableYears.length > 0">
+        <label class="filter-label">Year</label>
         <select 
-          class="form-select" 
-          style="width: auto"
+          class="form-select filter-select" 
           [ngModel]="selectedYear"
-          (ngModelChange)="onYearChange($event)"
-          *ngIf="availableYears && availableYears.length > 0">
+          (ngModelChange)="onYearChange($event)">
           <option *ngFor="let year of availableYears" [ngValue]="year">
             {{ year }}
           </option>
         </select>
+      </div>
 
-        <!-- Branch Filter -->
+      <!-- Branch Filter -->
+      <div class="filter-group" *ngIf="canViewBranches && branches !== undefined">
+        <label class="filter-label">Branch</label>
+        <select 
+          class="form-select filter-select" 
+          [ngModel]="selectedBranch"
+          (ngModelChange)="onBranchChange($event)">
+          <option value="All branches">All branches</option>
+          <option *ngFor="let branch of branches" [ngValue]="branch?.name">
+            {{ branch?.name }}
+          </option>
+        </select>
       </div>
     </div>
-    <div class="col-1 d-flex justify-content-end">
-      <select 
-        class="form-select" 
-        style="width: auto"
-        [ngModel]="selectedBranch"
-        (ngModelChange)="onBranchChange($event)"
-        *ngIf="branches !== undefined">
-        <option value="All branches">All branches</option>
-        <option *ngFor="let branch of branches" [ngValue]="branch?.name">
-          {{ branch?.name }}
-        </option>
-      </select>
+  </div>
+
+  <!-- Empty State - Show if user has no permissions -->
+  <div class="empty-state" *ngIf="!hasAnyPermission && !loading">
+    <div class="empty-state-content">
+      <div class="empty-state-icon">
+        <i class="mdi mdi-shield-lock-outline"></i>
+      </div>
+      <h3 class="empty-state-title">No Access Permissions</h3>
+      <p class="empty-state-message">
+        You don't have permission to view any dashboard data. Please contact your administrator to request access.
+      </p>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner-container">
+      <div class="spinner-border text-warning" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="loading-text">Loading dashboard data...</p>
     </div>
   </div>
 
   <!-- KPI Cards Section -->
-  <div class="row mb-4 d-flex align-items-stretch justify-content-between">
-    <!-- Branches Card -->
-    <div class="col-lg-3 col-md-4 mb-3">
+  <div class="dashboard-kpis" *ngIf="hasAnyPermission && !loading">
+    <div class="row g-3">
       <!-- Branches Card -->
-      <div class="card mb-3">
-        <div class="card-body text-center">
-          <h3 class="card-title text-muted mb-2">Branches</h3>
-          <h1 class="display-4 text-primary mb-0" *ngIf="!loading">
-            {{ formatNumber(totalBranches) }}
-          </h1>
-          <h1 class="display-4 text-primary mb-0" *ngIf="loading">...</h1>
+      <div class="col-lg-3 col-md-6" *hasPermission="{ resource: ResourceType.BRANCHES, action: ActionType.LIST }">
+        <div class="kpi-card branches-card">
+          <div class="kpi-card-body">
+            <div class="kpi-icon">
+              <i class="mdi mdi-office-building"></i>
+            </div>
+            <div class="kpi-content">
+              <h3 class="kpi-label">Branches</h3>
+              <h2 class="kpi-value">{{ formatNumber(totalBranches) }}</h2>
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- Preachers Card -->
-      <div class="card">
-        <div class="card-body text-center">
-          <h3 class="card-title text-muted mb-2">Preachers</h3>
-          <h1 class="display-4 text-success mb-0" *ngIf="!loading">
-            {{ formatNumber(totalPreachers) }}
-          </h1>
-          <h1 class="display-4 text-success mb-0" *ngIf="loading">...</h1>
+      <div class="col-lg-3 col-md-6" *hasPermission="{ resource: ResourceType.VOLUNTEERS, action: ActionType.LIST }">
+        <div class="kpi-card preachers-card">
+          <div class="kpi-card-body">
+            <div class="kpi-icon">
+              <i class="mdi mdi-account-group"></i>
+            </div>
+            <div class="kpi-content">
+              <h3 class="kpi-label">Preachers</h3>
+              <h2 class="kpi-value">{{ formatNumber(totalPreachers) }}</h2>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Events Card -->
+      <div class="col-lg-3 col-md-6" *hasPermission="{ resource: ResourceType.EVENTS, action: ActionType.LIST }">
+        <div class="kpi-card events-card">
+          <div class="kpi-card-body">
+            <div class="kpi-icon">
+              <i class="mdi mdi-calendar-multiple"></i>
+            </div>
+            <div class="kpi-content">
+              <h3 class="kpi-label">Events</h3>
+              <h2 class="kpi-value">{{ formatNumber(totalEvents) }}</h2>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Initiation Card -->
+      <div class="col-lg-3 col-md-6" *hasPermission="{ resource: ResourceType.EVENTS, action: ActionType.READ }">
+        <div class="kpi-card initiation-card">
+          <div class="kpi-card-body">
+            <div class="kpi-icon">
+              <i class="mdi mdi-account-plus"></i>
+            </div>
+            <div class="kpi-content">
+              <h3 class="kpi-label">Initiation</h3>
+              <h2 class="kpi-value">{{ formatNumber(totalInitiation) }}</h2>
+            </div>
+          </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Events Card -->
-    <div class="col-lg-4 col-md-6 mb-3">
-      <div class="card">
-        <div class="card-body">
-          <!-- Title -->
-          <div class="d-flex align-items-center flex-grow-1">
-            <div class="flex-grow-1">
-              <h3 class="card-title text-muted mb-2">Events</h3>
-
-              <!-- Value and Change -->
-              <div class="d-flex align-items-center mb-2">
-                <h2 class="mb-0 me-2" *ngIf="!loading">
-                  {{ formatNumber(totalEvents) }}
-                </h2>
-                <h2 class="mb-0 me-2" *ngIf="loading">...</h2>
-              </div>
-
-              <!-- View All Button -->
-              <button class="btn btn-sm btn-warning text-white mb-3">
-                View all →
-              </button>
-
-              <!-- Chart + Legend -->
-              <div class="d-flex align-items-center flex-grow-1">
-                <!-- Legend -->
-                <div class="chart-legend flex-grow-1" *ngIf="!loading">
-                  <div *ngFor="let label of eventsByTypeLabels; let i = index">
-                    <span 
-                      class="legend-color"
-                      [ngClass]="{
-                        'bg-success': i === 0,
-                        'bg-danger': i === 1,
-                        'bg-primary': i === 2,
-                        'bg-warning': i === 3
-                      }">
-                    </span>
-                    {{ label }}: {{ formatNumber(eventsByTypeSeries[i]) }}
-                  </div>
-                  <div *ngIf="eventsByTypeLabels.length === 0">
-                    <span class="text-muted">No events data available</span>
-                  </div>
-                </div>
-                <div class="chart-legend flex-grow-1" *ngIf="loading">
-                  <span class="text-muted">Loading...</span>
-                </div>
-
-                <!-- Donut Chart -->
+  <!-- Charts Section -->
+  <div class="dashboard-charts" *ngIf="hasAnyPermission && !loading">
+    <div class="row g-4">
+      <!-- Events by Type Chart -->
+      <div class="col-lg-4 col-md-6" *hasPermission="{ resource: ResourceType.EVENTS, action: ActionType.READ }">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <h5 class="chart-title">Events by Type</h5>
+          </div>
+          <div class="chart-card-body">
+            <div class="chart-legend" *ngIf="!loading && eventsByTypeLabels.length > 0">
+              <div *ngFor="let label of eventsByTypeLabels; let i = index" class="legend-item">
+                <span 
+                  class="legend-color"
+                  [ngClass]="{
+                    'legend-success': i === 0,
+                    'legend-danger': i === 1,
+                    'legend-primary': i === 2,
+                    'legend-warning': i === 3
+                  }">
+                </span>
+                <span class="legend-label">{{ label }}</span>
+                <span class="legend-value">{{ formatNumber(eventsByTypeSeries[i]) }}</span>
               </div>
             </div>
-            <div class="ms-auto d-flex align-items-center">
+            <div class="chart-legend" *ngIf="loading">
+              <span class="text-muted">Loading...</span>
+            </div>
+            <div class="chart-legend" *ngIf="!loading && eventsByTypeLabels.length === 0">
+              <span class="text-muted">No events data available</span>
+            </div>
+            <div class="chart-container">
               <apx-chart
                 #eventsDonutChart
                 [series]="eventsChartOptions.series"
@@ -165,53 +213,35 @@
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Initiation Card -->
-    <div class="col-lg-4 col-md-6 mb-3">
-      <div class="card">
-        <div class="card-body">
-          <!-- Title -->
-          <div class="d-flex align-items-center flex-grow-1">
-            <div class="flex-grow-1">
-              <h3 class="card-title text-muted mb-2">Initiation</h3>
-
-              <!-- Value and Change -->
-              <div class="d-flex align-items-center mb-2">
-                <h2 class="mb-0 me-2" *ngIf="!loading">
-                  {{ formatNumber(totalInitiation) }}
-                </h2>
-                <h2 class="mb-0 me-2" *ngIf="loading">...</h2>
-                <span class="text-success fw-bold" *ngIf="!loading && totalInitiation > 0">↑</span>
+      <!-- Initiation Chart -->
+      <div class="col-lg-4 col-md-6" *hasPermission="{ resource: ResourceType.EVENTS, action: ActionType.READ }">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <h5 class="chart-title">Initiation Breakdown</h5>
+          </div>
+          <div class="chart-card-body">
+            <div class="chart-legend" *ngIf="!loading">
+              <div class="legend-item">
+                <span class="legend-color legend-success"></span>
+                <span class="legend-label">Male</span>
+                <span class="legend-value">{{ formatNumber(initiationMen) }}</span>
               </div>
-
-              <!-- View All Button -->
-              <button class="btn btn-sm btn-warning text-white mb-3">
-                View all →
-              </button>
-
-              <!-- Chart + Legend -->
-              <div class="d-flex align-items-center flex-grow-1">
-                <!-- Legend -->
-                <div class="chart-legend flex-grow-1" *ngIf="!loading">
-                  <div>
-                    <span class="legend-color bg-success"></span> Male: {{ formatNumber(initiationMen) }}
-                  </div>
-                  <div>
-                    <span class="legend-color bg-danger"></span> Female: {{ formatNumber(initiationWomen) }}
-                  </div>
-                  <div>
-                    <span class="legend-color bg-primary"></span> Kids: {{ formatNumber(initiationKids) }}
-                  </div>
-                </div>
-                <div class="chart-legend flex-grow-1" *ngIf="loading">
-                  <span class="text-muted">Loading...</span>
-                </div>
-
-                <!-- Donut Chart -->
+              <div class="legend-item">
+                <span class="legend-color legend-danger"></span>
+                <span class="legend-label">Female</span>
+                <span class="legend-value">{{ formatNumber(initiationWomen) }}</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color legend-primary"></span>
+                <span class="legend-label">Kids</span>
+                <span class="legend-value">{{ formatNumber(initiationKids) }}</span>
               </div>
             </div>
-            <div class="ms-auto">
+            <div class="chart-legend" *ngIf="loading">
+              <span class="text-muted">Loading...</span>
+            </div>
+            <div class="chart-container">
               <apx-chart
                 #initiationDonutChart
                 [series]="initiationChartOptions.series"
@@ -227,86 +257,116 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- Charts Section -->
-  <div class="row">
-    <!-- Top 10 Branches Chart - Left Side (Half Width) -->
-    <div class="col-lg-6 mb-4">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title mb-4">Top 10 branches by event type</h5>
-          <apx-chart
-            [series]="topBranchesChartOptions.series"
-            [chart]="topBranchesChartOptions.chart"
-            [plotOptions]="topBranchesChartOptions.plotOptions"
-            [dataLabels]="topBranchesChartOptions.dataLabels"
-            [stroke]="topBranchesChartOptions.stroke"
-            [xaxis]="topBranchesChartOptions.xaxis"
-            [yaxis]="topBranchesChartOptions.yaxis"
-            [tooltip]="topBranchesChartOptions.tooltip"
-            [legend]="topBranchesChartOptions.legend"
-            [fill]="topBranchesChartOptions.fill"
-          ></apx-chart>
+      <!-- Volunteers Trend Summary Card -->
+      <div class="col-lg-4 col-md-6" *hasPermission="{ resource: ResourceType.VOLUNTEERS, action: ActionType.READ }">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <h5 class="chart-title">Active Volunteers</h5>
+          </div>
+          <div class="chart-card-body">
+            <div class="volunteers-summary" *ngIf="!loading">
+              <div class="summary-value">
+                <h2 class="summary-number">{{ formatNumber(currentVolunteersCount) }}</h2>
+                <p class="summary-label">Current Year</p>
+              </div>
+              <div class="summary-trend">
+                <span class="trend-badge" [ngClass]="currentVolunteersCount > 0 ? 'trend-up' : 'trend-down'">
+                  <i class="mdi" [ngClass]="currentVolunteersCount > 0 ? 'mdi-trending-up' : 'mdi-trending-down'"></i>
+                </span>
+              </div>
+            </div>
+            <div class="volunteers-summary" *ngIf="loading">
+              <span class="text-muted">Loading...</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Right Side Charts - Half Width, Two Rows -->
-    <div class="col-lg-6 mb-4">
-      <!-- Event Trend Chart - Top Row -->
-      <div class="row mb-4">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title mb-4">Event trend</h5>
-            <apx-chart
-              [series]="eventTrendChartOptions.series"
-              [chart]="eventTrendChartOptions.chart"
-              [plotOptions]="eventTrendChartOptions.plotOptions"
-              [dataLabels]="eventTrendChartOptions.dataLabels"
-              [stroke]="eventTrendChartOptions.stroke"
-              [xaxis]="eventTrendChartOptions.xaxis"
-              [yaxis]="eventTrendChartOptions.yaxis"
-              [fill]="eventTrendChartOptions.fill"
-              [tooltip]="eventTrendChartOptions.tooltip"
-              [legend]="eventTrendChartOptions.legend"
-            ></apx-chart>
+    <!-- Large Charts Row -->
+    <div class="row g-4 mt-2">
+      <!-- Top 10 Branches Chart -->
+      <div class="col-lg-6" *hasPermission="[
+        { resource: ResourceType.BRANCHES, action: ActionType.READ },
+        { resource: ResourceType.EVENTS, action: ActionType.READ }
+      ]">
+        <div class="chart-card chart-card-large">
+          <div class="chart-card-header">
+            <h5 class="chart-title">Top 10 Branches by Event Type</h5>
+          </div>
+          <div class="chart-card-body">
+            <div class="chart-container-large">
+              <apx-chart
+                [series]="topBranchesChartOptions.series"
+                [chart]="topBranchesChartOptions.chart"
+                [plotOptions]="topBranchesChartOptions.plotOptions"
+                [dataLabels]="topBranchesChartOptions.dataLabels"
+                [stroke]="topBranchesChartOptions.stroke"
+                [xaxis]="topBranchesChartOptions.xaxis"
+                [yaxis]="topBranchesChartOptions.yaxis"
+                [tooltip]="topBranchesChartOptions.tooltip"
+                [legend]="topBranchesChartOptions.legend"
+                [fill]="topBranchesChartOptions.fill"
+              ></apx-chart>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Active Volunteers Trend Chart - Bottom Row -->
-      <div class="row">
-        <div class="card">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <h5 class="card-title mb-0">
-                Active volunteers trend (year to date)
-              </h5>
-              <div class="text-center" *ngIf="!loading">
-                <h3 class="mb-0">{{ formatNumber(currentVolunteersCount) }}</h3>
-                <span 
-                  class="badge"
-                  [ngClass]="currentVolunteersCount > 0 ? 'bg-success' : 'bg-danger'">
-                  {{ currentVolunteersCount > 0 ? '↑' : '↓' }}
-                </span>
-              </div>
-              <div class="text-center" *ngIf="loading">
-                <h3 class="mb-0">...</h3>
+      <!-- Event Trend Chart -->
+      <div class="col-lg-6" *hasPermission="{ resource: ResourceType.EVENTS, action: ActionType.READ }">
+        <div class="chart-card chart-card-large">
+          <div class="chart-card-header">
+            <h5 class="chart-title">Event Trend</h5>
+          </div>
+          <div class="chart-card-body">
+            <div class="chart-container-large">
+              <apx-chart
+                [series]="eventTrendChartOptions.series"
+                [chart]="eventTrendChartOptions.chart"
+                [plotOptions]="eventTrendChartOptions.plotOptions"
+                [dataLabels]="eventTrendChartOptions.dataLabels"
+                [stroke]="eventTrendChartOptions.stroke"
+                [xaxis]="eventTrendChartOptions.xaxis"
+                [yaxis]="eventTrendChartOptions.yaxis"
+                [fill]="eventTrendChartOptions.fill"
+                [tooltip]="eventTrendChartOptions.tooltip"
+                [legend]="eventTrendChartOptions.legend"
+              ></apx-chart>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Volunteers Trend Chart -->
+    <div class="row g-4 mt-2">
+      <div class="col-12" *hasPermission="{ resource: ResourceType.VOLUNTEERS, action: ActionType.READ }">
+        <div class="chart-card chart-card-large">
+          <div class="chart-card-header">
+            <div class="d-flex justify-content-between align-items-center">
+              <h5 class="chart-title mb-0">Active Volunteers Trend (Year to Date)</h5>
+              <div class="chart-header-badge" *ngIf="!loading">
+                <span class="badge-value">{{ formatNumber(currentVolunteersCount) }}</span>
+                <span class="badge-label">Current</span>
               </div>
             </div>
-            <apx-chart
-              [series]="volunteersTrendChartOptions.series"
-              [chart]="volunteersTrendChartOptions.chart"
-              [plotOptions]="volunteersTrendChartOptions.plotOptions"
-              [dataLabels]="volunteersTrendChartOptions.dataLabels"
-              [stroke]="volunteersTrendChartOptions.stroke"
-              [xaxis]="volunteersTrendChartOptions.xaxis"
-              [yaxis]="volunteersTrendChartOptions.yaxis"
-              [fill]="volunteersTrendChartOptions.fill"
-              [tooltip]="volunteersTrendChartOptions.tooltip"
-            ></apx-chart>
+          </div>
+          <div class="chart-card-body">
+            <div class="chart-container-large">
+              <apx-chart
+                [series]="volunteersTrendChartOptions.series"
+                [chart]="volunteersTrendChartOptions.chart"
+                [plotOptions]="volunteersTrendChartOptions.plotOptions"
+                [dataLabels]="volunteersTrendChartOptions.dataLabels"
+                [stroke]="volunteersTrendChartOptions.stroke"
+                [xaxis]="volunteersTrendChartOptions.xaxis"
+                [yaxis]="volunteersTrendChartOptions.yaxis"
+                [fill]="volunteersTrendChartOptions.fill"
+                [tooltip]="volunteersTrendChartOptions.tooltip"
+              ></apx-chart>
+            </div>
           </div>
         </div>
       </div>
