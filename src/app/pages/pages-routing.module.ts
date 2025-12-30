@@ -6,18 +6,40 @@ import { ChatComponent } from "./chat/chat.component";
 import { FilemanagerComponent } from "./filemanager/filemanager.component";
 import { DashboardComponent } from "./dashboard/dashboard.component";
 import { RbacTestComponent } from "./rbac-test/rbac-test.component";
+import { AuthGuard } from "../core/guards/auth.guard";
 
 const routes: Routes = [
   // { path: '', redirectTo: 'dashboard' },
   {
     path: "",
     component: DashboardComponent,
+    canActivate: [AuthGuard],
   },
-  { path: "dashboard", component: DashboardComponent },
-  { path: "calendar", component: CalendarComponent },
-  { path: "chat", component: ChatComponent },
-  { path: "filemanager", component: FilemanagerComponent },
-  { path: "rbac-test", component: RbacTestComponent },
+  { 
+    path: "dashboard", 
+    component: DashboardComponent,
+    canActivate: [AuthGuard],
+  },
+  { 
+    path: "calendar", 
+    component: CalendarComponent,
+    canActivate: [AuthGuard],
+  },
+  { 
+    path: "chat", 
+    component: ChatComponent,
+    canActivate: [AuthGuard],
+  },
+  { 
+    path: "filemanager", 
+    component: FilemanagerComponent,
+    canActivate: [AuthGuard],
+  },
+  { 
+    path: "rbac-test", 
+    component: RbacTestComponent,
+    canActivate: [AuthGuard],
+  },
   {
     path: "dashboards",
     loadChildren: () =>
