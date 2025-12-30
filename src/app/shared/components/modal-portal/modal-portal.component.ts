@@ -71,14 +71,35 @@ export class ModalPortalComponent implements OnInit, AfterViewInit, OnDestroy {
       const target = event.target as HTMLElement;
       const path = event.composedPath();
       
+      // Helper function to safely get className as string
+      const getClassNameString = (element: any): string => {
+        if (!element) return '';
+        // Handle both string and DOMTokenList (SVG elements)
+        if (typeof element.className === 'string') {
+          return element.className;
+        } else if (element.className && typeof element.className.baseVal === 'string') {
+          // SVG elements have className.baseVal
+          return element.className.baseVal;
+        } else if (element.classList && element.classList.toString) {
+          // Fallback to classList if available
+          return element.classList.toString();
+        }
+        return '';
+      };
+      
+      const targetClassName = getClassNameString(target);
+      const targetClassStr = targetClassName ? '.' + targetClassName.split(' ').join('.') : '';
+      
       console.log('🔍 Click Debug:', {
-        target: target.tagName + (target.className ? '.' + target.className.split(' ').join('.') : ''),
+        target: target.tagName + targetClassStr,
         targetId: target.id,
         pointerEvents: window.getComputedStyle(target).pointerEvents,
         zIndex: window.getComputedStyle(target).zIndex,
-        path: Array.from(path).slice(0, 5).map((el: any) => 
-          el.tagName + (el.className ? '.' + el.className.split(' ').slice(0, 2).join('.') : '')
-        ),
+        path: Array.from(path).slice(0, 5).map((el: any) => {
+          const elClassName = getClassNameString(el);
+          const elClassStr = elClassName ? '.' + elClassName.split(' ').slice(0, 2).join('.') : '';
+          return el.tagName + elClassStr;
+        }),
         isModal: target.closest('.modal'),
         isBackdrop: target.closest('.modal-backdrop'),
         isModalContent: target.closest('.modal-content'),
