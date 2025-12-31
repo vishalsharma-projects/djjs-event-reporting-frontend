@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core'
-import { FormBuilder, FormGroup, Validators } from '@angular/forms'
-import { LocationService, Country, State, City, Coordinator, Branch } from 'src/app/core/services/location.service'
+import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms'
+import { LocationService, Country, State, City, Coordinator, Branch, InfrastructureType } from 'src/app/core/services/location.service'
 import { ChildBranchService, ChildBranchPayload } from 'src/app/core/services/child-branch.service'
 import { TokenStorageService } from 'src/app/core/services/token-storage.service'
 import { Router, ActivatedRoute } from '@angular/router'
@@ -29,11 +29,13 @@ export class AddChildBranchComponent implements OnInit {
     countryList: Country[] = [];
     stateList: State[] = [];
     cityList: City[] = [];
+    infrastructureTypesList: InfrastructureType[] = [];
 
     // Loading states
     loadingCountries = false;
     loadingStates = false;
     loadingCities = false;
+    loadingInfrastructureTypes = false;
     loadingParentBranch = false;
 
     // Submitting state
@@ -97,7 +99,13 @@ export class AddChildBranchComponent implements OnInit {
             status: [true],
             ncr: [false],
             regionId: [''],
-            branchCode: ['']
+            branchCode: [''],
+            infrastructure: this.fb.array([
+                this.fb.group({
+                    roomType: [''],
+                    number: ['']
+                })
+            ])
         });
 
         // Set breadcrumbs
@@ -106,8 +114,9 @@ export class AddChildBranchComponent implements OnInit {
             { label: 'Add Child Branch', active: true }
         ];
 
-        // Load countries on init
+        // Load countries and infrastructure types on init
         this.loadCountries();
+        this.loadInfrastructureTypes();
 
         // Listen for changes to reset dependent selects
         this.childBranchForm.get('country')?.valueChanges.subscribe(countryId => {
@@ -216,6 +225,33 @@ export class AddChildBranchComponent implements OnInit {
         });
     }
 
+    /**
+     * Load infrastructure types from API
+     */
+    loadInfrastructureTypes() {
+        this.loadingInfrastructureTypes = true;
+        this.locationService.getInfrastructureTypes().subscribe({
+            next: (types) => {
+                this.infrastructureTypesList = types;
+                this.loadingInfrastructureTypes = false;
+            },
+            error: (error) => {
+                console.error('Error loading infrastructure types:', error);
+                this.loadingInfrastructureTypes = false;
+            }
+        });
+    }
+
+    get infrastructure(): FormArray {
+        return this.childBranchForm.get('infrastructure') as FormArray;
+    }
+
+    addRoomType() {
+        this.infrastructure.push(this.fb.group({
+            roomType: [''],
+            number: ['']
+        }));
+    }
 
     updateCompletion() {
         const requiredFields = [
@@ -288,19 +324,76 @@ export class AddChildBranchComponent implements OnInit {
         // Submit to API
         this.childBranchService.createChildBranch(childBranchData).subscribe({
             next: (response) => {
-                console.log('Child branch created successfully:', response);
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Success',
-                    detail: 'Child branch created successfully!',
-                    life: 3000
-                });
-                this.isSubmitting = false;
+                const createdChildBranchId = response.id;
+                
+                // Prepare infrastructure array from form
+                const infrastructureArray: any[] = [];
+                if (formValue.infrastructure && Array.isArray(formValue.infrastructure)) {
+                    formValue.infrastructure.forEach((infra: any) => {
+                        if (infra.roomType && infra.roomType.trim() !== '') {
+                            let count = 0;
+                            if (infra.number !== null && infra.number !== undefined && infra.number !== '') {
+                                if (typeof infra.number === 'string') {
+                                    count = parseInt(infra.number.trim(), 10);
+                                } else {
+                                    count = Number(infra.number);
+                                }
+                                if (isNaN(count)) {
+                                    count = 0;
+                                }
+                            }
+                            infrastructureArray.push({
+                                type: infra.roomType.trim(),
+                                count: count
+                            });
+                        }
+                    });
+                }
 
-                // Redirect to branch list
-                setTimeout(() => {
-                    this.router.navigate(['/branch']);
-                }, 1500);
+                // Create infrastructure entries if any
+                if (infrastructureArray.length > 0) {
+                    let infrastructureCreated = 0;
+                    let infrastructureErrors = 0;
+                    
+                    infrastructureArray.forEach((infra) => {
+                        this.childBranchService.createChildBranchInfrastructure(createdChildBranchId, {
+                            type: infra.type,
+                            count: infra.count
+                        }).subscribe({
+                            next: () => {
+                                infrastructureCreated++;
+                                if (infrastructureCreated + infrastructureErrors === infrastructureArray.length) {
+                                    if (infrastructureErrors > 0) {
+                                        this.messageService.add({
+                                            severity: 'warn',
+                                            summary: 'Partial Success',
+                                            detail: `Child branch created, but ${infrastructureErrors} infrastructure entry(ies) failed to save.`,
+                                            life: 5000
+                                        });
+                                    }
+                                    this.showSuccessAndRedirect();
+                                }
+                            },
+                            error: (error) => {
+                                console.error('Error creating infrastructure:', error);
+                                infrastructureErrors++;
+                                if (infrastructureCreated + infrastructureErrors === infrastructureArray.length) {
+                                    if (infrastructureErrors > 0) {
+                                        this.messageService.add({
+                                            severity: 'warn',
+                                            summary: 'Partial Success',
+                                            detail: `Child branch created, but ${infrastructureErrors} infrastructure entry(ies) failed to save.`,
+                                            life: 5000
+                                        });
+                                    }
+                                    this.showSuccessAndRedirect();
+                                }
+                            }
+                        });
+                    });
+                } else {
+                    this.showSuccessAndRedirect();
+                }
             },
             error: (error) => {
                 console.error('Error creating child branch:', error);
@@ -339,6 +432,21 @@ export class AddChildBranchComponent implements OnInit {
 
     getCoordinatorName(): string {
         return this.parentCoordinatorName || 'Not selected';
+    }
+
+    showSuccessAndRedirect() {
+        this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Child branch created successfully!',
+            life: 3000
+        });
+        this.isSubmitting = false;
+
+        // Redirect to branch list
+        setTimeout(() => {
+            this.router.navigate(['/branch']);
+        }, 1500);
     }
 
     cancel() {

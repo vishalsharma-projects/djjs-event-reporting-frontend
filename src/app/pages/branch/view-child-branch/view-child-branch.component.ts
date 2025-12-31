@@ -18,6 +18,8 @@ export class ViewChildBranchComponent implements OnInit {
   activeTab: 'details' | 'members' = 'details';
   members: ChildBranchMember[] = [];
   loadingMembers: boolean = false;
+  branchInfrastructure: any[] = [];
+  loadingInfrastructure: boolean = false;
 
   breadCrumbItems: Array<{}> = [];
 
@@ -56,6 +58,8 @@ export class ViewChildBranchComponent implements OnInit {
 
     this.childBranchService.getChildBranchById(this.childBranchId).subscribe({
       next: (childBranch) => {
+        console.log('Child branch loaded:', childBranch);
+        console.log('Child branch infrastructure from response:', (childBranch as any).infrastructure);
         this.childBranch = childBranch;
         this.loading = false;
 
@@ -68,13 +72,15 @@ export class ViewChildBranchComponent implements OnInit {
           });
         }
 
-                this.breadCrumbItems = [
+        this.breadCrumbItems = [
           { label: 'Branches', routerLink: '/branch' },
           { label: childBranch.name || 'Child Branch Details', active: true }
         ];
 
-        // Load members
+        // Load members and infrastructure
         this.loadMembers();
+        // Check infrastructure in branch object first, then load from API if needed
+        this.checkAndLoadInfrastructure();
       },
       error: (error) => {
         console.error('Error loading child branch:', error);
@@ -146,6 +152,50 @@ export class ViewChildBranchComponent implements OnInit {
         console.error('Error loading members:', error);
         this.loadingMembers = false;
         this.members = [];
+      }
+    });
+  }
+
+  checkAndLoadInfrastructure() {
+    if (!this.childBranchId) return;
+
+    this.loadingInfrastructure = true;
+    console.log('Checking infrastructure for child branch ID:', this.childBranchId);
+    
+    // First check if infrastructure is already in the branch object (from preloaded data)
+    if (this.childBranch) {
+      const infraFromBranch = (this.childBranch as any).infrastructure;
+      console.log('Infrastructure from branch object:', infraFromBranch);
+      
+      if (infraFromBranch && Array.isArray(infraFromBranch)) {
+        if (infraFromBranch.length > 0) {
+          console.log('Using infrastructure from branch object:', infraFromBranch);
+          this.branchInfrastructure = infraFromBranch;
+          this.loadingInfrastructure = false;
+          return;
+        } else {
+          console.log('Infrastructure array is empty in branch object, fetching from API...');
+        }
+      } else {
+        console.log('No infrastructure in branch object, fetching from API...');
+      }
+    }
+
+    // Fetch from API
+    console.log('Fetching infrastructure from API endpoint: /api/child-branches/' + this.childBranchId + '/infrastructure');
+    this.childBranchService.getChildBranchInfrastructure(this.childBranchId).subscribe({
+      next: (infra) => {
+        console.log('Infrastructure loaded from API:', infra);
+        console.log('Infrastructure array length:', infra?.length || 0);
+        this.branchInfrastructure = infra || [];
+        this.loadingInfrastructure = false;
+      },
+      error: (error) => {
+        console.error('Error loading branch infrastructure:', error);
+        console.error('Error details:', error.error, error.status, error.statusText);
+        console.error('Full error object:', error);
+        this.branchInfrastructure = [];
+        this.loadingInfrastructure = false;
       }
     });
   }

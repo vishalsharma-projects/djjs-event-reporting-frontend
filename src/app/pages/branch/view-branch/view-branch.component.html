@@ -139,12 +139,12 @@
     </div>
 
     <!-- Infrastructure -->
-    <div class="card mb-4" *ngIf="branchInfrastructure && branchInfrastructure.length > 0">
+    <div class="card mb-4">
       <div class="card-header">
-        <h5 class="mb-0">Infrastructure ({{ branchInfrastructure.length }})</h5>
+        <h5 class="mb-0">Infrastructure</h5>
       </div>
       <div class="card-body">
-        <div class="table-responsive">
+        <div *ngIf="branchInfrastructure && branchInfrastructure.length > 0" class="table-responsive">
           <table class="table table-bordered table-striped">
             <thead class="table-light">
               <tr>
@@ -159,6 +159,9 @@
               </tr>
             </tbody>
           </table>
+        </div>
+        <div *ngIf="!branchInfrastructure || branchInfrastructure.length === 0" class="alert alert-info mb-0">
+          <i class="pi pi-info-circle me-2"></i>No infrastructure records found for this branch.
         </div>
       </div>
     </div>

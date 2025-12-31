@@ -200,8 +200,34 @@ export class AddBranchComponent implements OnInit {
                 establishedOn = new Date(establishedOn).toISOString();
             }
 
+            // Prepare infrastructure array from form
+            // Backend expects: [{type: string, count: number}]
+            // Form has: [{roomType: string, number: string|number}]
+            const infrastructureArray: any[] = [];
+            if (formValue.infrastructure && Array.isArray(formValue.infrastructure)) {
+                formValue.infrastructure.forEach((infra: any) => {
+                    if (infra.roomType && infra.roomType.trim() !== '') {
+                        let count = 0;
+                        if (infra.number !== null && infra.number !== undefined && infra.number !== '') {
+                            if (typeof infra.number === 'string') {
+                                count = parseInt(infra.number.trim(), 10);
+                            } else {
+                                count = Number(infra.number);
+                            }
+                            if (isNaN(count)) {
+                                count = 0;
+                            }
+                        }
+                        infrastructureArray.push({
+                            type: infra.roomType.trim(),
+                            count: count
+                        });
+                    }
+                });
+            }
+
             // Prepare API payload - send IDs instead of names to avoid null issues
-            const branchData: BranchPayload = {
+            const branchData: any = {
                 aashram_area: parseFloat(formValue.ashramArea) || 0,
                 address: formValue.address || '',
                 city_id: city?.id || null,
@@ -226,7 +252,8 @@ export class AddBranchComponent implements OnInit {
                 region_id: formValue.regionId ? parseInt(formValue.regionId, 10) : null,
                 branch_code: formValue.branchCode || '',
                 updated_by: createdBy,
-                updated_on: currentTimestamp
+                updated_on: currentTimestamp,
+                infrastructure: infrastructureArray // Include infrastructure array
             };
 
             // Submit to API

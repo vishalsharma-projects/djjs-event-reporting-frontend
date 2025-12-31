@@ -126,10 +126,18 @@ export class ChildBranchService {
    * Create infrastructure for a child branch (now uses BranchInfrastructure with branch_id)
    */
   createChildBranchInfrastructure(childBranchId: number, infrastructure: Omit<BranchInfrastructure, 'id' | 'branch_id'>): Observable<BranchInfrastructure> {
-    return this.http.post<BranchInfrastructure>(`${this.apiBaseUrl}/api/child-branches/${childBranchId}/infrastructure`, {
+    const payload = {
       ...infrastructure,
       branch_id: childBranchId
-    });
+    };
+    return this.http.post<BranchInfrastructure>(`${this.apiBaseUrl}/api/child-branches/${childBranchId}/infrastructure`, payload);
+  }
+
+  /**
+   * Delete infrastructure for a child branch (uses branch infrastructure endpoint)
+   */
+  deleteChildBranchInfrastructure(infrastructureId: number): Observable<any> {
+    return this.http.delete(`${this.apiBaseUrl}/api/branch-infra/${infrastructureId}`);
   }
 
   /**

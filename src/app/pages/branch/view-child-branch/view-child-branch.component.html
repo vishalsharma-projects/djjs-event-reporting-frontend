@@ -74,6 +74,44 @@
               <p>{{ childBranch.address || 'N/A' }}</p>
             </div>
           </div>
+
+          <!-- Infrastructure Section -->
+          <div class="card mt-4">
+            <div class="card-header">
+              <h6 class="mb-0">Infrastructure 
+                <span *ngIf="!loadingInfrastructure && branchInfrastructure.length > 0" class="badge bg-primary ms-2">
+                  {{ branchInfrastructure.length }}
+                </span>
+              </h6>
+            </div>
+            <div class="card-body">
+              <div *ngIf="loadingInfrastructure" class="text-center p-3">
+                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-muted mt-2">Loading infrastructure...</p>
+              </div>
+              <div *ngIf="!loadingInfrastructure && branchInfrastructure.length === 0" class="alert alert-info mb-0">
+                <i class="pi pi-info-circle me-2"></i>No infrastructure records found for this child branch.
+              </div>
+              <div *ngIf="!loadingInfrastructure && branchInfrastructure.length > 0" class="table-responsive">
+                <table class="table table-bordered table-striped">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Room Type</th>
+                      <th>Number</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let infra of branchInfrastructure">
+                      <td>{{ infra.type || 'N/A' }}</td>
+                      <td>{{ infra.count !== null && infra.count !== undefined ? infra.count : 'N/A' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Members Tab -->

@@ -207,30 +207,8 @@
           <h5 class="mb-3">Infrastructure</h5>
 
           <div formArrayName="infrastructure" class="row g-3">
-            <!-- First item -->
-            <div *ngIf="infrastructure.length > 0" [formGroupName]="0" class="col-12">
-              <div class="row g-2">
-                <div class="col-md-4">
-                  <select class="form-select" formControlName="roomType" [disabled]="loadingInfrastructureTypes">
-                    <option value="">Select Room Type</option>
-                    <option *ngFor="let type of infrastructureTypesList" [value]="type.name">{{type.name}}</option>
-                  </select>
-                </div>
-                <div class="col-md-4">
-                  <input class="form-control" formControlName="number" type="number" placeholder="Add number" />
-                </div>
-                <div class="col-md-4 d-flex align-items-center">
-                  <button type="button" class="btn btn-outline-danger" *ngIf="infrastructure.length > 1"
-                    (click)="infrastructure.removeAt(0)">
-                    <i class="fas fa-trash me-1"></i>Remove
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Rest items -->
             <ng-container *ngFor="let infra of infrastructure.controls; let i = index">
-              <div *ngIf="i > 0" [formGroupName]="i" class="col-12">
+              <div [formGroupName]="i" class="col-12">
                 <div class="row g-2">
                   <div class="col-md-4">
                     <select class="form-select" formControlName="roomType" [disabled]="loadingInfrastructureTypes">
@@ -242,7 +220,7 @@
                     <input class="form-control" formControlName="number" type="number" placeholder="Add number" />
                   </div>
                   <div class="col-md-4 d-flex align-items-center">
-                    <button type="button" class="btn btn-outline-danger" (click)="infrastructure.removeAt(i)">
+                    <button type="button" class="btn btn-outline-danger" *ngIf="infrastructure.length > 1" (click)="infrastructure.removeAt(i)">
                       <i class="fas fa-trash me-1"></i>Remove
                     </button>
                   </div>

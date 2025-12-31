@@ -747,12 +747,21 @@ export class EditBranchComponent implements OnInit {
             const infrastructureArray: any[] = [];
             if (formValue.infrastructure && Array.isArray(formValue.infrastructure)) {
                 formValue.infrastructure.forEach((infra: any) => {
-                    // Only include entries that have at least a type
                     if (infra.roomType && infra.roomType.trim() !== '') {
-                        const count = infra.number ? (typeof infra.number === 'string' ? parseInt(infra.number, 10) : infra.number) : 0;
+                        let count = 0;
+                        if (infra.number !== null && infra.number !== undefined && infra.number !== '') {
+                            if (typeof infra.number === 'string') {
+                                count = parseInt(infra.number.trim(), 10);
+                            } else {
+                                count = Number(infra.number);
+                            }
+                            if (isNaN(count)) {
+                                count = 0;
+                            }
+                        }
                         infrastructureArray.push({
                             type: infra.roomType.trim(),
-                            count: isNaN(count) ? 0 : count
+                            count: count
                         });
                     }
                 });
@@ -790,10 +799,6 @@ export class EditBranchComponent implements OnInit {
             delete branchData.id;
             delete branchData.created_on;
             delete branchData.created_by;
-
-            // Log infrastructure for debugging
-            console.log('Infrastructure to be saved:', infrastructureArray);
-            console.log('Complete branch data payload:', branchData);
 
             // Update branch via API
             this.locationService.updateBranch(this.branchId, branchData).subscribe({

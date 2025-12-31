@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core'
-import { FormBuilder, FormGroup, Validators } from '@angular/forms'
-import { LocationService, Country, State, City, Branch } from 'src/app/core/services/location.service'
+import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms'
+import { LocationService, Country, State, City, Branch, InfrastructureType } from 'src/app/core/services/location.service'
 import { ChildBranchService, ChildBranch, ChildBranchPayload } from 'src/app/core/services/child-branch.service'
 import { Router, ActivatedRoute } from '@angular/router'
 import { MessageService } from 'primeng/api'
@@ -21,9 +21,11 @@ export class EditChildBranchComponent implements OnInit {
     countryList: Country[] = [];
     stateList: State[] = [];
     cityList: City[] = [];
+    infrastructureTypesList: InfrastructureType[] = [];
 
     // Loading states
     loading = false;
+    loadingInfrastructureTypes = false;
     isSubmitting = false;
 
     breadCrumbItems: Array<{}> = [];
@@ -70,7 +72,13 @@ export class EditChildBranchComponent implements OnInit {
             status: [true],
             ncr: [false],
             regionId: [''],
-            branchCode: ['']
+            branchCode: [''],
+            infrastructure: this.fb.array([
+                this.fb.group({
+                    roomType: [''],
+                    number: ['']
+                })
+            ])
         });
 
         this.breadCrumbItems = [
@@ -79,6 +87,7 @@ export class EditChildBranchComponent implements OnInit {
         ];
 
         this.loadCountries();
+        this.loadInfrastructureTypes();
         this.loadChildBranch();
 
         this.childBranchForm.get('country')?.valueChanges.subscribe(countryId => {
@@ -150,6 +159,9 @@ export class EditChildBranchComponent implements OnInit {
                     branchCode: childBranch.branch_code || ''
                 });
 
+                // Load infrastructure data
+                this.loadBranchInfrastructure();
+
                 this.loading = false;
             },
             error: (error) => {
@@ -181,6 +193,76 @@ export class EditChildBranchComponent implements OnInit {
                 this.cityList = cities;
             },
             error: (error) => console.error('Error loading cities:', error)
+        });
+    }
+
+    /**
+     * Load infrastructure types from API
+     */
+    loadInfrastructureTypes() {
+        this.loadingInfrastructureTypes = true;
+        this.locationService.getInfrastructureTypes().subscribe({
+            next: (types) => {
+                this.infrastructureTypesList = types;
+                this.loadingInfrastructureTypes = false;
+            },
+            error: (error) => {
+                console.error('Error loading infrastructure types:', error);
+                this.loadingInfrastructureTypes = false;
+            }
+        });
+    }
+
+    get infrastructure(): FormArray {
+        return this.childBranchForm.get('infrastructure') as FormArray;
+    }
+
+    addRoomType() {
+        this.infrastructure.push(this.fb.group({
+            roomType: [''],
+            number: ['']
+        }));
+    }
+
+    /**
+     * Load branch infrastructure from API
+     */
+    loadBranchInfrastructure() {
+        if (!this.childBranchId) return;
+
+        this.childBranchService.getChildBranchInfrastructure(this.childBranchId).subscribe({
+            next: (infra) => {
+                // Clear existing infrastructure
+                while (this.infrastructure.length !== 0) {
+                    this.infrastructure.removeAt(0);
+                }
+
+                // Add infrastructure to form
+                if (infra && infra.length > 0) {
+                    infra.forEach((item: any) => {
+                        this.infrastructure.push(this.fb.group({
+                            roomType: [item.type || ''],
+                            number: [item.count || '']
+                        }));
+                    });
+                } else {
+                    // If no infrastructure, add one empty row
+                    this.infrastructure.push(this.fb.group({
+                        roomType: [''],
+                        number: ['']
+                    }));
+                }
+            },
+            error: (error) => {
+                console.error('Error loading branch infrastructure:', error);
+                // On error, ensure at least one empty row exists
+                if (this.infrastructure.length === 0) {
+                    this.infrastructure.push(this.fb.group({
+                        roomType: [''],
+                        number: ['']
+                    }));
+                }
+            }
         });
     }
 
@@ -216,9 +298,72 @@ export class EditChildBranchComponent implements OnInit {
 
         this.childBranchService.updateChildBranch(this.childBranchId, updateData).subscribe({
             next: () => {
-                this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Child branch updated successfully!' });
-                this.isSubmitting = false;
-                setTimeout(() => this.router.navigate(['/branch']), 1500);
+                // Prepare infrastructure array from form
+                // Use the FormArray directly to get the most up-to-date values
+                const infrastructureArray: any[] = [];
+                const infraFormArray = this.infrastructure;
+                
+                for (let i = 0; i < infraFormArray.length; i++) {
+                    const infraGroup = infraFormArray.at(i);
+                    const roomTypeValue = infraGroup.get('roomType')?.value;
+                    const numberValue = infraGroup.get('number')?.value;
+                    
+                    if (roomTypeValue && roomTypeValue.trim() !== '') {
+                        let count = 0;
+                        if (numberValue !== null && numberValue !== undefined && numberValue !== '') {
+                            if (typeof numberValue === 'string') {
+                                count = parseInt(numberValue.trim(), 10);
+                            } else {
+                                count = Number(numberValue);
+                            }
+                            if (isNaN(count)) {
+                                count = 0;
+                            }
+                        }
+                        infrastructureArray.push({
+                            type: roomTypeValue.trim(),
+                            count: count
+                        });
+                    }
+                }
+
+                // Get existing infrastructure to delete and recreate
+                this.childBranchService.getChildBranchInfrastructure(this.childBranchId!).subscribe({
+                    next: (existingInfra) => {
+                        // Delete all existing infrastructure
+                        let deletedCount = 0;
+                        if (existingInfra && existingInfra.length > 0) {
+                            existingInfra.forEach((infra) => {
+                                if (infra.id) {
+                                    this.childBranchService.deleteChildBranchInfrastructure(infra.id).subscribe({
+                                        next: () => {
+                                            deletedCount++;
+                                            if (deletedCount === existingInfra.length) {
+                                                this.createNewInfrastructure(infrastructureArray);
+                                            }
+                                        },
+                                        error: (err) => {
+                                            console.error('Error deleting infrastructure:', err);
+                                            deletedCount++;
+                                            if (deletedCount === existingInfra.length) {
+                                                this.createNewInfrastructure(infrastructureArray);
+                                            }
+                                        }
+                                    });
+                                } else {
+                                    deletedCount++;
+                                }
+                            });
+                        } else {
+                            this.createNewInfrastructure(infrastructureArray);
+                        }
+                    },
+                    error: (err) => {
+                        console.error('Error fetching existing infrastructure:', err);
+                        // Still try to create new infrastructure
+                        this.createNewInfrastructure(infrastructureArray);
+                    }
+                });
             },
             error: (error) => {
                 console.error('Error updating child branch:', error);
@@ -226,6 +371,59 @@ export class EditChildBranchComponent implements OnInit {
                 this.isSubmitting = false;
             }
         });
+    }
+
+    createNewInfrastructure(infrastructureArray: any[]) {
+        if (infrastructureArray.length === 0) {
+            this.showSuccessAndRedirect();
+            return;
+        }
+
+        let infrastructureCreated = 0;
+        let infrastructureErrors = 0;
+        
+        infrastructureArray.forEach((infra) => {
+            this.childBranchService.createChildBranchInfrastructure(this.childBranchId!, {
+                type: infra.type,
+                count: infra.count
+            }).subscribe({
+                next: () => {
+                    infrastructureCreated++;
+                    if (infrastructureCreated + infrastructureErrors === infrastructureArray.length) {
+                        if (infrastructureErrors > 0) {
+                            this.messageService.add({
+                                severity: 'warn',
+                                summary: 'Partial Success',
+                                detail: `Child branch updated, but ${infrastructureErrors} infrastructure entry(ies) failed to save.`,
+                                life: 5000
+                            });
+                        }
+                        this.showSuccessAndRedirect();
+                    }
+                },
+                error: (error) => {
+                    console.error('Error creating infrastructure:', error);
+                    infrastructureErrors++;
+                    if (infrastructureCreated + infrastructureErrors === infrastructureArray.length) {
+                        if (infrastructureErrors > 0) {
+                            this.messageService.add({
+                                severity: 'warn',
+                                summary: 'Partial Success',
+                                detail: `Child branch updated, but ${infrastructureErrors} infrastructure entry(ies) failed to save.`,
+                                life: 5000
+                            });
+                        }
+                        this.showSuccessAndRedirect();
+                    }
+                }
+            });
+        });
+    }
+
+    showSuccessAndRedirect() {
+        this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Child branch updated successfully!' });
+        this.isSubmitting = false;
+        setTimeout(() => this.router.navigate(['/branch']), 1500);
     }
 
     cancel() {
