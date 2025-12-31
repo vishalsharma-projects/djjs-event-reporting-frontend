@@ -85,6 +85,7 @@ export class AllMembersComponent implements OnInit {
 
     // Edit Member Form
     this.editMemberForm = this.fb.group({
+      branch_id: [null], // Optional field - can assign or unassign branch
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
       member_type: ['', Validators.required],
       branch_role: ['', Validators.required],
@@ -282,6 +283,7 @@ export class AllMembersComponent implements OnInit {
     };
 
     this.editMemberForm.patchValue({
+      branch_id: member.branch_id || null,
       name: member.name || '',
       member_type: member.member_type || '',
       branch_role: member.branch_role || '',
@@ -321,7 +323,15 @@ export class AllMembersComponent implements OnInit {
     this.isUpdating = true;
     const formValue = this.editMemberForm.value;
 
+    // Handle branch_id - can be null to unassign, or a number to assign
+    const branchId = formValue.branch_id 
+      ? (typeof formValue.branch_id === 'string' 
+          ? parseInt(formValue.branch_id, 10) 
+          : (typeof formValue.branch_id === 'number' ? formValue.branch_id : null))
+      : null;
+
     const memberPayload = {
+      branch_id: branchId, // Can be null to unassign branch
       name: formValue.name.trim(),
       member_type: formValue.member_type,
       branch_role: formValue.branch_role || '',

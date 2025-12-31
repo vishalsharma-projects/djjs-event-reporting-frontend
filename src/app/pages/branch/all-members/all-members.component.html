@@ -284,10 +284,24 @@
         <form [formGroup]="editMemberForm" (ngSubmit)="updateMember()">
           <!-- Member Info Display -->
           <div class="alert alert-info mb-3" *ngIf="editingMember">
-            <strong>Branch:</strong> {{ editingMember.branch_name || editingMember.child_branch_name || 'N/A' }} 
+            <strong>Current Branch:</strong> {{ editingMember.branch_name || editingMember.child_branch_name || 'N/A' }} 
             <span class="badge ms-2" [ngClass]="editingMember.branch_type === 'branch' ? 'bg-primary' : 'bg-warning'">
               {{ editingMember.branch_type === 'branch' ? 'Branch' : 'Child Branch' }}
             </span>
+          </div>
+
+          <!-- Branch Selection - All Branches (Parent and Child) -->
+          <div class="row mb-3">
+            <div class="col-12">
+              <label class="form-label">Assign to Branch</label>
+              <select class="form-select" formControlName="branch_id">
+                <option [value]="null">-- Unassign from Branch (No Branch) --</option>
+                <option *ngFor="let branch of allBranches" [value]="branch.id">
+                  {{ branch.name }}{{ branch.isChildBranch ? ' (Child Branch)' : '' }}
+                </option>
+              </select>
+              <small class="form-text text-muted">Select a branch to assign this member to, or leave as "Unassign" to remove branch assignment.</small>
+            </div>
           </div>
 
           <!-- Member Details -->
