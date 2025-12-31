@@ -47,6 +47,11 @@ export interface EventDetails {
     name: string;
     event_type_id: number;
   };
+  event_sub_category?: {
+    id: number;
+    name: string;
+    event_category_id: number;
+  };
   branch_id?: number;
   branch?: string | {
     id: number;

@@ -3459,16 +3459,13 @@ export class AddEventComponent implements OnInit, OnDestroy {
         if (event.event_category?.name) {
           setTimeout(() => {
             this.onEventCategoryChange(event.event_category!.name);
-            // Try to set eventSubCategory if it exists in the event object
-            // Note: eventSubCategory is not stored in database, so this will only work if it's in the response
+            // Set eventSubCategory if it exists in the event object
             setTimeout(() => {
-              if ((event as any).event_sub_category || (event as any).eventSubCategory) {
-                const subCategoryName = (event as any).event_sub_category?.name || (event as any).eventSubCategory;
-                if (subCategoryName) {
-                  const subCategoryExists = this.filteredEventSubCategories.find(sc => sc.name === subCategoryName);
-                  if (subCategoryExists) {
-                    this.generalDetailsForm.patchValue({ eventSubCategory: subCategoryName }, { emitEvent: false });
-                  }
+              if (event.event_sub_category?.name) {
+                const subCategoryName = event.event_sub_category.name;
+                const subCategoryExists = this.filteredEventSubCategories.find(sc => sc.name === subCategoryName);
+                if (subCategoryExists) {
+                  this.generalDetailsForm.patchValue({ eventSubCategory: subCategoryName }, { emitEvent: false });
                 }
               }
             }, 500);
@@ -3479,15 +3476,13 @@ export class AddEventComponent implements OnInit, OnDestroy {
       // If event type is not available but category is, still try to load sub categories
       setTimeout(() => {
         this.onEventCategoryChange(event.event_category!.name);
-        // Try to set eventSubCategory if it exists
+        // Set eventSubCategory if it exists
         setTimeout(() => {
-          if ((event as any).event_sub_category || (event as any).eventSubCategory) {
-            const subCategoryName = (event as any).event_sub_category?.name || (event as any).eventSubCategory;
-            if (subCategoryName) {
-              const subCategoryExists = this.filteredEventSubCategories.find(sc => sc.name === subCategoryName);
-              if (subCategoryExists) {
-                this.generalDetailsForm.patchValue({ eventSubCategory: subCategoryName }, { emitEvent: false });
-              }
+          if (event.event_sub_category?.name) {
+            const subCategoryName = event.event_sub_category.name;
+            const subCategoryExists = this.filteredEventSubCategories.find(sc => sc.name === subCategoryName);
+            if (subCategoryExists) {
+              this.generalDetailsForm.patchValue({ eventSubCategory: subCategoryName }, { emitEvent: false });
             }
           }
         }, 500);
@@ -3495,10 +3490,11 @@ export class AddEventComponent implements OnInit, OnDestroy {
     }
 
     // Set additional fields that might not be in the main event object but could be in response
-    // Check if these fields exist in the event object (they might be added later or in drafts)
-    if ((event as any).address_type || (event as any).addressType) {
+    // Note: addressType is already set above on line 3383, but we check again here in case it wasn't set
+    // This ensures addressType is loaded even if the initial patchValue didn't work
+    if (event.address_type && !this.generalDetailsForm.get('addressType')?.value) {
       this.generalDetailsForm.patchValue({ 
-        addressType: (event as any).address_type || (event as any).addressType || '' 
+        addressType: event.address_type 
       }, { emitEvent: false });
     }
     if ((event as any).police_station || (event as any).policeStation) {
@@ -3729,6 +3725,7 @@ export class AddEventComponent implements OnInit, OnDestroy {
       generalDetails: {
         eventType: generalDetails.eventType || '', // Send name, backend will look up ID
         eventCategory: generalDetails.eventCategory || '', // Send name, backend will look up ID
+        eventSubCategory: generalDetails.eventSubCategory || '', // Send name, backend will look up ID
         scale: generalDetails.scale || '',
         theme: generalDetails.theme || '',
         duration: durationString || '', // Backend will parse this to start_date and end_date (empty if invalid)
