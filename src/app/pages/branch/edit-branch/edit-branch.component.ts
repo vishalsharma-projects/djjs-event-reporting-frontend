@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core'
 import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms'
-import { LocationService, Branch, BranchPayload, Country, State, City, Coordinator } from 'src/app/core/services/location.service'
+import { LocationService, Branch, BranchPayload, Country, State, City, Coordinator, InfrastructureType } from 'src/app/core/services/location.service'
 import { TokenStorageService } from 'src/app/core/services/token-storage.service'
 import { Router, ActivatedRoute } from '@angular/router'
 import { MessageService } from 'primeng/api'
@@ -29,12 +29,14 @@ export class EditBranchComponent implements OnInit {
     stateList: State[] = [];
     cityList: City[] = [];
     coordinatorsList: Coordinator[] = [];
+    infrastructureTypesList: InfrastructureType[] = [];
 
     // Loading states
     loadingCountries = false;
     loadingStates = false;
     loadingCities = false;
     loadingCoordinators = false;
+    loadingInfrastructureTypes = false;
     loadingBranch = false;
 
     // Submitting state
@@ -165,15 +167,16 @@ export class EditBranchComponent implements OnInit {
     }
 
     /**
-     * Load initial data (countries, coordinators, branches) before loading branch data
+     * Load initial data (countries, coordinators, infrastructure types, branches) before loading branch data
      */
     loadInitialData() {
         let countriesLoaded = false;
         let coordinatorsLoaded = false;
+        let infrastructureTypesLoaded = false;
         let branchesLoaded = false;
 
         const checkAndLoadBranch = () => {
-            if (countriesLoaded && coordinatorsLoaded && branchesLoaded) {
+            if (countriesLoaded && coordinatorsLoaded && infrastructureTypesLoaded && branchesLoaded) {
                 this.loadBranchData();
             }
         };
@@ -208,6 +211,23 @@ export class EditBranchComponent implements OnInit {
                 console.error('Error loading coordinators:', error);
                 this.loadingCoordinators = false;
                 coordinatorsLoaded = true; // Set to true even on error to prevent blocking
+                checkAndLoadBranch();
+            }
+        });
+
+        // Load infrastructure types
+        this.loadingInfrastructureTypes = true;
+        this.locationService.getInfrastructureTypes().subscribe({
+            next: (types) => {
+                this.infrastructureTypesList = types;
+                this.loadingInfrastructureTypes = false;
+                infrastructureTypesLoaded = true;
+                checkAndLoadBranch();
+            },
+            error: (error) => {
+                console.error('Error loading infrastructure types:', error);
+                this.loadingInfrastructureTypes = false;
+                infrastructureTypesLoaded = true; // Set to true even on error to prevent blocking
                 checkAndLoadBranch();
             }
         });
@@ -721,6 +741,23 @@ export class EditBranchComponent implements OnInit {
                 establishedOn = new Date(establishedOn).toISOString();
             }
 
+            // Prepare infrastructure array from form
+            // Backend expects: [{type: string, count: number}]
+            // Form has: [{roomType: string, number: string|number}]
+            const infrastructureArray: any[] = [];
+            if (formValue.infrastructure && Array.isArray(formValue.infrastructure)) {
+                formValue.infrastructure.forEach((infra: any) => {
+                    // Only include entries that have at least a type
+                    if (infra.roomType && infra.roomType.trim() !== '') {
+                        const count = infra.number ? (typeof infra.number === 'string' ? parseInt(infra.number, 10) : infra.number) : 0;
+                        infrastructureArray.push({
+                            type: infra.roomType.trim(),
+                            count: isNaN(count) ? 0 : count
+                        });
+                    }
+                });
+            }
+
             // Prepare API payload (exclude id, created_on, created_by as they cannot be updated per backend validation)
             // The id is passed in the URL path, not in the request body
             const branchData: any = {
@@ -745,13 +782,18 @@ export class EditBranchComponent implements OnInit {
                 region_id: formValue.regionId ? parseInt(formValue.regionId, 10) : null,
                 branch_code: formValue.branchCode || '',
                 updated_by: updatedBy,
-                updated_on: currentTimestamp
+                updated_on: currentTimestamp,
+                infrastructure: infrastructureArray // Include infrastructure array
             };
 
             // Explicitly remove id, created_on, and created_by if they exist (they shouldn't be in update payload)
             delete branchData.id;
             delete branchData.created_on;
             delete branchData.created_by;
+
+            // Log infrastructure for debugging
+            console.log('Infrastructure to be saved:', infrastructureArray);
+            console.log('Complete branch data payload:', branchData);
 
             // Update branch via API
             this.locationService.updateBranch(this.branchId, branchData).subscribe({

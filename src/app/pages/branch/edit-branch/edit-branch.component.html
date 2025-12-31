@@ -211,11 +211,9 @@
             <div *ngIf="infrastructure.length > 0" [formGroupName]="0" class="col-12">
               <div class="row g-2">
                 <div class="col-md-4">
-                  <select class="form-select" formControlName="roomType">
+                  <select class="form-select" formControlName="roomType" [disabled]="loadingInfrastructureTypes">
                     <option value="">Select Room Type</option>
-                    <option value="Hall">Hall</option>
-                    <option value="Office">Office</option>
-                    <option value="Store">Store</option>
+                    <option *ngFor="let type of infrastructureTypesList" [value]="type.name">{{type.name}}</option>
                   </select>
                 </div>
                 <div class="col-md-4">
@@ -235,11 +233,9 @@
               <div *ngIf="i > 0" [formGroupName]="i" class="col-12">
                 <div class="row g-2">
                   <div class="col-md-4">
-                    <select class="form-select" formControlName="roomType">
+                    <select class="form-select" formControlName="roomType" [disabled]="loadingInfrastructureTypes">
                       <option value="">Select Room Type</option>
-                      <option value="Hall">Hall</option>
-                      <option value="Office">Office</option>
-                      <option value="Store">Store</option>
+                      <option *ngFor="let type of infrastructureTypesList" [value]="type.name">{{type.name}}</option>
                     </select>
                   </div>
                   <div class="col-md-4">
@@ -270,7 +266,7 @@
   </div>
   <!-- Actions -->
   <div class="d-flex justify-content-end mb-5">
-    <button type="submit" class="btn btn-primary" [disabled]="branchForm.invalid || isSubmitting">
+    <button type="submit" class="btn btn-primary" [disabled]="isSubmitting || !branchId || loadingBranch">
       <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
       {{ isSubmitting ? 'Updating...' : 'Update Branch' }}
     </button>

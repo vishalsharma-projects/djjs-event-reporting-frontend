@@ -47,6 +47,13 @@ export interface Coordinator {
   [key: string]: any;
 }
 
+export interface InfrastructureType {
+  id: number;
+  name: string;
+  created_on?: string;
+  updated_on?: string;
+}
+
 /**
  * Branch response interface (from GET /api/branches)
  * Location fields are nested objects with id and name
@@ -277,6 +284,13 @@ export class LocationService {
    */
   getCoordinators(): Observable<Coordinator[]> {
     return this.http.get<Coordinator[]>(`${this.apiBaseUrl}/api/coordinators`);
+  }
+
+  /**
+   * Get all infrastructure types
+   */
+  getInfrastructureTypes(): Observable<InfrastructureType[]> {
+    return this.http.get<InfrastructureType[]>(`${this.apiBaseUrl}/api/infrastructure-types`);
   }
 
   /**

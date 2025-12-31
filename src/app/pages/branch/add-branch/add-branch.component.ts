@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core'
 import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms'
-import { LocationService, BranchPayload, Country, State, City, Coordinator } from 'src/app/core/services/location.service'
+import { LocationService, BranchPayload, Country, State, City, Coordinator, InfrastructureType } from 'src/app/core/services/location.service'
 import { TokenStorageService } from 'src/app/core/services/token-storage.service'
 import { Router } from '@angular/router'
 import { MessageService } from 'primeng/api'
@@ -24,12 +24,14 @@ export class AddBranchComponent implements OnInit {
     stateList: State[] = [];
     cityList: City[] = [];
     coordinatorsList: Coordinator[] = [];
+    infrastructureTypesList: InfrastructureType[] = [];
 
     // Loading states
     loadingCountries = false;
     loadingStates = false;
     loadingCities = false;
     loadingCoordinators = false;
+    loadingInfrastructureTypes = false;
 
     // Submitting state
     isSubmitting = false;
@@ -85,9 +87,10 @@ export class AddBranchComponent implements OnInit {
           { label: 'Add Branch', active: true }
         ];
 
-        // Load countries and coordinators on init
+        // Load countries, coordinators, and infrastructure types on init
         this.loadCountries();
         this.loadCoordinators();
+        this.loadInfrastructureTypes();
 
         // Listen for changes to reset dependent selects
         this.branchForm.get('country')?.valueChanges.subscribe(countryId => {
@@ -362,6 +365,23 @@ export class AddBranchComponent implements OnInit {
             error: (error) => {
                 console.error('Error loading coordinators:', error);
                 this.loadingCoordinators = false;
+            }
+        });
+    }
+
+    /**
+     * Load infrastructure types from API
+     */
+    loadInfrastructureTypes() {
+        this.loadingInfrastructureTypes = true;
+        this.locationService.getInfrastructureTypes().subscribe({
+            next: (types) => {
+                this.infrastructureTypesList = types;
+                this.loadingInfrastructureTypes = false;
+            },
+            error: (error) => {
+                console.error('Error loading infrastructure types:', error);
+                this.loadingInfrastructureTypes = false;
             }
         });
     }

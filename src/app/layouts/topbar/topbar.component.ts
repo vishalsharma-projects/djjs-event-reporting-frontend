@@ -132,6 +132,7 @@ export class TopbarComponent implements OnInit {
     for (let i = 0; i < segments.length; i++) {
       const segment = segments[i];
       const nextSegment = segments[i + 1];
+      const previousSegment = segments[i - 1];
       
       // Skip "branch" segment if we're going to "members" page
       if (segment === 'branch' && nextSegment === 'members') {
@@ -143,14 +144,24 @@ export class TopbarComponent implements OnInit {
       // Check if we're editing an event (segment is "edit" or "add" with ID parameter)
       let label = this.formatLabel(segment);
       if (segment === 'edit') {
-        label = 'Edit Event';
+        // Check the previous segment to determine context
+        if (previousSegment === 'branch' || previousSegment === 'child-branch') {
+          label = previousSegment === 'child-branch' ? 'Edit Child Branch' : 'Edit Branch';
+        } else {
+          label = 'Edit Event';
+        }
       } else if (segment === 'add') {
         // Check if there's an ID parameter in the route (backward compatibility)
         let route = this.activatedRoute.root;
         while (route.firstChild) {
           route = route.firstChild;
           if (route.snapshot.paramMap.has('id')) {
-            label = 'Edit Event';
+            // Check the previous segment to determine context
+            if (previousSegment === 'branch' || previousSegment === 'child-branch') {
+              label = previousSegment === 'child-branch' ? 'Edit Child Branch' : 'Edit Branch';
+            } else {
+              label = 'Edit Event';
+            }
             break;
           }
         }
