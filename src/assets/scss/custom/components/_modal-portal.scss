@@ -137,6 +137,26 @@
     }
   }
   
+  // Gallery preview modal - fit to content width
+  &.gallery-preview-modal-dialog {
+    width: fit-content !important;
+    max-width: min(95vw, 1200px) !important;
+    
+    @media (min-width: 992px) {
+      max-width: min(95vw, 1200px) !important;
+    }
+    
+    .modal-content {
+      width: fit-content;
+      max-width: 100%;
+    }
+    
+    .gallery-preview-modal {
+      width: fit-content;
+      max-width: 100%;
+    }
+  }
+  
   &.modal-xl {
     @media (min-width: 1200px) {
       max-width: 1140px;
@@ -182,6 +202,12 @@
   
   @media (max-width: 575.98px) {
     max-height: calc(100vh - 60px - 2rem); // Mobile: 60px navbar (different from desktop)
+  }
+  
+  // Gallery preview modal - allow content-based width
+  .gallery-preview-modal {
+    width: fit-content;
+    max-width: 100%;
   }
 }
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, ViewContainerRef, ChangeDetectorRef, OnDestroy, ElementRef, QueryList, ViewChildren, Injector } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewContainerRef, ChangeDetectorRef, OnDestroy, ElementRef, QueryList, ViewChildren, Injector, ComponentRef, ViewChild, TemplateRef } from '@angular/core';
 import { ModalPortalService, ModalInstance } from '../../../core/services/modal-portal.service';
 import { FocusManagerService } from '../../../core/services/focus-manager.service';
 import { Subject } from 'rxjs';
@@ -20,6 +20,8 @@ export class ModalPortalComponent implements OnInit, AfterViewInit, OnDestroy {
   private lastFocusedModalId: string | null = null;
   private focusTrapListener: ((event: KeyboardEvent) => void) | null = null;
   @ViewChildren('modalElement') modalElements!: QueryList<ElementRef<HTMLElement>>;
+  @ViewChildren('modalBody') modalBodies!: QueryList<ElementRef<HTMLElement>>;
+  private componentRefs = new Map<string, ComponentRef<any>>();
 
   constructor(
     private modalService: ModalPortalService,
@@ -123,15 +125,37 @@ export class ModalPortalComponent implements OnInit, AfterViewInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
         this.handleModalListChange();
+        // Create components for any modals that don't have components yet
+        this.activeModals.forEach(modal => {
+          if (modal.componentType && !this.componentRefs.has(modal.id)) {
+            setTimeout(() => {
+              this.createComponentForModal(modal);
+            }, 0);
+          }
+        });
       });
     
     // Initial check in case modals are already rendered
     if (this.modalElements.length > 0) {
       this.handleModalListChange();
+      // Create components for any modals that don't have components yet
+      this.activeModals.forEach(modal => {
+        if (modal.componentType && !this.componentRefs.has(modal.id)) {
+          setTimeout(() => {
+            this.createComponentForModal(modal);
+          }, 0);
+        }
+      });
     }
   }
 
   ngOnDestroy(): void {
+    // Destroy all component refs
+    this.componentRefs.forEach((ref, modalId) => {
+      ref.destroy();
+    });
+    this.componentRefs.clear();
+    
     this.cleanupFocusTrap();
     this.removeClickLogger();
     this.destroy$.next();
@@ -145,7 +169,26 @@ export class ModalPortalComponent implements OnInit, AfterViewInit, OnDestroy {
     const wasEmpty = this.activeModals.length === 0;
     const previousTopModalId = this.activeModals.length > 0 ? this.activeModals[this.activeModals.length - 1].id : null;
     
+    const previousModalIds = new Set(this.activeModals.map(m => m.id));
     this.activeModals = this.modalService.getModalsForRendering();
+    const currentModalIds = new Set(this.activeModals.map(m => m.id));
+    
+    // Destroy components for modals that were closed
+    previousModalIds.forEach(modalId => {
+      if (!currentModalIds.has(modalId)) {
+        this.destroyComponent(modalId);
+      }
+    });
+    
+    // Create components for new modals
+    this.activeModals.forEach(modal => {
+      if (!previousModalIds.has(modal.id) && modal.componentType) {
+        // New modal with component - will be created in ngAfterViewChecked or after view init
+        setTimeout(() => {
+          this.createComponentForModal(modal);
+        }, 0);
+      }
+    });
     
     // Store active element when first modal opens
     if (wasEmpty && this.activeModals.length > 0) {
@@ -169,6 +212,133 @@ export class ModalPortalComponent implements OnInit, AfterViewInit, OnDestroy {
       setTimeout(() => {
         this.setupFocusTrap();
       }, 0);
+    }
+  }
+  
+  /**
+   * Create component for a modal
+   */
+  private createComponentForModal(modal: ModalInstance): void {
+    if (!modal.componentType || this.componentRefs.has(modal.id)) {
+      return;
+    }
+    
+    // Find the modal body element for this modal
+    const modalElement = this.modalElements?.find(el => {
+      const modalId = el.nativeElement.getAttribute('data-modal-id');
+      return modalId === modal.id;
+    });
+    
+    if (!modalElement) {
+      console.warn(`Modal element not found for modal ${modal.id}`);
+      return;
+    }
+    
+    // Find the modal body container
+    const modalBody = modalElement.nativeElement.querySelector(`[data-modal-body="${modal.id}"]`) as HTMLElement;
+    if (!modalBody) {
+      console.warn(`Modal body container not found for modal ${modal.id}`);
+      return;
+    }
+    
+    // Create an injector with the modal data
+    const injector = this.getComponentInjector(modal);
+    
+    try {
+      // Create a container element in the modal body
+      // This ensures the component is properly attached to the DOM tree
+      const container = document.createElement('div');
+      container.style.width = '100%';
+      container.style.height = '100%';
+      modalBody.appendChild(container);
+      
+      // Create a ViewContainerRef from the container element
+      // We'll use the main viewContainerRef but attach to our container
+      const componentRef = this.viewContainerRef.createComponent(modal.componentType, {
+        injector: injector,
+        projectableNodes: []
+      });
+      
+      // Set inputs if data is provided
+      if (modal.config.data) {
+        Object.keys(modal.config.data).forEach(key => {
+          if (componentRef.instance && key in componentRef.instance) {
+            (componentRef.instance as any)[key] = modal.config.data[key];
+          }
+        });
+        
+        // Also set data input if component has it
+        if ('data' in componentRef.instance) {
+          (componentRef.instance as any).data = modal.config.data;
+        }
+      }
+      
+      // Get the component's host element
+      const hostElement = componentRef.location.nativeElement;
+      
+      // Move the component to our container
+      // The component is initially attached to viewContainerRef, we need to move it
+      if (hostElement.parentNode) {
+        hostElement.parentNode.removeChild(hostElement);
+      }
+      container.appendChild(hostElement);
+      
+      // Store component ref in modal instance and our map
+      modal.componentRef = componentRef;
+      this.componentRefs.set(modal.id, componentRef);
+      
+      // Ensure component is properly initialized
+      // The component's ngOnInit should have been called by Angular
+      // But we need to ensure change detection runs after moving the element
+      setTimeout(() => {
+        // Trigger change detection on the component
+        componentRef.changeDetectorRef.detectChanges();
+        
+        // Trigger change detection on the modal portal
+        this.cdr.detectChanges();
+        
+        // Verify component is visible and in the DOM
+        const isVisible = window.getComputedStyle(hostElement).display !== 'none';
+        const isInDOM = document.body.contains(hostElement) || modalBody.contains(hostElement);
+        
+        console.log(`Component created for modal ${modal.id}`, {
+          componentInstance: componentRef.instance,
+          hasInstance: !!componentRef.instance,
+          hostElement: hostElement,
+          hostElementTag: hostElement.tagName,
+          modalBody: modalBody,
+          isVisible: isVisible,
+          isInDOM: isInDOM,
+          componentDisplay: window.getComputedStyle(hostElement).display,
+          componentVisibility: window.getComputedStyle(hostElement).visibility,
+          componentWidth: window.getComputedStyle(hostElement).width,
+          componentHeight: window.getComputedStyle(hostElement).height,
+          parentElement: hostElement.parentElement?.tagName,
+          modalBodyChildren: modalBody.children.length
+        });
+        
+        // If component is not visible, try to force it
+        if (!isVisible || !isInDOM) {
+          console.warn(`Component for modal ${modal.id} may not be visible. Attempting to fix...`);
+          hostElement.style.display = 'block';
+          hostElement.style.visibility = 'visible';
+          componentRef.changeDetectorRef.detectChanges();
+        }
+      }, 100);
+    } catch (error) {
+      console.error(`Error creating component for modal ${modal.id}:`, error);
+    }
+  }
+  
+  /**
+   * Destroy component for a modal
+   */
+  private destroyComponent(modalId: string): void {
+    const componentRef = this.componentRefs.get(modalId);
+    if (componentRef) {
+      componentRef.destroy();
+      this.componentRefs.delete(modalId);
+      console.log(`Component destroyed for modal ${modalId}`);
     }
   }
 

@@ -491,13 +491,14 @@ export class GalleryComponent implements OnInit, OnDestroy {
         GalleryImagePreviewComponent,
         {
           id: modalId,
-          size: 'xl',
+          size: 'lg',
           centered: true,
           backdrop: true,
           keyboard: true,
           scrollable: false, // Body handles its own scrolling
           showCloseButton: false, // We have custom close in component
           closeOnBackdropClick: true,
+          class: 'gallery-preview-modal-dialog', // Add custom class for styling
           data: {
             // Pass primitive values instead of object references
             mediaId: item.id || undefined,
@@ -508,17 +509,30 @@ export class GalleryComponent implements OnInit, OnDestroy {
             item: item,
             onDownload: (item: GalleryItem) => this.downloadItem(item, new Event('click')),
             onDelete: (item: GalleryItem) => this.deleteItem(item, new Event('click')),
-            onClose: () => this.closePopup(),
-            onNavigate: (index: number) => this.navigateToItem(filteredItems, index)
+            onClose: () => this.closePopup()
           }
         }
       );
       console.log('Modal instance created:', this.previewModalInstance);
       
-      // Set activeIndex on component instance if available
-      if (this.previewModalInstance?.componentInstance) {
-        this.previewModalInstance.componentInstance.activeIndex = activeIndex;
-        this.previewModalInstance.componentInstance.currentIndex = activeIndex;
+      // Set inputs directly on component instance if available
+      if (this.previewModalInstance?.componentRef?.instance) {
+        const instance = this.previewModalInstance.componentRef.instance;
+        instance.data = {
+          mediaId: item.id || undefined,
+          items: filteredItems,
+          currentIndex: activeIndex,
+          activeIndex: activeIndex,
+          item: item,
+          onDownload: (item: GalleryItem) => this.downloadItem(item, new Event('click')),
+          onDelete: (item: GalleryItem) => this.deleteItem(item, new Event('click')),
+          onClose: () => this.closePopup()
+        };
+        instance.items = filteredItems;
+        instance.currentIndex = activeIndex;
+        instance.activeIndex = activeIndex;
+        instance.mediaId = item.id || undefined;
+        this.previewModalInstance.componentRef.changeDetectorRef.detectChanges();
       }
     } catch (error) {
       console.error('Error opening modal:', error);
@@ -572,28 +586,6 @@ export class GalleryComponent implements OnInit, OnDestroy {
     img.src = url;
   }
 
-  /**
-   * Navigate to a different item in the gallery
-   * Updates the existing modal instead of closing/reopening
-   */
-  navigateToItem(items: GalleryItem[], index: number): void {
-    if (index < 0 || index >= items.length) {
-      return;
-    }
-    
-    const newItem = items[index];
-    if (!newItem) {
-      return;
-    }
-    
-    // Update the selected item
-    this.selectedItem = newItem;
-    this.activePreviewId = newItem.id || null;
-    
-    // The preview component will handle loading the new item
-    // We don't need to reopen the modal - just update the data
-    // The component's navigateToItem method will handle it
-  }
 
   closePopup() {
     if (this.previewModalInstance) {

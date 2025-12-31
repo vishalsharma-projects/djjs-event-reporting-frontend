@@ -35,7 +35,6 @@ export class GalleryImagePreviewComponent implements OnInit, OnDestroy, OnChange
     onDownload?: (item: GalleryItem) => void; 
     onDelete?: (item: GalleryItem) => void; 
     onClose?: () => void;
-    onNavigate?: (index: number) => void;
   };
   
   // Display state
@@ -73,39 +72,28 @@ export class GalleryImagePreviewComponent implements OnInit, OnDestroy, OnChange
   }
 
   ngOnInit(): void {
-    // TEMPORARY: Add click logger for debugging
-    const clickLogger = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const computed = window.getComputedStyle(target);
-      console.log('🔍 CLICK TARGET:', {
-        tag: target.tagName,
-        class: target.className,
-        id: target.id,
-        pointerEvents: computed.pointerEvents,
-        zIndex: computed.zIndex,
-        position: computed.position,
-        isButton: target.tagName === 'BUTTON' || target.closest('button'),
-        closestModal: target.closest('.modal'),
-        closestBackdrop: target.closest('.modal-backdrop'),
-        closestContent: target.closest('.modal-content')
-      });
-    };
-    document.addEventListener('click', clickLogger, true);
-    
-    // Store logger for cleanup
-    (this as any)._clickLogger = clickLogger;
-    
-    // Initialize from data input or injector (backward compatibility)
+    // Initialize from @Input() properties (set directly by modal portal)
+    // Also support injector pattern for backward compatibility
     const data = this.data || this.modalData;
+    
     if (data) {
-      if (data.items) {
+      console.log('GalleryImagePreviewComponent: Initializing with data:', {
+        hasItems: !!data.items,
+        itemsLength: data.items?.length,
+        currentIndex: data.currentIndex,
+        activeIndex: data.activeIndex,
+        mediaId: data.mediaId,
+        hasItem: !!data.item
+      });
+      
+      if (data.items && Array.isArray(data.items)) {
         this.items = data.items;
       }
-      if (data.currentIndex !== undefined) {
+      if (data.currentIndex !== undefined && data.currentIndex !== null) {
         this.currentIndex = data.currentIndex;
         this.activeIndex = data.currentIndex; // Set activeIndex from currentIndex
       }
-      if (data.activeIndex !== undefined) {
+      if (data.activeIndex !== undefined && data.activeIndex !== null) {
         this.activeIndex = data.activeIndex;
         this.currentIndex = data.activeIndex; // Sync currentIndex with activeIndex
       }
@@ -122,12 +110,23 @@ export class GalleryImagePreviewComponent implements OnInit, OnDestroy, OnChange
       }
     }
     
+    // Also check if inputs were set directly (from modal portal createComponent)
+    if (this.items && this.items.length > 0 && !this.item && this.activeIndex >= 0 && this.activeIndex < this.items.length) {
+      this.item = this.items[this.activeIndex];
+      if (this.item.id && !this.mediaId) {
+        this.mediaId = this.item.id;
+      }
+    }
+    
     // Ensure activeIndex is always valid (0 if items exist, otherwise 0)
     if (this.items && this.items.length > 0) {
+      // Validate and fix activeIndex
       if (this.activeIndex < 0 || this.activeIndex >= this.items.length) {
+        console.warn(`Invalid activeIndex ${this.activeIndex}, resetting to 0. Items length: ${this.items.length}`);
         this.activeIndex = 0;
         this.currentIndex = 0;
       }
+      
       // Ensure item is set from items array if not already set
       if (!this.item && this.items[this.activeIndex]) {
         this.item = this.items[this.activeIndex];
@@ -135,25 +134,66 @@ export class GalleryImagePreviewComponent implements OnInit, OnDestroy, OnChange
           this.mediaId = this.item.id;
         }
       }
+      
       // If item is set but doesn't match activeIndex, update to match
       if (this.item && this.items[this.activeIndex] && this.item.id !== this.items[this.activeIndex].id) {
+        console.log(`Item ID mismatch. Updating item from index ${this.activeIndex}`);
         this.item = this.items[this.activeIndex];
         if (this.item.id && !this.mediaId) {
           this.mediaId = this.item.id;
         }
       }
+      
+      // If we have mediaId but no item, try to find it in items array
+      if (this.mediaId && !this.item) {
+        const foundItem = this.items.find(i => i.id === this.mediaId);
+        if (foundItem) {
+          this.item = foundItem;
+          const foundIndex = this.items.findIndex(i => i.id === this.mediaId);
+          if (foundIndex >= 0) {
+            this.activeIndex = foundIndex;
+            this.currentIndex = foundIndex;
+          }
+        }
+      }
+    } else {
+      console.warn('GalleryImagePreviewComponent: No items provided or items array is empty');
+      if (this.item && this.item.id) {
+        // If we have an item but no items array, use the item directly
+        this.mediaId = this.item.id;
+      }
     }
+    
+    console.log('GalleryImagePreviewComponent: Initialized state:', {
+      itemsLength: this.items?.length || 0,
+      activeIndex: this.activeIndex,
+      currentIndex: this.currentIndex,
+      mediaId: this.mediaId,
+      itemId: this.item?.id,
+      itemType: this.item?.type
+    });
     
     // Start loading if we have a mediaId
     if (this.mediaId) {
-      // Use setTimeout to ensure component is fully initialized
-      setTimeout(() => {
-        this.mediaId$.next(this.mediaId!);
-      }, 100); // Increased delay to avoid race conditions
+      // If item already has a URL, use it directly (faster)
+      if (this.item && this.item.url && this.item.type === 'image') {
+        console.log(`Using item URL directly for mediaId ${this.mediaId}`);
+        this.imageUrl = this.item.url;
+        this.imageLoading = false;
+        // Cache the URL
+        this.urlCache.set(this.mediaId, {
+          url: this.item.url,
+          expiresAt: Date.now() + this.CACHE_DURATION_MS
+        });
+      } else {
+        // Use setTimeout to ensure component is fully initialized
+        setTimeout(() => {
+          this.mediaId$.next(this.mediaId!);
+        }, 100); // Increased delay to avoid race conditions
+      }
+    } else {
+      console.warn('GalleryImagePreviewComponent: No mediaId available to load');
     }
-    
-    // Preload adjacent images
-    this.preloadAdjacentImages();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -253,6 +293,8 @@ export class GalleryImagePreviewComponent implements OnInit, OnDestroy, OnChange
         
         // Check if item already has a valid presigned URL
         if (item.url && this.isPresignedUrl(item.url)) {
+          console.log(`Using item URL directly for mediaId ${mediaId}:`, item.url.substring(0, 100) + '...');
+          
           // Cache it
           this.urlCache.set(mediaId, {
             url: item.url,
@@ -261,12 +303,15 @@ export class GalleryImagePreviewComponent implements OnInit, OnDestroy, OnChange
           
           // Guard: Don't reload if URL is same as last loaded
           if (item.url === this.lastLoadedUrl && this.imageUrl === item.url) {
+            console.log(`URL already loaded for mediaId ${mediaId}, skipping`);
             this.imageLoading = false;
             return EMPTY;
           }
           
           this.lastLoadedUrl = item.url;
           return of(item.url);
+        } else if (item.url) {
+          console.warn(`Item has URL but it's not a valid presigned URL for mediaId ${mediaId}:`, item.url.substring(0, 100));
         }
         
         // Need to fetch presigned URL
@@ -328,8 +373,11 @@ export class GalleryImagePreviewComponent implements OnInit, OnDestroy, OnChange
       // The template's (load) event will handle completion
       tap((url: string) => {
         if (!url) {
+          console.warn('Image URL is empty, cannot load image');
           return;
         }
+        
+        console.log(`Setting imageUrl for mediaId ${this.mediaId}:`, url.substring(0, 100) + '...');
         
         // Set the URL - browser will load it
         this.imageUrl = url;
@@ -340,7 +388,7 @@ export class GalleryImagePreviewComponent implements OnInit, OnDestroy, OnChange
         }
         this.currentImageLoadTimeout = setTimeout(() => {
           if (this.imageLoading) {
-            console.warn('Image loading timeout after 30s');
+            console.warn('Image loading timeout after 30s for mediaId:', this.mediaId);
             this.imageError = true;
             this.imageLoading = false;
             this.errorMessage = 'Image loading timed out';
@@ -380,9 +428,14 @@ export class GalleryImagePreviewComponent implements OnInit, OnDestroy, OnChange
       return false;
     }
     // Presigned URLs contain signature parameters
-    if (url.includes('.amazonaws.com/') && !url.includes('X-Amz-') && !url.includes('Signature=')) {
-      return false;
+    // Check for AWS presigned URL signatures (X-Amz-* parameters or Signature=)
+    if (url.includes('.amazonaws.com/')) {
+      // AWS S3 presigned URLs must have signature parameters
+      if (!url.includes('X-Amz-') && !url.includes('Signature=') && !url.includes('AWSAccessKeyId=')) {
+        return false;
+      }
     }
+    // For non-AWS URLs, assume they're valid if they're HTTP/HTTPS
     return true;
   }
 
@@ -415,12 +468,6 @@ export class GalleryImagePreviewComponent implements OnInit, OnDestroy, OnChange
   }
 
   ngOnDestroy(): void {
-    // Remove click logger
-    if ((this as any)._clickLogger) {
-      document.removeEventListener('click', (this as any)._clickLogger, true);
-      delete (this as any)._clickLogger;
-    }
-    
     // Clean up keyboard listener
     this.removeKeyboardNavigation();
     
@@ -450,11 +497,7 @@ export class GalleryImagePreviewComponent implements OnInit, OnDestroy, OnChange
   
   setupKeyboardNavigation(): void {
     this.keyboardHandler = (event: KeyboardEvent) => {
-      if (event.key === 'ArrowLeft') {
-        this.navigatePrevious();
-      } else if (event.key === 'ArrowRight') {
-        this.navigateNext();
-      } else if (event.key === 'Escape') {
+      if (event.key === 'Escape') {
         this.handleClose(new Event('keydown'));
       }
     };
@@ -467,28 +510,6 @@ export class GalleryImagePreviewComponent implements OnInit, OnDestroy, OnChange
     }
   }
 
-  /**
-   * Preload adjacent images for faster navigation
-   */
-  preloadAdjacentImages(): void {
-    if (this.items.length === 0) return;
-    
-    // Preload next image
-    const nextIndex = (this.currentIndex + 1) % this.items.length;
-    const nextItem = this.items[nextIndex];
-    if (nextItem && nextItem.type === 'image' && nextItem.url) {
-      const img = new Image();
-      img.src = nextItem.url;
-    }
-    
-    // Preload previous image
-    const prevIndex = this.currentIndex - 1 >= 0 ? this.currentIndex - 1 : this.items.length - 1;
-    const prevItem = this.items[prevIndex];
-    if (prevItem && prevItem.type === 'image' && prevItem.url) {
-      const img = new Image();
-      img.src = prevItem.url;
-    }
-  }
 
   onImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
@@ -579,66 +600,4 @@ export class GalleryImagePreviewComponent implements OnInit, OnDestroy, OnChange
     return filename.substring(0, maxLength - 3) + '...';
   }
 
-  /**
-   * Navigate to next item
-   */
-  navigateNext(): void {
-    if (this.items.length === 0) return;
-    const nextIndex = (this.currentIndex + 1) % this.items.length;
-    this.navigateToItem(nextIndex);
-  }
-
-  /**
-   * Navigate to previous item
-   */
-  navigatePrevious(): void {
-    if (this.items.length === 0) return;
-    const prevIndex = this.currentIndex - 1 >= 0 ? this.currentIndex - 1 : this.items.length - 1;
-    this.navigateToItem(prevIndex);
-  }
-
-  /**
-   * Navigate to specific item index
-   */
-  navigateToItem(index: number): void {
-    if (index < 0 || index >= this.items.length) {
-      return;
-    }
-    
-    const newItem = this.items[index];
-    if (!newItem) {
-      return;
-    }
-    
-    // Update current index and activeIndex
-    this.currentIndex = index;
-    this.activeIndex = index; // Ensure activeIndex is synced
-    this.item = newItem;
-    
-    // Trigger load if mediaId changed
-    if (newItem.id && newItem.id !== this.mediaId) {
-      this.mediaId = newItem.id;
-      this.mediaId$.next(newItem.id);
-    }
-    
-    // Preload adjacent images for faster navigation
-    this.preloadAdjacentImages();
-    
-    // Also call the parent's navigate handler if provided
-    const data = this.data || this.modalData;
-    if (data?.onNavigate) {
-      data.onNavigate(index);
-    }
-  }
-
-  /**
-   * Check if navigation is available
-   */
-  get hasNext(): boolean {
-    return this.items.length > 1;
-  }
-
-  get hasPrevious(): boolean {
-    return this.items.length > 1;
-  }
 }

@@ -49,13 +49,12 @@
           <!-- Body -->
           <div 
             class="modal-body"
-            [class.modal-body-scrollable]="modal.config.scrollable !== false">
+            [class.modal-body-scrollable]="modal.config.scrollable !== false"
+            [attr.data-modal-body]="modal.id">
             <ng-container *ngIf="modal.templateRef">
               <ng-container *ngTemplateOutlet="modal.templateRef"></ng-container>
             </ng-container>
-            <ng-container *ngIf="modal.componentType">
-              <ng-container [ngComponentOutlet]="modal.componentType" [ngComponentOutletInjector]="getComponentInjector(modal)"></ng-container>
-            </ng-container>
+            <!-- Component will be created dynamically via ViewContainerRef.createComponent -->
           </div>
 
           <!-- Footer -->

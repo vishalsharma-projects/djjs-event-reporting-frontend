@@ -1,14 +1,31 @@
 .gallery-preview-modal {
   display: flex;
   flex-direction: column;
-  width: 100%;
-  height: 100%;
-  max-width: min(95vw, 1100px);
-  max-height: 90vh;
+  width: fit-content; // Fit to content width
+  min-width: 300px; // Minimum width for header
+  max-width: min(95vw, 1200px); // Maximum width constraint
+  height: auto; // Auto height to fit content
+  max-height: 90vh; // Maximum height constraint
   background: white;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0px 8px 32px rgba(0, 0, 0, 0.5);
+  margin: auto; // Center the modal
+}
+
+// Override modal-dialog width for gallery preview
+:host-context(.modal-dialog) {
+  .gallery-preview-modal {
+    width: fit-content;
+  }
+}
+
+// Target the modal-content that contains this component
+:host-context(.modal-content) {
+  .gallery-preview-modal {
+    width: fit-content;
+    max-width: 100%;
+  }
 }
 
 .gallery-preview-header {
@@ -52,14 +69,15 @@
 }
 
 .gallery-preview-body {
-  flex: 1 1 auto;
+  flex: 0 1 auto; // Changed from 1 1 auto to allow content-based sizing
   overflow: auto;
   min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  background: #f5f5f5;
+  background: transparent; // Removed background color
+  width: 100%; // Full width of modal
   
   // Smooth scrolling
   -webkit-overflow-scrolling: touch;
@@ -88,54 +106,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
+  width: fit-content; // Fit to image width
+  max-width: 100%; // Don't exceed parent
   min-height: 40vh;
   max-height: calc(90vh - 120px);
-  overflow: auto;
+  overflow: hidden;
   position: relative;
+  padding: 0;
+  margin: 0;
+  background: transparent; // No background
 }
 
-// Navigation Buttons
-.gallery-nav-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 10;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.6);
-  border: 2px solid rgba(255, 255, 255, 0.8);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 1.5rem;
-  
-  &:hover {
-    background: rgba(0, 0, 0, 0.8);
-    border-color: #ff6b35;
-    transform: translateY(-50%) scale(1.1);
-  }
-  
-  &:active {
-    transform: translateY(-50%) scale(0.95);
-  }
-  
-  i {
-    font-size: 1.5rem;
-  }
-}
-
-.gallery-nav-prev {
-  left: 1rem;
-}
-
-.gallery-nav-next {
-  right: 1rem;
-}
 
 // Loading state
 .gallery-preview-loading {
@@ -168,8 +149,8 @@
 }
 
 .gallery-preview-image {
-  max-width: 100%;
-  max-height: 75vh;
+  max-width: calc(95vw - 4rem); // Account for modal padding and margins
+  max-height: calc(90vh - 150px); // Account for header and padding
   width: auto;
   height: auto;
   object-fit: contain;
@@ -179,6 +160,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   background: white;
   padding: 5px;
+  position: relative;
 }
 
 // Video Preview Container
