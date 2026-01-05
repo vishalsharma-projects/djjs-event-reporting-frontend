@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, Input } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
-import { UserService } from 'src/app/core/services/branch-assistance.service'; // Adjust path
+import { UserService } from 'src/app/core/services/branch-assistance.service';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
+import { MessageService } from 'primeng/api';
 
 interface Role {
   id: number;
@@ -13,19 +14,25 @@ interface Role {
 @Component({
   selector: 'app-add-branch-assistance',
   templateUrl: './add-branch-assistance.component.html',
-  styleUrls: ['./add-branch-assistance.component.css']
+  styleUrls: ['./add-branch-assistance.component.scss']
 })
 export class AddBranchAssistanceComponent implements OnInit {
+
+  @Input() isVisible: boolean = false;
+  @Output() userCreated = new EventEmitter<void>();
+  @Output() closeModalEvent = new EventEmitter<void>();
 
   userForm: FormGroup;
   roles: Role[] = [];
   errorMessage: string = '';
   successMessage: string = '';
+  submitting: boolean = false;
 
   constructor(
     private fb: FormBuilder,
     private userService: UserService,
-    private http: HttpClient
+    private http: HttpClient,
+    private messageService: MessageService
   ) { }
 
   ngOnInit(): void {
@@ -47,11 +54,21 @@ export class AddBranchAssistanceComponent implements OnInit {
       return null;
     };
 
+    // Custom validator for password strength
+    const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+    const passwordValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+      if (control.value && !passwordPattern.test(control.value)) {
+        return { pattern: true };
+      }
+      return null;
+    };
+
     this.userForm = this.fb.group({
       name: ['', [Validators.required, nameValidator]],
       email: ['', [Validators.required, Validators.email]],
       contact_number: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(13), contactValidator]],
-      role_id: ['', [Validators.required]]
+      role_id: ['', [Validators.required]],
+      password: ['', [Validators.required, Validators.minLength(8), passwordValidator]]
     });
 
     // Fetch roles for dropdown
@@ -71,32 +88,62 @@ export class AddBranchAssistanceComponent implements OnInit {
     );
   }
 
+  openModal(): void {
+    this.resetForm();
+    this.isVisible = true;
+    document.body.classList.add('modal-open');
+  }
+
+  closeModal(): void {
+    this.isVisible = false;
+    document.body.classList.remove('modal-open');
+    this.resetForm();
+    this.closeModalEvent.emit();
+  }
+
+  resetForm(): void {
+    this.userForm.reset();
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.submitting = false;
+    this.userForm.markAsUntouched();
+  }
+
   onSubmit(): void {
     if (this.userForm.valid) {
       this.errorMessage = '';
       this.successMessage = '';
+      this.submitting = true;
 
       // Transform form data to match backend expectations
       const userData = {
         name: this.userForm.value.name,
         email: this.userForm.value.email,
         contact_number: this.userForm.value.contact_number,
-        role_id: Number(this.userForm.value.role_id) // Ensure it's a number
+        role_id: Number(this.userForm.value.role_id),
+        password: this.userForm.value.password
       };
 
-      console.log('Sending user data:', userData);
-
-      this.userService.createUser(userData).subscribe(
-        (response) => {
-          console.log('User created successfully!', response);
-          this.successMessage = `User created successfully! Password: ${response.password || 'N/A'}`;
-          // Reset form after successful creation
-          this.userForm.reset();
+      this.userService.createUser(userData).subscribe({
+        next: (response) => {
+          this.submitting = false;
+          this.successMessage = 'User created successfully!';
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'User created successfully!',
+            life: 3000
+          });
+          
+          // Reset form and emit event
+          setTimeout(() => {
+            this.userForm.reset();
+            this.userCreated.emit();
+            this.closeModal();
+          }, 1500);
         },
-        (error) => {
-          console.error('Error creating user - Full error object:', error);
-          console.error('Error status:', error.status);
-          console.error('Error error:', error.error);
+        error: (error) => {
+          this.submitting = false;
           
           // Extract error message from response
           if (error.error) {
@@ -105,17 +152,24 @@ export class AddBranchAssistanceComponent implements OnInit {
             } else if (typeof error.error === 'string') {
               this.errorMessage = error.error;
             } else {
-              this.errorMessage = `Error: ${JSON.stringify(error.error)}`;
+              this.errorMessage = 'Failed to create user. Please try again.';
             }
           } else if (error.message) {
             this.errorMessage = error.message;
           } else {
-            this.errorMessage = `Failed to create user. Status: ${error.status || 'Unknown'}`;
+            this.errorMessage = 'Failed to create user. Please try again.';
           }
+
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: this.errorMessage,
+            life: 5000
+          });
         }
-      );
+      });
     } else {
-      this.userForm.markAllAsTouched();  // Mark all fields as touched to show validation errors
+      this.userForm.markAllAsTouched();
     }
   }
 }

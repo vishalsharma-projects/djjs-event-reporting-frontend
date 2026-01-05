@@ -1,8 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { UserService } from 'src/app/core/services/branch-assistance.service';
 import { MessageService } from 'primeng/api';
 import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
+import { AddBranchAssistanceComponent } from '../add-branch-assistance/add-branch-assistance.component';
+import { EditBranchAssistanceComponent } from '../edit-branch-assistance/edit-branch-assistance.component';
 
 @Component({
   selector: 'app-list-branch-assistance',
@@ -10,6 +12,9 @@ import { ConfirmationDialogService } from 'src/app/core/services/confirmation-di
   styleUrls: ['./list-branch-assistance.component.scss']
 })
 export class ListBranchAssistanceComponent implements OnInit {
+
+  @ViewChild(AddBranchAssistanceComponent) addUserComponent?: AddBranchAssistanceComponent;
+  @ViewChild(EditBranchAssistanceComponent) editUserComponent?: EditBranchAssistanceComponent;
 
   users: any[] = []; // Paginated users to display
   allUsersData: any[] = []; // Store all users for pagination
@@ -114,10 +119,8 @@ ngOnInit(): void {
 
   // Update paginated users based on current page
   updatePaginatedUsers() {
-    const sourceData = this.hasActiveFilters() ? this.filteredUsersData : this.allUsersData;
-    const start = this.first;
-    const end = start + this.rows;
-    this.users = sourceData.slice(start, end);
+    // PrimeNG handles pagination automatically, so we just need to set the full array
+    this.users = this.hasActiveFilters() ? this.filteredUsersData : this.allUsersData;
   }
 
   // Check if there are active filters
@@ -130,13 +133,21 @@ ngOnInit(): void {
     return this.hasActiveFilters() ? this.filteredUsersData.length : this.allUsersData.length;
   }
 
-  // Add a new user
+  // Add a new user - open modal
   addUser() {
-    this.router.navigate(['/branch/branchAssistance/add']);
+    if (this.addUserComponent) {
+      this.addUserComponent.openModal();
+    }
   }
 
-  // Edit a user
-  editUser(userId: string) {
+  // Handle user created event
+  onUserCreated() {
+    // Refresh the user list
+    this.fetchUsers();
+  }
+
+  // Edit a user - open modal
+  editUser(userId: string | number) {
     if (!userId) {
       this.messageService.add({
         severity: 'warn',
@@ -146,7 +157,16 @@ ngOnInit(): void {
       });
       return;
     }
-    this.router.navigate(['/branch/branchAssistance/edit', userId]);
+    const userIdNumber = typeof userId === 'string' ? parseInt(userId, 10) : userId;
+    if (this.editUserComponent) {
+      this.editUserComponent.openModal(userIdNumber);
+    }
+  }
+
+  // Handle user updated event
+  onUserUpdated() {
+    // Refresh the user list
+    this.fetchUsers();
   }
 
   // Delete a user
@@ -223,7 +243,7 @@ ngOnInit(): void {
   onPageChange(event: any) {
     this.first = event.first;
     this.rows = event.rows || this.rows; // Keep current rows if not provided
-    this.updatePaginatedUsers();
+    // PrimeNG handles pagination automatically, no need to manually slice
   }
 
   // Sorting

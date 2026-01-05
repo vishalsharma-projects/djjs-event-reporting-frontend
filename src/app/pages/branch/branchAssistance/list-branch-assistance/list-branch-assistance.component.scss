@@ -111,20 +111,71 @@
 }
 
 
-/* Pagination styling */
+/* Pagination styling - PrimeNG with orange theme */
 ::ng-deep .p-paginator {
   justify-content: flex-end;
   padding: 10px;
+  background-color: #fff;
+  border: none;
+  border-top: 1px solid #dee2e6;
 
   .p-paginator-pages .p-paginator-page {
     min-width: 32px;
     height: 32px;
     border-radius: 4px;
+    margin: 0 2px;
+    transition: all 0.2s ease;
   }
 
   .p-paginator-pages .p-paginator-page.p-highlight {
     background-color: #ff6b35;
     color: #fff;
+    border-color: #ff6b35;
+  }
+
+  .p-paginator-pages .p-paginator-page:not(.p-highlight):hover {
+    background-color: rgba(255, 107, 53, 0.1);
+    border-color: #ff6b35;
+    color: #ff6b35;
+  }
+
+  .p-paginator-first,
+  .p-paginator-prev,
+  .p-paginator-next,
+  .p-paginator-last {
+    min-width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    margin: 0 2px;
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+      background-color: rgba(255, 107, 53, 0.1);
+      border-color: #ff6b35;
+      color: #ff6b35;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  .p-paginator-rpp-options {
+    margin-left: 10px;
+    
+    .p-dropdown {
+      border-color: #ced4da;
+      
+      &:hover {
+        border-color: #ff6b35;
+      }
+      
+      &:focus {
+        border-color: #ff6b35;
+        box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25);
+      }
+    }
   }
 }
 

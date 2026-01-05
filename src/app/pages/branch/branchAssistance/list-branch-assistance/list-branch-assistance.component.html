@@ -4,7 +4,7 @@
       <h4 class="mb-0">Users</h4>
       <div class="page-title-right">
         <button class="btn btn-primary" (click)="addUser()">
-          <i class="fas fa-plus me-2"></i>Add User
+          <i class="mdi mdi-account-plus me-2"></i>Add User
         </button>
       </div>
     </div>
@@ -39,7 +39,9 @@
         <div class="scroll-table-wrapper">
           <p-table [value]="users" [rowHover]="true" [globalFilterFields]="['email', 'name', 'role.name']"
             (onSort)="onSort($event)" [sortMode]="'multiple'"
-            [tableStyle]="{ 'min-width': '100%' }" [loading]="loading" [scrollable]="true" [scrollHeight]="'100%'">
+            [tableStyle]="{ 'min-width': '100%' }" [loading]="loading" [scrollable]="true" [scrollHeight]="'100%'"
+            [paginator]="true" [rows]="rows" [first]="first" [rowsPerPageOptions]="rowsPerPageOptions"
+            (onPageChange)="onPageChange($event)" [totalRecords]="getTotalRecords()">
 
           <!-- Table Header -->
           <ng-template pTemplate="header">
@@ -96,15 +98,13 @@
           </p-table>
         </div>
 
-        <!-- Custom Pagination Component -->
-        <app-pagination
-          [first]="first"
-          [rows]="rows"
-          [totalRecords]="getTotalRecords()"
-          (pageChange)="onPageChange($event)">
-        </app-pagination>
-
       </div>
     </div>
   </div>
 </div>
+
+<!-- Add User Modal -->
+<app-add-branch-assistance (userCreated)="onUserCreated()"></app-add-branch-assistance>
+
+<!-- Edit User Modal -->
+<app-edit-branch-assistance (userUpdated)="onUserUpdated()"></app-edit-branch-assistance>

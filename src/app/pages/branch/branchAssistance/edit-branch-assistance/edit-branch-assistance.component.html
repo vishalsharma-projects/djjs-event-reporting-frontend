@@ -1,82 +1,222 @@
-<div class="row">
-  <div class="col-12">
-    <div class="page-title-box d-flex align-items-center justify-content-between">
-      <h4 class="mb-0">Update User</h4>
-    </div>
-  </div>
-</div>
+<!-- Modal -->
+<div class="modal fade" [class.show]="isVisible" [style.display]="isVisible ? 'flex' : 'none'" 
+     id="editUserModal" tabindex="-1" role="dialog" aria-labelledby="editUserModalLabel" 
+     [attr.aria-hidden]="!isVisible">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editUserModalLabel">
+          <i class="mdi mdi-account-edit me-2"></i>Edit User
+        </h5>
+        <button type="button" class="btn-close" (click)="closeModal()" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Success Message -->
+        <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+          <i class="mdi mdi-check-circle me-2"></i>{{ successMessage }}
+          <button type="button" class="btn-close" (click)="successMessage = ''" aria-label="Close"></button>
+        </div>
 
-<div class="row">
-  <div class="col-12">
-    <div class="card">
-      <div class="card-body">
-        <form [formGroup]="updateUserForm" (ngSubmit)="onSubmit()">
+        <!-- Error Message -->
+        <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+          <i class="mdi mdi-alert-circle me-2"></i>{{ errorMessage }}
+          <button type="button" class="btn-close" (click)="errorMessage = ''" aria-label="Close"></button>
+        </div>
 
+        <!-- Loading Indicator -->
+        <div *ngIf="loading" class="text-center py-4">
+          <div class="spinner-border text-success" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-2 text-muted">Loading user data...</p>
+        </div>
+
+        <form [formGroup]="updateUserForm" (ngSubmit)="onSubmit()" autocomplete="off" *ngIf="!loading">
           <div class="row mb-3">
-            <!-- Username Field -->
-            <div class="col-md-4">
-              <label for="Username" class="form-label">Username</label>
+            <!-- Name Field -->
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
               <input 
                 type="text" 
                 class="form-control" 
-                formControlName="Username" 
-                placeholder="Enter Username" 
+                id="name"
+                formControlName="name" 
+                placeholder="Enter full name" 
+                [ngClass]="{'is-invalid': updateUserForm.get('name')?.touched && updateUserForm.get('name')?.invalid}"
                 required 
               />
-              <!-- Error Message for Username -->
-              <div *ngIf="updateUserForm.get('Username')?.touched && updateUserForm.get('Username')?.invalid" class="text-danger">
-                <small *ngIf="updateUserForm.get('Username')?.hasError('required')">Username is required.</small>
+                <div *ngIf="updateUserForm.get('name')?.touched && updateUserForm.get('name')?.invalid" class="invalid-feedback">
+                  <div *ngIf="updateUserForm.get('name')?.hasError('required')">Name is required.</div>
+                  <div *ngIf="updateUserForm.get('name')?.hasError('numericNotAllowed')">Name cannot contain numeric characters.</div>
+                  <div *ngIf="updateUserForm.get('name')?.hasError('minlength')">Name must be at least 2 characters.</div>
+                </div>
               </div>
             </div>
 
-            <!-- Contact Number Field -->
-            <div class="col-md-4">
-              <label for="Contact_Number" class="form-label">Contact Number</label>
+            <!-- Email Field -->
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
               <input 
-                type="number" 
+                type="email" 
                 class="form-control" 
-                formControlName="Contact_Number" 
-                placeholder="Enter Contact Number" 
+                id="email"
+                formControlName="email" 
+                placeholder="Enter email address" 
+                [ngClass]="{'is-invalid': updateUserForm.get('email')?.touched && updateUserForm.get('email')?.invalid}"
                 required 
               />
-              <!-- Error Message for Contact Number -->
-              <div *ngIf="updateUserForm.get('Contact_Number')?.touched && updateUserForm.get('Contact_Number')?.invalid" class="text-danger">
-                <small *ngIf="updateUserForm.get('Contact_Number')?.hasError('required')">Contact Number is required.</small>
+                <div *ngIf="updateUserForm.get('email')?.touched && updateUserForm.get('email')?.invalid" class="invalid-feedback">
+                  <div *ngIf="updateUserForm.get('email')?.hasError('required')">Email is required.</div>
+                  <div *ngIf="updateUserForm.get('email')?.hasError('email')">Please enter a valid email address.</div>
+                </div>
               </div>
             </div>
-
           </div>
 
           <div class="row mb-3">
-            <!-- Password Field -->
-            <div class="col-md-4">
-              <label for="Password" class="form-label">Password</label>
+            <!-- Contact Number Field -->
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="contact_number" class="form-label">Contact Number <span class="text-danger">*</span></label>
               <input 
-                type="password" 
+                type="tel" 
                 class="form-control" 
-                formControlName="Password" 
-                placeholder="Enter Password" 
+                id="contact_number"
+                formControlName="contact_number" 
+                placeholder="Enter contact number" 
+                [ngClass]="{'is-invalid': updateUserForm.get('contact_number')?.touched && updateUserForm.get('contact_number')?.invalid}"
                 required 
               />
-              <!-- Error Message for Password -->
-              <div *ngIf="updateUserForm.get('Password')?.touched && updateUserForm.get('Password')?.invalid" class="text-danger">
-                <small *ngIf="updateUserForm.get('Password')?.hasError('required')">Password is required.</small>
-                <small *ngIf="updateUserForm.get('Password')?.hasError('minlength')">Password must be at least 6 characters long.</small>
+              <small class="form-text text-muted">Format: 10 digits or +91XXXXXXXXXX</small>
+                <div *ngIf="updateUserForm.get('contact_number')?.touched && updateUserForm.get('contact_number')?.invalid" class="invalid-feedback">
+                  <div *ngIf="updateUserForm.get('contact_number')?.hasError('required')">Contact number is required.</div>
+                  <div *ngIf="updateUserForm.get('contact_number')?.hasError('minlength')">Contact number must be at least 10 digits.</div>
+                  <div *ngIf="updateUserForm.get('contact_number')?.hasError('maxlength')">Contact number cannot exceed 13 characters.</div>
+                  <div *ngIf="updateUserForm.get('contact_number')?.hasError('invalidFormat')">Invalid format. Use 10 digits or +91XXXXXXXXXX.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Role Field (Read-only for display) -->
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="role_display" class="form-label">Role</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="role_display"
+                [value]="userRoleName || 'N/A'"
+                readonly
+                disabled
+                style="background-color: #e9ecef;"
+              />
+                <small class="form-text text-muted">Role cannot be changed from here</small>
               </div>
             </div>
           </div>
 
-          <!-- Submit Button -->
-          <div class="row">
-            <div class="col-md-12 mt-2">
-              <button type="submit" class="btn btn-primary" [disabled]="updateUserForm.invalid">
-                Update User
-              </button>
+          <!-- Password Update Section -->
+          <div class="row mb-3">
+            <div class="col-12">
+              <div class="card border-primary" style="background-color: #f8f9fa;">
+                <div class="card-body">
+                  <h6 class="card-title mb-3">
+                    <i class="mdi mdi-lock-reset me-2"></i>Update Password
+                  </h6>
+                  
+                  <div class="row">
+                    <!-- Old Password -->
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label for="old_password" class="form-label">Current Password <span class="text-danger">*</span></label>
+                        <input 
+                          type="password" 
+                          class="form-control" 
+                          id="old_password"
+                          formControlName="old_password" 
+                          placeholder="Enter current password" 
+                          [ngClass]="{'is-invalid': updateUserForm.get('old_password')?.touched && updateUserForm.get('old_password')?.invalid}"
+                        />
+                        <div *ngIf="updateUserForm.get('old_password')?.touched && updateUserForm.hasError('passwordFieldsIncomplete')" class="invalid-feedback">
+                          <div>All password fields are required to change password.</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- New Password -->
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label for="new_password" class="form-label">New Password <span class="text-danger">*</span></label>
+                        <input 
+                          type="password" 
+                          class="form-control" 
+                          id="new_password"
+                          formControlName="new_password" 
+                          placeholder="Enter new password" 
+                          [ngClass]="{'is-invalid': updateUserForm.get('new_password')?.touched && updateUserForm.get('new_password')?.invalid}"
+                        />
+                        <small class="form-text text-muted">
+                          Must be at least 8 characters with uppercase, lowercase, number, and special character
+                        </small>
+                        <div *ngIf="updateUserForm.get('new_password')?.touched && (updateUserForm.get('new_password')?.invalid || updateUserForm.hasError('passwordWeak'))" class="invalid-feedback">
+                          <div *ngIf="updateUserForm.get('new_password')?.hasError('pattern') || updateUserForm.hasError('passwordWeak')">Password must contain uppercase, lowercase, number, and special character.</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <!-- Confirm Password -->
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label for="confirm_password" class="form-label">Confirm New Password <span class="text-danger">*</span></label>
+                        <input 
+                          type="password" 
+                          class="form-control" 
+                          id="confirm_password"
+                          formControlName="confirm_password" 
+                          placeholder="Confirm new password" 
+                          [ngClass]="{'is-invalid': updateUserForm.get('confirm_password')?.touched && (updateUserForm.get('confirm_password')?.invalid || updateUserForm.hasError('passwordMismatch'))}"
+                        />
+                        <div *ngIf="updateUserForm.get('confirm_password')?.touched && (updateUserForm.get('confirm_password')?.invalid || updateUserForm.hasError('passwordMismatch'))" class="invalid-feedback">
+                          <div *ngIf="updateUserForm.get('confirm_password')?.hasError('required')">Please confirm the new password.</div>
+                          <div *ngIf="updateUserForm.hasError('passwordMismatch')">Passwords do not match.</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="alert alert-info mb-0">
+                    <small>
+                      <i class="mdi mdi-information-outline me-1"></i>
+                      <strong>Note:</strong> Leave password fields empty if you don't want to change the password. Only fill them if you want to update the password.
+                    </small>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-
         </form>
+      </div>
+      <div class="modal-footer" *ngIf="!loading">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">
+          <i class="mdi mdi-close me-1"></i>Cancel
+        </button>
+        <button type="button" class="btn btn-primary" (click)="onSubmit()" [disabled]="updateUserForm.invalid || submitting">
+          <i class="mdi mdi-content-save me-1"></i>
+          <span *ngIf="!submitting">Update User</span>
+          <span *ngIf="submitting">
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            Updating...
+          </span>
+        </button>
       </div>
     </div>
   </div>
 </div>
+
+<!-- Modal Backdrop -->
+<div *ngIf="isVisible" class="modal-backdrop fade show" (click)="closeModal()"></div>
+

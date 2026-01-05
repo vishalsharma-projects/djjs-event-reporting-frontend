@@ -165,6 +165,29 @@
                   </div>
                 }
               </div>
+              @if(!createContactForm.get('id')?.value) {
+                <div class="mb-3">
+                  <label for="password-input" class="form-label">Password <span class="text-danger">*</span></label>
+                  <input type="password" id="password-input" class="form-control" placeholder="Enter password" formControlName="password" 
+                    [ngClass]="{'is-invalid': submitted && createContactForm.get('password')?.errors}" required />
+                  <small class="form-text text-muted">
+                    Must be at least 8 characters with uppercase, lowercase, number, and special character
+                  </small>
+                  @if(submitted && createContactForm.get('password')?.errors) {
+                    <div class="invalid-feedback">
+                      @if(createContactForm.get('password')?.errors?.['required']) {
+                        <span>Password is required.</span>
+                      }
+                      @if(createContactForm.get('password')?.errors?.['minlength']) {
+                        <span>Password must be at least 8 characters.</span>
+                      }
+                      @if(createContactForm.get('password')?.errors?.['pattern']) {
+                        <span>Password must contain uppercase, lowercase, number, and special character.</span>
+                      }
+                    </div>
+                  }
+                </div>
+              }
             </div>
 
             <div class="col-lg-12">

@@ -522,6 +522,28 @@ export class AuthenticationService {
   }
 
   /**
+   * Change password for the currently authenticated user
+   * @param currentPassword Current password
+   * @param newPassword New password (must meet strength requirements)
+   */
+  changePassword(currentPassword: string, newPassword: string): Observable<{ message: string }> {
+    const headers = this.getAuthHeaders();
+    return this.http.post<{ message: string }>(
+      `${this.apiUrl}/api/auth/change-password`,
+      {
+        currentPassword,
+        newPassword
+      },
+      { headers }
+    ).pipe(
+      catchError(error => {
+        console.error('[AuthService] Change password failed:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
    * Get current user from store or memory
    */
   getCurrentUser(): Observable<User | null> {

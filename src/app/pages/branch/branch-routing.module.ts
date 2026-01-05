@@ -2,8 +2,6 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { BranchListComponent } from './branch-list/branch-list.component';
 import { ListBranchAssistanceComponent } from './branchAssistance/list-branch-assistance/list-branch-assistance.component';
-import { AddBranchAssistanceComponent } from './branchAssistance/add-branch-assistance/add-branch-assistance.component';
-import { EditBranchAssistanceComponent } from './branchAssistance/edit-branch-assistance/edit-branch-assistance.component';
 import { AddBranchComponent } from './add-branch/add-branch.component';
 import { EditBranchComponent } from './edit-branch/edit-branch.component';
 import { ViewBranchComponent } from './view-branch/view-branch.component';
@@ -117,22 +115,6 @@ const routes: Routes = [
       permission: { resource: ResourceType.BRANCHES, action: ActionType.READ }
     }
   },
-  { 
-    path: "branchAssistance/add", 
-    component: AddBranchAssistanceComponent,
-    canActivate: [AuthGuard, PermissionGuard],
-    data: {
-      permission: { resource: ResourceType.BRANCHES, action: ActionType.CREATE }
-    }
-  },
-  { 
-    path: "branchAssistance/edit/:id", 
-    component: EditBranchAssistanceComponent,
-    canActivate: [AuthGuard, PermissionGuard],
-    data: {
-      permission: { resource: ResourceType.BRANCHES, action: ActionType.UPDATE }
-    }
-  }
 ];
 
 @NgModule({

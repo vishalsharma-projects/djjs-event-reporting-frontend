@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { Observable } from 'rxjs';
 import { BsModalService, BsModalRef, ModalDirective } from 'ngx-bootstrap/modal';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 
 import { Store } from '@ngrx/store';
 import { adduserlist, deleteuserlist, fetchuserlistData, updateuserlist } from 'src/app/store/UserList/userlist.action';
@@ -63,12 +63,22 @@ export class UserlistComponent implements OnInit {
       document.getElementById('elmLoader')?.classList.add('d-none');
     });
 
+    // Password validator
+    const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+    const passwordValidator = (control: AbstractControl): ValidationErrors | null => {
+      if (control.value && !passwordPattern.test(control.value)) {
+        return { pattern: true };
+      }
+      return null;
+    };
+
     this.createContactForm = this.formBuilder.group({
       id: [''],
       name: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
       contact_number: [''],
       role_id: ['', [Validators.required]],
+      password: ['', [Validators.required, Validators.minLength(8), passwordValidator]]
     });
   }
 
@@ -104,7 +114,8 @@ export class UserlistComponent implements OnInit {
           name: formValue.name,
           email: formValue.email,
           contact_number: formValue.contact_number || '',
-          role_id: Number(formValue.role_id)
+          role_id: Number(formValue.role_id),
+          password: formValue.password // Include password for new users
         };
         this.store.dispatch(adduserlist({ newData }));
       }

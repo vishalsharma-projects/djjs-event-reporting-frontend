@@ -1,120 +1,160 @@
-<div class="row">
-  <div class="col-12">
-    <div class="page-title-box d-flex align-items-center justify-content-between">
-      <h4 class="mb-0">Add User</h4>
-    </div>
-  </div>
-</div>
-
-<div class="row">
-  <div class="col-12">
-    <div class="card">
-      <div class="card-body">
+<!-- Modal -->
+<div class="modal fade" [class.show]="isVisible" [style.display]="isVisible ? 'flex' : 'none'" 
+     id="addUserModal" tabindex="-1" role="dialog" aria-labelledby="addUserModalLabel" 
+     [attr.aria-hidden]="!isVisible">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addUserModalLabel">
+          <i class="mdi mdi-account-plus me-2"></i>Add New User
+        </h5>
+        <button type="button" class="btn-close" (click)="closeModal()" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
         <!-- Success Message -->
         <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
-          {{ successMessage }}
+          <i class="mdi mdi-check-circle me-2"></i>{{ successMessage }}
           <button type="button" class="btn-close" (click)="successMessage = ''" aria-label="Close"></button>
         </div>
 
         <!-- Error Message -->
         <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
-          {{ errorMessage }}
+          <i class="mdi mdi-alert-circle me-2"></i>{{ errorMessage }}
           <button type="button" class="btn-close" (click)="errorMessage = ''" aria-label="Close"></button>
         </div>
 
-        <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
+        <form [formGroup]="userForm" (ngSubmit)="onSubmit()" autocomplete="off">
 
           <div class="row mb-3">
             <!-- Name Field -->
-            <div class="col-md-4">
-              <label for="name" class="form-label">Name</label>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
               <input 
                 type="text" 
                 class="form-control" 
+                id="name"
                 formControlName="name" 
-                placeholder="Enter Name" 
+                placeholder="Enter full name" 
+                [ngClass]="{'is-invalid': userForm.get('name')?.touched && userForm.get('name')?.invalid}"
                 required 
-                pattern="[a-zA-Z\s]*"
-                title="Name cannot contain numbers"
               />
-              <!-- Error Message for Name -->
-              <div *ngIf="userForm.get('name')?.touched && userForm.get('name')?.invalid" class="text-danger">
-                <small *ngIf="userForm.get('name')?.hasError('required')">Name is required.</small>
-                <small *ngIf="userForm.get('name')?.hasError('numericNotAllowed')">Name cannot contain numeric characters.</small>
+                <div *ngIf="userForm.get('name')?.touched && userForm.get('name')?.invalid" class="invalid-feedback">
+                  <div *ngIf="userForm.get('name')?.hasError('required')">Name is required.</div>
+                  <div *ngIf="userForm.get('name')?.hasError('numericNotAllowed')">Name cannot contain numeric characters.</div>
+                </div>
               </div>
             </div>
 
             <!-- Email Field -->
-            <div class="col-md-4">
-              <label for="email" class="form-label">Email</label>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
               <input 
                 type="email" 
                 class="form-control" 
+                id="email"
                 formControlName="email" 
-                placeholder="Enter Email" 
+                placeholder="Enter email address" 
+                [ngClass]="{'is-invalid': userForm.get('email')?.touched && userForm.get('email')?.invalid}"
                 required 
               />
-              <!-- Error Message for Email -->
-              <div *ngIf="userForm.get('email')?.touched && userForm.get('email')?.invalid" class="text-danger">
-                <small *ngIf="userForm.get('email')?.hasError('required')">Email is required.</small>
-                <small *ngIf="userForm.get('email')?.hasError('email')">Please enter a valid email.</small>
-              </div>
-            </div>
-
-            <!-- Contact Number Field -->
-            <div class="col-md-4">
-              <label for="contact_number" class="form-label">Contact Number</label>
-              <input 
-                type="tel" 
-                class="form-control" 
-                formControlName="contact_number" 
-                placeholder="Enter Contact Number (10 digits or +91XXXXXXXXXX)" 
-                required 
-                minlength="10"
-                maxlength="13"
-                pattern="(\+91[0-9]{10}|[0-9]{10})"
-                title="Enter 10 digits or +91 followed by 10 digits"
-              />
-              <small class="form-text text-muted">Format: 10 digits (e.g., 9876543210) or +91XXXXXXXXXX</small>
-              <!-- Error Message for Contact Number -->
-              <div *ngIf="userForm.get('contact_number')?.touched && userForm.get('contact_number')?.invalid" class="text-danger">
-                <small *ngIf="userForm.get('contact_number')?.hasError('required')">Contact Number is required.</small>
-                <small *ngIf="userForm.get('contact_number')?.hasError('minlength')">Contact Number must be at least 10 digits.</small>
-                <small *ngIf="userForm.get('contact_number')?.hasError('maxlength')">Contact Number cannot exceed 13 characters.</small>
-                <small *ngIf="userForm.get('contact_number')?.hasError('invalidFormat')">Invalid format. Use 10 digits or +91XXXXXXXXXX.</small>
+                <div *ngIf="userForm.get('email')?.touched && userForm.get('email')?.invalid" class="invalid-feedback">
+                  <div *ngIf="userForm.get('email')?.hasError('required')">Email is required.</div>
+                  <div *ngIf="userForm.get('email')?.hasError('email')">Please enter a valid email address.</div>
+                </div>
               </div>
             </div>
           </div>
 
           <div class="row mb-3">
+            <!-- Contact Number Field -->
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="contact_number" class="form-label">Contact Number <span class="text-danger">*</span></label>
+              <input 
+                type="tel" 
+                class="form-control" 
+                id="contact_number"
+                formControlName="contact_number" 
+                placeholder="Enter contact number" 
+                [ngClass]="{'is-invalid': userForm.get('contact_number')?.touched && userForm.get('contact_number')?.invalid}"
+                required 
+              />
+              <small class="form-text text-muted">Format: 10 digits or +91XXXXXXXXXX</small>
+                <div *ngIf="userForm.get('contact_number')?.touched && userForm.get('contact_number')?.invalid" class="invalid-feedback">
+                  <div *ngIf="userForm.get('contact_number')?.hasError('required')">Contact number is required.</div>
+                  <div *ngIf="userForm.get('contact_number')?.hasError('minlength')">Contact number must be at least 10 digits.</div>
+                  <div *ngIf="userForm.get('contact_number')?.hasError('maxlength')">Contact number cannot exceed 13 characters.</div>
+                  <div *ngIf="userForm.get('contact_number')?.hasError('invalidFormat')">Invalid format. Use 10 digits or +91XXXXXXXXXX.</div>
+                </div>
+              </div>
+            </div>
+
             <!-- Role Field -->
-            <div class="col-md-4">
-              <label for="role_id" class="form-label">Role</label>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="role_id" class="form-label">Role <span class="text-danger">*</span></label>
               <select 
                 class="form-select" 
+                id="role_id"
                 formControlName="role_id" 
+                [ngClass]="{'is-invalid': userForm.get('role_id')?.touched && userForm.get('role_id')?.invalid}"
                 required
               >
-                <option value="">Select a Role</option>
+                <option value="">Select a role</option>
                 <option *ngFor="let role of roles" [value]="role.id">{{ role.name }}</option>
               </select>
-              <!-- Error Message for Role -->
-              <div *ngIf="userForm.get('role_id')?.touched && userForm.get('role_id')?.invalid" class="text-danger">
-                <small *ngIf="userForm.get('role_id')?.hasError('required')">Role is required.</small>
+                <div *ngIf="userForm.get('role_id')?.touched && userForm.get('role_id')?.invalid" class="invalid-feedback">
+                  <div>Role is required.</div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="row">
-            <div class="col-md-12 mt-2">
-              <button type="submit" class="btn btn-primary" [disabled]="userForm.invalid">
-                Create User
-              </button>
+          <div class="row mb-3">
+            <!-- Password Field -->
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
+              <input 
+                type="password" 
+                class="form-control" 
+                id="password"
+                formControlName="password" 
+                placeholder="Enter password" 
+                [ngClass]="{'is-invalid': userForm.get('password')?.touched && userForm.get('password')?.invalid}"
+                required 
+              />
+              <small class="form-text text-muted">
+                Must be at least 8 characters with uppercase, lowercase, number, and special character
+              </small>
+                <div *ngIf="userForm.get('password')?.touched && userForm.get('password')?.invalid" class="invalid-feedback">
+                  <div *ngIf="userForm.get('password')?.hasError('required')">Password is required.</div>
+                  <div *ngIf="userForm.get('password')?.hasError('minlength')">Password must be at least 8 characters.</div>
+                  <div *ngIf="userForm.get('password')?.hasError('pattern')">Password must contain uppercase, lowercase, number, and special character.</div>
+                </div>
+              </div>
             </div>
           </div>
-
         </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">
+          <i class="mdi mdi-close me-1"></i>Cancel
+        </button>
+        <button type="button" class="btn btn-primary" (click)="onSubmit()" [disabled]="userForm.invalid || submitting">
+          <i class="mdi mdi-content-save me-1"></i>
+          <span *ngIf="!submitting">Create User</span>
+          <span *ngIf="submitting">
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            Creating...
+          </span>
+        </button>
       </div>
     </div>
   </div>
 </div>
+
+<!-- Modal Backdrop -->
+<div *ngIf="isVisible" class="modal-backdrop fade show" (click)="closeModal()"></div>

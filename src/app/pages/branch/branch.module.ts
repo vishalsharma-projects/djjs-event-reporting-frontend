@@ -5,6 +5,7 @@ import { NgStepperModule } from 'angular-ng-stepper';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { BsDatepickerModule } from 'ngx-bootstrap/datepicker';
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
+import { ModalModule } from 'ngx-bootstrap/modal';
 import { DropzoneModule, DROPZONE_CONFIG, DropzoneConfigInterface } from 'ngx-dropzone-wrapper';
 
 // PrimeNG Modules
@@ -73,6 +74,7 @@ const DEFAULT_DROPZONE_CONFIG: DropzoneConfigInterface = {
     NgSelectModule,
     BsDatepickerModule.forRoot(),
     BsDropdownModule.forRoot(),
+    ModalModule.forRoot(),
     DropzoneModule,
     // PrimeNG Modules
     TableModule,
