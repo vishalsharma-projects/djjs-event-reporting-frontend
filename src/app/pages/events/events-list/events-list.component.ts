@@ -505,8 +505,16 @@ export class EventsListComponent implements OnInit, AfterViewChecked, OnDestroy 
 
   // Utility methods for the template
   getEventTypeDisplay(event: EventData): string {
-    return `${event.eventType}(${event.scale})`;
-  }
+  const short = this.extractParenPart(event.scale); // "(M)"
+  return `${event.eventType}${short}`;
+}
+
+private extractParenPart(scale: string): string {
+  // If scale is "Medium (M)" -> returns "(M)"
+  const match = scale?.match(/\([^)]*\)/);
+  return match ? match[0] : ''; // fallback: show nothing if no "(...)"
+}
+
 
   getSeverity(scale: string): string {
     switch (scale) {

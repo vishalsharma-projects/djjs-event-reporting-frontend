@@ -73,7 +73,7 @@
             <th style="width: 10%">Status</th>
             <th style="width: 12%" [class.pinned-column]="isColumnPinned('eventType')">
               <div class="d-flex align-items-center sortable-area" pSortableColumn="eventType">
-                <span>Event Type (Scale)</span>
+                <span>Type (S)</span>
                 <p-sortIcon field="eventType"></p-sortIcon>
               </div>
               <!-- Filter input inside column header -->
@@ -455,7 +455,7 @@
         <ng-template pTemplate="body" let-event>
           <tr>
             <td>
-              <div class="d-flex align-items-center gap-2">
+              <div class="d-flex align-items-center ">
                 <div class="action-menu-container" (click)="$event.stopPropagation()">
                   <button
                     class="btn btn-link p-0 action-menu-btn"
