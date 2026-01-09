@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { EventApiService, EventDetails } from 'src/app/core/services/event-api.service';
 import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
+import { UserPreferencesService } from 'src/app/core/services/user-preferences.service';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
@@ -128,6 +129,9 @@ export class EventsListComponent implements OnInit, AfterViewChecked, OnDestroy 
   // Column pinning
   pinnedColumns: string[] = [];
 
+  // Column visibility
+  hiddenColumns: string[] = [];
+
   // Additional filtering methods
   activeFilter: string | null = null;
 
@@ -169,13 +173,16 @@ export class EventsListComponent implements OnInit, AfterViewChecked, OnDestroy 
     private messageService: MessageService,
     private eventApiService: EventApiService,
     private confirmationDialog: ConfirmationDialogService,
+    private userPreferencesService: UserPreferencesService,
     private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
+    this.recomputePinLeft();
     this.loadEvents();
     this.initializeFilters();
     this.setupSearchDebounce();
+    this.loadColumnPreferences();
   }
 
   ngOnDestroy(): void {
@@ -242,6 +249,68 @@ export class EventsListComponent implements OnInit, AfterViewChecked, OnDestroy 
       }
     });
   }
+  columnOrder: string[] = [
+  'eventType', 'name', 'duration', 'timing', 'state', 'city', 'branch',
+  'spiritualOrator', 'language', 'beneficiaries', 'initiation', 'specialGuests', 'volunteers'
+];
+
+  // Column display names mapping
+  columnDisplayNames: Record<string, string> = {
+    'eventType': 'Type (S)',
+    'name': 'Name',
+    'duration': 'Duration',
+    'timing': 'Timing',
+    'state': 'State',
+    'city': 'City',
+    'branch': 'Branch',
+    'spiritualOrator': 'Orator',
+    'language': 'Language',
+    'beneficiaries': 'Beneficiaries',
+    'initiation': 'Initiation',
+    'specialGuests': 'Special Guests',
+    'volunteers': 'Volunteers'
+  };
+
+  // Column visibility manager
+  isColumnVisibilityMenuOpen: boolean = false;
+
+columnWidths: Record<string, number> = {
+  eventType: 160,
+  name: 180,
+  duration: 160,
+  timing: 140,
+  state: 140,
+  city: 140,
+  branch: 160,
+  spiritualOrator: 180,
+  language: 140,
+  beneficiaries: 140,
+  initiation: 140,
+  specialGuests: 160,
+  volunteers: 140
+};
+
+pinLeft: Record<string, number> = {};
+
+private recomputePinLeft(): void {
+  let left = 0;
+  const map: Record<string, number> = {};
+
+  for (const field of this.columnOrder) {
+    if (this.isColumnPinned(field)) {
+      map[field] = left;
+      left += this.columnWidths[field] ?? 140;
+    }
+  }
+
+  this.pinLeft = map;
+}
+
+getPinnedStyle(field: string): Record<string, string> {
+  if (!this.isColumnPinned(field)) return {};
+  return { '--pin-left': `${this.pinLeft[field] ?? 0}px` };
+}
+
 
   /**
    * Update status filter and reload events
@@ -437,9 +506,10 @@ export class EventsListComponent implements OnInit, AfterViewChecked, OnDestroy 
     const target = event.target as HTMLElement;
 
     // Close dropdowns if clicking outside
-    if (!target.closest('.dropdown-container') && !target.closest('.action-menu-container')) {
+    if (!target.closest('.dropdown-container') && !target.closest('.action-menu-container') && !target.closest('.column-visibility-manager')) {
       this.closeDropdown();
       this.closeActionMenu();
+      this.closeColumnVisibilityMenu();
     }
 
     // Close filters if clicking outside
@@ -461,14 +531,113 @@ export class EventsListComponent implements OnInit, AfterViewChecked, OnDestroy 
     } else {
       this.pinnedColumns.push(column);
     }
-    // Close dropdown after pinning/unpinning
+
+    // Create a new array reference to trigger change detection
+    this.pinnedColumns = [...this.pinnedColumns];
+    this.recomputePinLeft();
     this.closeDropdown();
-    // Also close any active filter
     this.activeFilter = null;
+    
+    // Save preferences to backend
+    this.saveColumnPreferences();
+    
+    // Force change detection to update the view
+    this.cdr.detectChanges();
   }
 
   isColumnPinned(column: string): boolean {
     return this.pinnedColumns.includes(column);
+  }
+
+  // Column visibility methods
+  toggleColumnVisibility(column: string): void {
+    const index = this.hiddenColumns.indexOf(column);
+    if (index > -1) {
+      this.hiddenColumns.splice(index, 1);
+    } else {
+      this.hiddenColumns.push(column);
+    }
+
+    // Create a new array reference to trigger change detection
+    this.hiddenColumns = [...this.hiddenColumns];
+    this.closeDropdown();
+    this.activeFilter = null;
+    
+    // Save preferences to backend
+    this.saveColumnPreferences();
+    
+    // Force change detection to update the view
+    this.cdr.detectChanges();
+  }
+
+  isColumnHidden(column: string): boolean {
+    return this.hiddenColumns.includes(column);
+  }
+
+  // Column visibility manager methods
+  toggleColumnVisibilityMenu(): void {
+    this.isColumnVisibilityMenuOpen = !this.isColumnVisibilityMenuOpen;
+    this.closeDropdown(); // Close any other open dropdowns
+  }
+
+  closeColumnVisibilityMenu(): void {
+    this.isColumnVisibilityMenuOpen = false;
+  }
+
+  getColumnDisplayName(column: string): string {
+    return this.columnDisplayNames[column] || column;
+  }
+
+  getAllColumns(): string[] {
+    return this.columnOrder;
+  }
+
+  showAllColumns(): void {
+    this.hiddenColumns = [];
+    this.hiddenColumns = [...this.hiddenColumns];
+    this.closeColumnVisibilityMenu();
+    this.saveColumnPreferences();
+    this.cdr.detectChanges();
+  }
+
+  // Load column preferences from backend
+  private loadColumnPreferences(): void {
+    this.userPreferencesService.getEventsListColumnPreferences().subscribe({
+      next: (preferences) => {
+        if (preferences) {
+          if (preferences.hidden_columns && preferences.hidden_columns.length > 0) {
+            this.hiddenColumns = [...preferences.hidden_columns];
+          }
+          if (preferences.pinned_columns && preferences.pinned_columns.length > 0) {
+            this.pinnedColumns = [...preferences.pinned_columns];
+            this.recomputePinLeft();
+          }
+          this.cdr.detectChanges();
+        }
+      },
+      error: (error) => {
+        console.error('Error loading column preferences:', error);
+        // Silently fail - use defaults
+      }
+    });
+  }
+
+  // Save column preferences to backend
+  private saveColumnPreferences(): void {
+    const preferences = {
+      hidden_columns: this.hiddenColumns,
+      pinned_columns: this.pinnedColumns
+    };
+
+    this.userPreferencesService.saveEventsListColumnPreferences(preferences).subscribe({
+      next: () => {
+        // Preferences saved successfully
+      },
+      error: (error) => {
+        console.error('Error saving column preferences:', error);
+        // Silently fail - preferences will be lost on refresh but won't break the UI
+      }
+    });
   }
 
   // Update paginated events - with PrimeNG pagination, we pass full dataset

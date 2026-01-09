@@ -12,6 +12,46 @@
           </h4>
         </div>
         <div class="col-md-6 text-end">
+          <div class="column-visibility-manager" (click)="$event.stopPropagation()">
+            <button class="btn btn-outline-info me-2" 
+                    (click)="toggleColumnVisibilityMenu()"
+                    [class.active]="isColumnVisibilityMenuOpen">
+              <i class="pi pi-th-large me-1"></i>
+              Columns
+              <span *ngIf="hiddenColumns.length > 0" class="badge bg-warning text-dark ms-1">
+                {{ hiddenColumns.length }}
+              </span>
+            </button>
+            <div class="column-visibility-dropdown" [class.show]="isColumnVisibilityMenuOpen">
+              <div class="dropdown-header">
+                <h6 class="mb-0">Column Visibility</h6>
+                <button class="btn btn-sm btn-link p-0" (click)="closeColumnVisibilityMenu()">
+                  <i class="pi pi-times"></i>
+                </button>
+              </div>
+              <div class="dropdown-body">
+                <div *ngFor="let column of getAllColumns()" class="column-visibility-item">
+                  <label class="d-flex align-items-center">
+                    <input type="checkbox" 
+                           [checked]="!isColumnHidden(column)"
+                           (change)="toggleColumnVisibility(column)"
+                           class="me-2">
+                    <span>{{ getColumnDisplayName(column) }}</span>
+                    <span *ngIf="isColumnPinned(column)" class="badge bg-warning text-dark ms-2" style="font-size: 0.65rem;">
+                      <i class="pi pi-thumbtack"></i> Pinned
+                    </span>
+                  </label>
+                </div>
+              </div>
+              <div class="dropdown-footer">
+                <button class="btn btn-sm btn-outline-secondary w-100" 
+                        (click)="showAllColumns()"
+                        [disabled]="hiddenColumns.length === 0">
+                  Show All
+                </button>
+              </div>
+            </div>
+          </div>
           <button class="btn btn-outline-secondary me-2"
                   (click)="statusFilter = 'incomplete'; onStatusFilterChange()"
                   [class.active]="statusFilter === 'incomplete'">
@@ -71,13 +111,16 @@
         <ng-template pTemplate="header">
           <tr>
             <th style="width: 10%">Status</th>
-            <th style="width: 12%" [class.pinned-column]="isColumnPinned('eventType')">
+
+            <th *ngIf="!isColumnHidden('eventType')" style="width: 12%"
+                [class.pinned-column]="isColumnPinned('eventType')"
+                [ngStyle]="getPinnedStyle('eventType')">              
               <div class="d-flex align-items-center sortable-area" pSortableColumn="eventType">
                 <span>Type (S)</span>
                 <p-sortIcon field="eventType"></p-sortIcon>
               </div>
               <!-- Filter input inside column header -->
-              <div *ngIf="activeFilter === 'eventType'" class="mt-2">
+              <div *ngIf="activeFilter === 'eventType'" class="mt-2 filter-overlay" (click)="$event.stopPropagation()">
                 <input type="text" pInputText class="form-control form-control-sm" placeholder="Filter Event Type"
                   [(ngModel)]="filters['eventType']" (input)="applyFilter()" />
                 <button class="btn btn-sm btn-link p-0 ms-1" (click)="clearFilter('eventType')">
@@ -85,7 +128,10 @@
                 </button>
               </div>
             </th>
-            <th style="width: 12%" [class.pinned-column]="isColumnPinned('name')">
+
+            <th *ngIf="!isColumnHidden('name')" style="width: 12%"
+                [class.pinned-column]="isColumnPinned('name')"
+                [ngStyle]="getPinnedStyle('name')">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="name">
                   <span>Name</span>
@@ -99,15 +145,19 @@
                     <a class="dropdown-item" href="#" (click)="showFilter('name'); $event.preventDefault()">
                       <i class="pi pi-filter me-2"></i>Filter
                     </a>
-                    <a class="dropdown-item" href="#" (click)="toggleColumnPin('name'); $event.preventDefault()">
+                    <a class="dropdown-item" href="#" (click)="toggleColumnPin('name'); $event.preventDefault(); $event.stopPropagation()">
                       <i class="pi pi-thumbtack me-2" [class.text-warning]="isColumnPinned('name')"></i>
                       {{ isColumnPinned('name') ? 'Unpin' : 'Pin' }}
+                    </a>
+                    <a class="dropdown-item" href="#" (click)="toggleColumnVisibility('name'); $event.preventDefault(); $event.stopPropagation()">
+                      <i class="pi pi-eye me-2" [class.text-muted]="isColumnHidden('name')"></i>
+                      {{ isColumnHidden('name') ? 'Show' : 'Hide' }}
                     </a>
                   </div>
                 </div>
               </div>
               <!-- Filter input inside column header -->
-              <div *ngIf="activeFilter === 'name'" class="mt-2">
+              <div *ngIf="activeFilter === 'name'" class="mt-2 filter-overlay" (click)="$event.stopPropagation()">
                 <input type="text" pInputText class="form-control form-control-sm" placeholder="Filter Name"
                   [(ngModel)]="filters['name']" (input)="applyFilter()" />
                 <button class="btn btn-sm btn-link p-0 ms-1" (click)="clearFilter('name')">
@@ -115,7 +165,10 @@
                 </button>
               </div>
             </th>
-            <th style="width: 10%" [class.pinned-column]="isColumnPinned('duration')">
+
+            <th *ngIf="!isColumnHidden('duration')" style="width: 10%"
+                [class.pinned-column]="isColumnPinned('duration')"
+                [ngStyle]="getPinnedStyle('duration')">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="duration">
                   <span>Duration</span>
@@ -129,15 +182,19 @@
                     <a class="dropdown-item" href="#" (click)="showFilter('duration'); $event.preventDefault()">
                       <i class="pi pi-filter me-2"></i>Filter
                     </a>
-                    <a class="dropdown-item" href="#" (click)="toggleColumnPin('duration'); $event.preventDefault()">
+                    <a class="dropdown-item" href="#" (click)="toggleColumnPin('duration'); $event.preventDefault(); $event.stopPropagation()">
                       <i class="pi pi-thumbtack me-2" [class.text-warning]="isColumnPinned('duration')"></i>
                       {{ isColumnPinned('duration') ? 'Unpin' : 'Pin' }}
+                    </a>
+                    <a class="dropdown-item" href="#" (click)="toggleColumnVisibility('duration'); $event.preventDefault(); $event.stopPropagation()">
+                      <i class="pi pi-eye me-2" [class.text-muted]="isColumnHidden('duration')"></i>
+                      {{ isColumnHidden('duration') ? 'Show' : 'Hide' }}
                     </a>
                   </div>
                 </div>
               </div>
               <!-- Filter input inside column header -->
-              <div *ngIf="activeFilter === 'duration'" class="mt-2">
+              <div *ngIf="activeFilter === 'duration'" class="mt-2 filter-overlay" (click)="$event.stopPropagation()">
                 <input type="text" pInputText class="form-control form-control-sm" placeholder="Filter Duration"
                   [(ngModel)]="filters['duration']" (input)="applyFilter()" />
                 <button class="btn btn-sm btn-link p-0 ms-1" (click)="clearFilter('duration')">
@@ -145,7 +202,10 @@
                 </button>
               </div>
             </th>
-            <th style="width: 8%" [class.pinned-column]="isColumnPinned('timing')">
+
+            <th *ngIf="!isColumnHidden('timing')" style="width: 8%"
+                [class.pinned-column]="isColumnPinned('timing')"
+                [ngStyle]="getPinnedStyle('timing')">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="timing">
                   <span>Timing</span>
@@ -159,15 +219,19 @@
                     <a class="dropdown-item" href="#" (click)="showFilter('timing'); $event.preventDefault()">
                       <i class="pi pi-filter me-2"></i>Filter
                     </a>
-                    <a class="dropdown-item" href="#" (click)="toggleColumnPin('timing'); $event.preventDefault()">
+                    <a class="dropdown-item" href="#" (click)="toggleColumnPin('timing'); $event.preventDefault(); $event.stopPropagation()">
                       <i class="pi pi-thumbtack me-2" [class.text-warning]="isColumnPinned('timing')"></i>
                       {{ isColumnPinned('timing') ? 'Unpin' : 'Pin' }}
+                    </a>
+                    <a class="dropdown-item" href="#" (click)="toggleColumnVisibility('timing'); $event.preventDefault(); $event.stopPropagation()">
+                      <i class="pi pi-eye me-2" [class.text-muted]="isColumnHidden('timing')"></i>
+                      {{ isColumnHidden('timing') ? 'Show' : 'Hide' }}
                     </a>
                   </div>
                 </div>
               </div>
               <!-- Filter input inside column header -->
-              <div *ngIf="activeFilter === 'timing'" class="mt-2">
+              <div *ngIf="activeFilter === 'timing'" class="mt-2 filter-overlay" (click)="$event.stopPropagation()">
                 <input type="text" pInputText class="form-control form-control-sm" placeholder="Filter Timing"
                   [(ngModel)]="filters['timing']" (input)="applyFilter()" />
                 <button class="btn btn-sm btn-link p-0 ms-1" (click)="clearFilter('timing')">
@@ -175,7 +239,10 @@
                 </button>
               </div>
             </th>
-            <th style="width: 8%" [class.pinned-column]="isColumnPinned('state')">
+
+            <th *ngIf="!isColumnHidden('state')" style="width: 8%"
+                [class.pinned-column]="isColumnPinned('state')"
+                [ngStyle]="getPinnedStyle('state')">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="state">
                   <span>State</span>
@@ -189,15 +256,19 @@
                     <a class="dropdown-item" href="#" (click)="showFilter('state'); $event.preventDefault()">
                       <i class="pi pi-filter me-2"></i>Filter
                     </a>
-                    <a class="dropdown-item" href="#" (click)="toggleColumnPin('state'); $event.preventDefault()">
+                    <a class="dropdown-item" href="#" (click)="toggleColumnPin('state'); $event.preventDefault(); $event.stopPropagation()">
                       <i class="pi pi-thumbtack me-2" [class.text-warning]="isColumnPinned('state')"></i>
                       {{ isColumnPinned('state') ? 'Unpin' : 'Pin' }}
+                    </a>
+                    <a class="dropdown-item" href="#" (click)="toggleColumnVisibility('state'); $event.preventDefault(); $event.stopPropagation()">
+                      <i class="pi pi-eye me-2" [class.text-muted]="isColumnHidden('state')"></i>
+                      {{ isColumnHidden('state') ? 'Show' : 'Hide' }}
                     </a>
                   </div>
                 </div>
               </div>
               <!-- Filter input inside column header -->
-              <div *ngIf="activeFilter === 'state'" class="mt-2">
+              <div *ngIf="activeFilter === 'state'" class="mt-2 filter-overlay" (click)="$event.stopPropagation()">
                 <input type="text" pInputText class="form-control form-control-sm" placeholder="Filter State"
                   [(ngModel)]="filters['state']" (input)="applyFilter()" />
                 <button class="btn btn-sm btn-link p-0 ms-1" (click)="clearFilter('state')">
@@ -205,7 +276,10 @@
                 </button>
               </div>
             </th>
-            <th style="width: 8%" [class.pinned-column]="isColumnPinned('city')">
+
+            <th *ngIf="!isColumnHidden('city')" style="width: 8%"
+                [class.pinned-column]="isColumnPinned('city')"
+                [ngStyle]="getPinnedStyle('city')">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="city">
                   <span>City</span>
@@ -219,15 +293,19 @@
                     <a class="dropdown-item" href="#" (click)="showFilter('city'); $event.preventDefault()">
                       <i class="pi pi-filter me-2"></i>Filter
                     </a>
-                    <a class="dropdown-item" href="#" (click)="toggleColumnPin('city'); $event.preventDefault()">
+                    <a class="dropdown-item" href="#" (click)="toggleColumnPin('city'); $event.preventDefault(); $event.stopPropagation()">
                       <i class="pi pi-thumbtack me-2" [class.text-warning]="isColumnPinned('city')"></i>
                       {{ isColumnPinned('city') ? 'Unpin' : 'Pin' }}
+                    </a>
+                    <a class="dropdown-item" href="#" (click)="toggleColumnVisibility('city'); $event.preventDefault(); $event.stopPropagation()">
+                      <i class="pi pi-eye me-2" [class.text-muted]="isColumnHidden('city')"></i>
+                      {{ isColumnHidden('city') ? 'Show' : 'Hide' }}
                     </a>
                   </div>
                 </div>
               </div>
               <!-- Filter input inside column header -->
-              <div *ngIf="activeFilter === 'city'" class="mt-2">
+              <div *ngIf="activeFilter === 'city'" class="mt-2 filter-overlay" (click)="$event.stopPropagation()">
                 <input type="text" pInputText class="form-control form-control-sm" placeholder="Filter City"
                   [(ngModel)]="filters['city']" (input)="applyFilter()" />
                 <button class="btn btn-sm btn-link p-0 ms-1" (click)="clearFilter('city')">
@@ -235,7 +313,10 @@
                 </button>
               </div>
             </th>
-            <th style="width: 12%" [class.pinned-column]="isColumnPinned('branch')">
+
+            <th *ngIf="!isColumnHidden('branch')" style="width: 12%"
+                [class.pinned-column]="isColumnPinned('branch')"
+                [ngStyle]="getPinnedStyle('branch')">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="branch">
                   <span>Branch</span>
@@ -249,15 +330,19 @@
                     <a class="dropdown-item" href="#" (click)="showFilter('branch'); $event.preventDefault()">
                       <i class="pi pi-filter me-2"></i>Filter
                     </a>
-                    <a class="dropdown-item" href="#" (click)="toggleColumnPin('branch'); $event.preventDefault()">
+                    <a class="dropdown-item" href="#" (click)="toggleColumnPin('branch'); $event.preventDefault(); $event.stopPropagation()">
                       <i class="pi pi-thumbtack me-2" [class.text-warning]="isColumnPinned('branch')"></i>
                       {{ isColumnPinned('branch') ? 'Unpin' : 'Pin' }}
+                    </a>
+                    <a class="dropdown-item" href="#" (click)="toggleColumnVisibility('branch'); $event.preventDefault(); $event.stopPropagation()">
+                      <i class="pi pi-eye me-2" [class.text-muted]="isColumnHidden('branch')"></i>
+                      {{ isColumnHidden('branch') ? 'Show' : 'Hide' }}
                     </a>
                   </div>
                 </div>
               </div>
               <!-- Filter input inside column header -->
-              <div *ngIf="activeFilter === 'branch'" class="mt-2">
+              <div *ngIf="activeFilter === 'branch'" class="mt-2 filter-overlay" (click)="$event.stopPropagation()">
                 <input type="text" pInputText class="form-control form-control-sm" placeholder="Filter Branch"
                   [(ngModel)]="filters['branch']" (input)="applyFilter()" />
                 <button class="btn btn-sm btn-link p-0 ms-1" (click)="clearFilter('branch')">
@@ -265,10 +350,13 @@
                 </button>
               </div>
             </th>
-            <th style="width: 7%; min-width: 100px;" [class.pinned-column]="isColumnPinned('spiritualOrator')">
+
+            <th *ngIf="!isColumnHidden('spiritualOrator')" style="width: 7%; min-width: 100px;"
+                [class.pinned-column]="isColumnPinned('spiritualOrator')"
+                [ngStyle]="getPinnedStyle('spiritualOrator')">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="spiritualOrator">
-                  <span>Spiritual Orator</span>
+                  <span>Orator</span>
                   <p-sortIcon field="spiritualOrator"></p-sortIcon>
                 </div>
                 <div class="dropdown-container" (click)="$event.stopPropagation()">
@@ -280,15 +368,19 @@
                       <i class="pi pi-filter me-2"></i>Filter
                     </a>
                     <a class="dropdown-item" href="#"
-                      (click)="toggleColumnPin('spiritualOrator'); $event.preventDefault()">
+                      (click)="toggleColumnPin('spiritualOrator'); $event.preventDefault(); $event.stopPropagation()">
                       <i class="pi pi-thumbtack me-2" [class.text-warning]="isColumnPinned('spiritualOrator')"></i>
                       {{ isColumnPinned('spiritualOrator') ? 'Unpin' : 'Pin' }}
+                    </a>
+                    <a class="dropdown-item" href="#" (click)="toggleColumnVisibility('spiritualOrator'); $event.preventDefault(); $event.stopPropagation()">
+                      <i class="pi pi-eye me-2" [class.text-muted]="isColumnHidden('spiritualOrator')"></i>
+                      {{ isColumnHidden('spiritualOrator') ? 'Show' : 'Hide' }}
                     </a>
                   </div>
                 </div>
               </div>
               <!-- Filter input inside column header -->
-              <div *ngIf="activeFilter === 'spiritualOrator'" class="mt-2">
+              <div *ngIf="activeFilter === 'spiritualOrator'" class="mt-2 filter-overlay" (click)="$event.stopPropagation()">
                 <input type="text" pInputText class="form-control form-control-sm" placeholder="Filter Orator"
                   [(ngModel)]="filters['spiritualOrator']" (input)="applyFilter()" />
                 <button class="btn btn-sm btn-link p-0 ms-1" (click)="clearFilter('spiritualOrator')">
@@ -296,7 +388,10 @@
                 </button>
               </div>
             </th>
-            <th style="width: 5%; min-width: 80px;" [class.pinned-column]="isColumnPinned('language')">
+
+            <th *ngIf="!isColumnHidden('language')" style="width: 5%; min-width: 80px;"
+                [class.pinned-column]="isColumnPinned('language')"
+                [ngStyle]="getPinnedStyle('language')">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="language">
                   <span>Language</span>
@@ -310,15 +405,19 @@
                     <a class="dropdown-item" href="#" (click)="showFilter('language'); $event.preventDefault()">
                       <i class="pi pi-filter me-2"></i>Filter
                     </a>
-                    <a class="dropdown-item" href="#" (click)="toggleColumnPin('language'); $event.preventDefault()">
+                    <a class="dropdown-item" href="#" (click)="toggleColumnPin('language'); $event.preventDefault(); $event.stopPropagation()">
                       <i class="pi pi-thumbtack me-2" [class.text-warning]="isColumnPinned('language')"></i>
                       {{ isColumnPinned('language') ? 'Unpin' : 'Pin' }}
+                    </a>
+                    <a class="dropdown-item" href="#" (click)="toggleColumnVisibility('language'); $event.preventDefault(); $event.stopPropagation()">
+                      <i class="pi pi-eye me-2" [class.text-muted]="isColumnHidden('language')"></i>
+                      {{ isColumnHidden('language') ? 'Show' : 'Hide' }}
                     </a>
                   </div>
                 </div>
               </div>
               <!-- Filter input inside column header -->
-              <div *ngIf="activeFilter === 'language'" class="mt-2">
+              <div *ngIf="activeFilter === 'language'" class="mt-2 filter-overlay" (click)="$event.stopPropagation()">
                 <input type="text" pInputText class="form-control form-control-sm" placeholder="Filter Language"
                   [(ngModel)]="filters['language']" (input)="applyFilter()" />
                 <button class="btn btn-sm btn-link p-0 ms-1" (click)="clearFilter('language')">
@@ -326,7 +425,10 @@
                 </button>
               </div>
             </th>
-            <th style="width: 6%; min-width: 90px;" [class.pinned-column]="isColumnPinned('beneficiaries')">
+
+            <th *ngIf="!isColumnHidden('beneficiaries')" style="width: 6%; min-width: 90px;"
+                [class.pinned-column]="isColumnPinned('beneficiaries')"
+                [ngStyle]="getPinnedStyle('beneficiaries')">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="beneficiaries">
                   <span>Beneficiaries</span>
@@ -341,15 +443,19 @@
                       <i class="pi pi-filter me-2"></i>Filter
                     </a>
                     <a class="dropdown-item" href="#"
-                      (click)="toggleColumnPin('beneficiaries'); $event.preventDefault()">
+                      (click)="toggleColumnPin('beneficiaries'); $event.preventDefault(); $event.stopPropagation()">
                       <i class="pi pi-thumbtack me-2" [class.text-warning]="isColumnPinned('beneficiaries')"></i>
                       {{ isColumnPinned('beneficiaries') ? 'Unpin' : 'Pin' }}
+                    </a>
+                    <a class="dropdown-item" href="#" (click)="toggleColumnVisibility('beneficiaries'); $event.preventDefault(); $event.stopPropagation()">
+                      <i class="pi pi-eye me-2" [class.text-muted]="isColumnHidden('beneficiaries')"></i>
+                      {{ isColumnHidden('beneficiaries') ? 'Show' : 'Hide' }}
                     </a>
                   </div>
                 </div>
               </div>
               <!-- Filter input inside column header -->
-              <div *ngIf="activeFilter === 'beneficiaries'" class="mt-2">
+              <div *ngIf="activeFilter === 'beneficiaries'" class="mt-2 filter-overlay" (click)="$event.stopPropagation()">
                 <input type="text" pInputText class="form-control form-control-sm" placeholder="Filter Beneficiaries"
                   [(ngModel)]="filters['beneficiaries']" (input)="applyFilter()" />
                 <button class="btn btn-sm btn-link p-0 ms-1" (click)="clearFilter('beneficiaries')">
@@ -357,7 +463,10 @@
                 </button>
               </div>
             </th>
-            <th style="width: 6%; min-width: 85px;" [class.pinned-column]="isColumnPinned('initiation')">
+
+            <th *ngIf="!isColumnHidden('initiation')" style="width: 6%; min-width: 85px;"
+                [class.pinned-column]="isColumnPinned('initiation')"
+                [ngStyle]="getPinnedStyle('initiation')">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="initiation">
                   <span>Initiation</span>
@@ -371,15 +480,19 @@
                     <a class="dropdown-item" href="#" (click)="showFilter('initiation'); $event.preventDefault()">
                       <i class="pi pi-filter me-2"></i>Filter
                     </a>
-                    <a class="dropdown-item" href="#" (click)="toggleColumnPin('initiation'); $event.preventDefault()">
+                    <a class="dropdown-item" href="#" (click)="toggleColumnPin('initiation'); $event.preventDefault(); $event.stopPropagation()">
                       <i class="pi pi-thumbtack me-2" [class.text-warning]="isColumnPinned('initiation')"></i>
                       {{ isColumnPinned('initiation') ? 'Unpin' : 'Pin' }}
+                    </a>
+                    <a class="dropdown-item" href="#" (click)="toggleColumnVisibility('initiation'); $event.preventDefault(); $event.stopPropagation()">
+                      <i class="pi pi-eye me-2" [class.text-muted]="isColumnHidden('initiation')"></i>
+                      {{ isColumnHidden('initiation') ? 'Show' : 'Hide' }}
                     </a>
                   </div>
                 </div>
               </div>
               <!-- Filter input inside column header -->
-              <div *ngIf="activeFilter === 'initiation'" class="mt-2">
+              <div *ngIf="activeFilter === 'initiation'" class="mt-2 filter-overlay" (click)="$event.stopPropagation()">
                 <input type="text" pInputText class="form-control form-control-sm" placeholder="Filter Initiation"
                   [(ngModel)]="filters['initiation']" (input)="applyFilter()" />
                 <button class="btn btn-sm btn-link p-0 ms-1" (click)="clearFilter('initiation')">
@@ -387,7 +500,10 @@
                 </button>
               </div>
             </th>
-            <th style="width: 5%; min-width: 100px;" [class.pinned-column]="isColumnPinned('specialGuests')">
+
+            <th *ngIf="!isColumnHidden('specialGuests')" style="width: 5%; min-width: 100px;"
+                [class.pinned-column]="isColumnPinned('specialGuests')"
+                [ngStyle]="getPinnedStyle('specialGuests')">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="specialGuests">
                   <span>Special Guests</span>
@@ -402,15 +518,19 @@
                       <i class="pi pi-filter me-2"></i>Filter
                     </a>
                     <a class="dropdown-item" href="#"
-                      (click)="toggleColumnPin('specialGuests'); $event.preventDefault()">
+                      (click)="toggleColumnPin('specialGuests'); $event.preventDefault(); $event.stopPropagation()">
                       <i class="pi pi-thumbtack me-2" [class.text-warning]="isColumnPinned('specialGuests')"></i>
                       {{ isColumnPinned('specialGuests') ? 'Unpin' : 'Pin' }}
+                    </a>
+                    <a class="dropdown-item" href="#" (click)="toggleColumnVisibility('specialGuests'); $event.preventDefault(); $event.stopPropagation()">
+                      <i class="pi pi-eye me-2" [class.text-muted]="isColumnHidden('specialGuests')"></i>
+                      {{ isColumnHidden('specialGuests') ? 'Show' : 'Hide' }}
                     </a>
                   </div>
                 </div>
               </div>
               <!-- Filter input inside column header -->
-              <div *ngIf="activeFilter === 'specialGuests'" class="mt-2">
+              <div *ngIf="activeFilter === 'specialGuests'" class="mt-2 filter-overlay" (click)="$event.stopPropagation()">
                 <input type="text" pInputText class="form-control form-control-sm" placeholder="Filter Special Guests"
                   [(ngModel)]="filters['specialGuests']" (input)="applyFilter()" />
                 <button class="btn btn-sm btn-link p-0 ms-1" (click)="clearFilter('specialGuests')">
@@ -418,7 +538,10 @@
                 </button>
               </div>
             </th>
-            <th style="width: 5%; min-width: 90px;" [class.pinned-column]="isColumnPinned('volunteers')">
+
+            <th *ngIf="!isColumnHidden('volunteers')" style="width: 5%; min-width: 90px;"
+                [class.pinned-column]="isColumnPinned('volunteers')"
+                [ngStyle]="getPinnedStyle('volunteers')">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="volunteers">
                   <span>Volunteers</span>
@@ -432,15 +555,19 @@
                     <a class="dropdown-item" href="#" (click)="showFilter('volunteers'); $event.preventDefault()">
                       <i class="pi pi-filter me-2"></i>Filter
                     </a>
-                    <a class="dropdown-item" href="#" (click)="toggleColumnPin('volunteers'); $event.preventDefault()">
+                    <a class="dropdown-item" href="#" (click)="toggleColumnPin('volunteers'); $event.preventDefault(); $event.stopPropagation()">
                       <i class="pi pi-thumbtack me-2" [class.text-warning]="isColumnPinned('volunteers')"></i>
                       {{ isColumnPinned('volunteers') ? 'Unpin' : 'Pin' }}
+                    </a>
+                    <a class="dropdown-item" href="#" (click)="toggleColumnVisibility('volunteers'); $event.preventDefault(); $event.stopPropagation()">
+                      <i class="pi pi-eye me-2" [class.text-muted]="isColumnHidden('volunteers')"></i>
+                      {{ isColumnHidden('volunteers') ? 'Show' : 'Hide' }}
                     </a>
                   </div>
                 </div>
               </div>
               <!-- Filter input inside column header -->
-              <div *ngIf="activeFilter === 'volunteers'" class="mt-2">
+              <div *ngIf="activeFilter === 'volunteers'" class="mt-2 filter-overlay" (click)="$event.stopPropagation()">
                 <input type="text" pInputText class="form-control form-control-sm" placeholder="Filter Volunteers"
                   [(ngModel)]="filters['volunteers']" (input)="applyFilter()" />
                 <button class="btn btn-sm btn-link p-0 ms-1" (click)="clearFilter('volunteers')">
@@ -502,39 +629,44 @@
                 </p-tag>
               </div>
             </td>
-            <td [class.pinned-column]="isColumnPinned('eventType')">
+
+            <td *ngIf="!isColumnHidden('eventType')" [class.pinned-column]="isColumnPinned('eventType')" [ngStyle]="getPinnedStyle('eventType')">
               <p-tag [value]="getEventTypeDisplay(event)" [severity]="getSeverity(event.scale)" />
             </td>
-            <td [class.pinned-column]="isColumnPinned('name')">{{ event.name }}</td>
-            <td [class.pinned-column]="isColumnPinned('duration')">{{ event.duration }}</td>
-            <td [class.pinned-column]="isColumnPinned('timing')">{{ event.timing }}</td>
-            <td [class.pinned-column]="isColumnPinned('state')">{{ event.state }}</td>
-            <td [class.pinned-column]="isColumnPinned('city')">{{ event.city }}</td>
-            <td [class.pinned-column]="isColumnPinned('branch')">{{ event.branch }}</td>
-            <td [class.pinned-column]="isColumnPinned('spiritualOrator')">{{ event.spiritualOrator || '-' }}</td>
-            <td [class.pinned-column]="isColumnPinned('language')">{{ event.language }}</td>
-            <td [class.pinned-column]="isColumnPinned('beneficiaries')">
+            <td *ngIf="!isColumnHidden('name')" [class.pinned-column]="isColumnPinned('name')" [ngStyle]="getPinnedStyle('name')">{{ event.name }}</td>
+            <td *ngIf="!isColumnHidden('duration')" [class.pinned-column]="isColumnPinned('duration')" [ngStyle]="getPinnedStyle('duration')">{{ event.duration }}</td>
+            <td *ngIf="!isColumnHidden('timing')" [class.pinned-column]="isColumnPinned('timing')" [ngStyle]="getPinnedStyle('timing')">{{ event.timing }}</td>
+            <td *ngIf="!isColumnHidden('state')" [class.pinned-column]="isColumnPinned('state')" [ngStyle]="getPinnedStyle('state')">{{ event.state }}</td>
+            <td *ngIf="!isColumnHidden('city')" [class.pinned-column]="isColumnPinned('city')" [ngStyle]="getPinnedStyle('city')">{{ event.city }}</td>
+            <td *ngIf="!isColumnHidden('branch')" [class.pinned-column]="isColumnPinned('branch')" [ngStyle]="getPinnedStyle('branch')">{{ event.branch }}</td>
+            <td *ngIf="!isColumnHidden('spiritualOrator')" [class.pinned-column]="isColumnPinned('spiritualOrator')" [ngStyle]="getPinnedStyle('spiritualOrator')">{{ event.spiritualOrator || '-' }}</td>
+            <td *ngIf="!isColumnHidden('language')" [class.pinned-column]="isColumnPinned('language')" [ngStyle]="getPinnedStyle('language')">{{ event.language }}</td>
+
+            <td *ngIf="!isColumnHidden('beneficiaries')" [class.pinned-column]="isColumnPinned('beneficiaries')" [ngStyle]="getPinnedStyle('beneficiaries')">
               <span class="cursor-pointer text-primary" (click)="openBeneficiariesModal(event); $event.stopPropagation()">
                 {{ event.beneficiaries.total }}
               </span>
               <i class="pi pi-info-circle text-primary ms-1" pTooltip="Click to view Beneficiaries details"
                 tooltipPosition="top"></i>
             </td>
-            <td [class.pinned-column]="isColumnPinned('initiation')">
+
+            <td *ngIf="!isColumnHidden('initiation')" [class.pinned-column]="isColumnPinned('initiation')" [ngStyle]="getPinnedStyle('initiation')">
               <span class="cursor-pointer text-primary" (click)="openInitiationModal(event); $event.stopPropagation()">
                 {{ event.initiation.total }}
               </span>
               <i class="pi pi-info-circle text-primary ms-1" pTooltip="Click to view Initiation details"
                 tooltipPosition="top"></i>
             </td>
-            <td [class.pinned-column]="isColumnPinned('specialGuests')">
+
+            <td *ngIf="!isColumnHidden('specialGuests')" [class.pinned-column]="isColumnPinned('specialGuests')" [ngStyle]="getPinnedStyle('specialGuests')">
               <span class="cursor-pointer text-primary" (click)="openSpecialGuestsModal(event); $event.stopPropagation()">
                 {{ event.specialGuests }}
               </span>
               <i class="pi pi-info-circle text-primary ms-1" pTooltip="Click to view Special Guests"
                 tooltipPosition="top"></i>
             </td>
-            <td [class.pinned-column]="isColumnPinned('volunteers')">
+
+            <td *ngIf="!isColumnHidden('volunteers')" [class.pinned-column]="isColumnPinned('volunteers')" [ngStyle]="getPinnedStyle('volunteers')">
               <span class="cursor-pointer text-primary" (click)="openVolunteersModal(event); $event.stopPropagation()">
                 {{ event.volunteers }}
               </span>
