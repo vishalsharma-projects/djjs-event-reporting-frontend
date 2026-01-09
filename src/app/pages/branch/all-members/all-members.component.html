@@ -27,55 +27,14 @@
                 [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()">
             </div>
           </div>
-        </div>
 
-        <!-- Filter Buttons -->
-        <div class="d-flex flex-wrap gap-2 mb-3">
-          <!-- Member Type Filters -->
-          <div class="btn-group" role="group">
-            <button type="button" class="btn btn-sm"
-              [ngClass]="{'btn-primary': activeMemberType === 'all', 'btn-outline-primary': activeMemberType !== 'all'}"
-              (click)="filterByType('all')"
-              [style.background]="activeMemberType === 'all' ? 'linear-gradient(135deg, #ff6b35, #f7931e)' : ''"
-              [style.border]="activeMemberType === 'all' ? 'none' : '1px solid #ff6b35'"
-              [style.color]="activeMemberType === 'all' ? 'white' : '#ff6b35'">
-              All Members ({{ members.length }})
-            </button>
-            <button type="button" class="btn btn-sm"
-              [ngClass]="{'btn-primary': activeMemberType === 'preacher', 'btn-outline-primary': activeMemberType !== 'preacher'}"
-              (click)="filterByType('preacher')"
-              [style.background]="activeMemberType === 'preacher' ? 'linear-gradient(135deg, #ff6b35, #f7931e)' : ''"
-              [style.border]="activeMemberType === 'preacher' ? 'none' : '1px solid #ff6b35'"
-              [style.color]="activeMemberType === 'preacher' ? 'white' : '#ff6b35'">
-              Preacher ({{ preacherCount }})
-            </button>
-            <button type="button" class="btn btn-sm"
-              [ngClass]="{'btn-primary': activeMemberType === 'samarpit', 'btn-outline-primary': activeMemberType !== 'samarpit'}"
-              (click)="filterByType('samarpit')"
-              [style.background]="activeMemberType === 'samarpit' ? 'linear-gradient(135deg, #ff6b35, #f7931e)' : ''"
-              [style.border]="activeMemberType === 'samarpit' ? 'none' : '1px solid #ff6b35'"
-              [style.color]="activeMemberType === 'samarpit' ? 'white' : '#ff6b35'">
-              Samarpit ({{ samarpitCount }})
-            </button>
-          </div>
-
-          <!-- Branch Type Filters -->
-          <div class="btn-group" role="group">
-            <button type="button" class="btn btn-sm"
-              [ngClass]="{'btn-success': activeBranchType === 'all', 'btn-outline-success': activeBranchType !== 'all'}"
-              (click)="filterByBranchType('all')">
-              All Branches ({{ members.length }})
-            </button>
-            <button type="button" class="btn btn-sm"
-              [ngClass]="{'btn-success': activeBranchType === 'branch', 'btn-outline-success': activeBranchType !== 'branch'}"
-              (click)="filterByBranchType('branch')">
-              Branch Members ({{ branchCount }})
-            </button>
-            <button type="button" class="btn btn-sm"
-              [ngClass]="{'btn-success': activeBranchType === 'child_branch', 'btn-outline-success': activeBranchType !== 'child_branch'}"
-              (click)="filterByBranchType('child_branch')">
-              Child Branch Members ({{ childBranchCount }})
-            </button>
+          <!-- Member Type Filter Dropdown -->
+          <div class="col-md-3 mt-2 mt-md-0">
+            <select class="form-select" [(ngModel)]="activeMemberType" (change)="filterByType(activeMemberType)">
+              <option value="all">All Members ({{ members.length }})</option>
+              <option value="preacher">Preacher ({{ preacherCount }})</option>
+              <option value="samarpit">Samarpit Sevadar ({{ samarpitCount }})</option>
+            </select>
           </div>
         </div>
 
@@ -99,7 +58,7 @@
               <tr>
                 <th>Name</th>
                 <th>Member Type</th>
-                <th>Branch Type</th>
+                <!-- <th>Branch Type</th> -->
                 <th>Branch Name</th>
                 <th>Branch Role</th>
                 <th>Responsibility</th>
@@ -113,14 +72,14 @@
                 <td>{{ member.name }}</td>
                 <td>
                   <span class="badge" [ngClass]="member.member_type === 'preacher' ? 'bg-info' : 'bg-success'">
-                    {{ member.member_type }}
+                    {{ member.member_type === 'preacher' ? 'Preacher' : 'Samarpit Sevadar' }}
                   </span>
                 </td>
-                <td>
+                <!-- <td>
                   <span class="badge" [ngClass]="member.branch_type === 'branch' ? 'bg-primary' : 'bg-warning'">
                     {{ member.branch_type === 'branch' ? 'Branch' : 'Child Branch' }}
                   </span>
-                </td>
+                </td> -->
                 <td>{{ member.branch_name || member.child_branch_name || 'N/A' }}</td>
                 <td>{{ member.branch_role || 'N/A' }}</td>
                 <td>{{ member.responsibility || 'N/A' }}</td>
@@ -187,7 +146,7 @@
               <select class="form-select" formControlName="member_type"
                 [ngClass]="{'is-invalid': memberForm.get('member_type')?.invalid && memberForm.get('member_type')?.touched}">
                 <option value="">Select Member Type</option>
-                <option value="samarpit">Samarpit Sewadar</option>
+                <option value="samarpit">Samarpit Sevadar</option>
                 <option value="preacher">Preacher</option>
               </select>
               <div *ngIf="memberForm.get('member_type')?.invalid && memberForm.get('member_type')?.touched" class="invalid-feedback">
@@ -311,7 +270,7 @@
               <select class="form-select" formControlName="member_type"
                 [ngClass]="{'is-invalid': editMemberForm.get('member_type')?.invalid && editMemberForm.get('member_type')?.touched}">
                 <option value="">Select Member Type</option>
-                <option value="samarpit">Samarpit Sewadar</option>
+                <option value="samarpit">Samarpit Sevadar</option>
                 <option value="preacher">Preacher</option>
               </select>
               <div *ngIf="editMemberForm.get('member_type')?.invalid && editMemberForm.get('member_type')?.touched" class="invalid-feedback">
@@ -393,4 +352,3 @@
   </div>
 </div>
 <div *ngIf="showEditMemberModal" class="modal-backdrop fade show" (click)="closeEditMemberModal()"></div>
-
