@@ -36,6 +36,11 @@ export interface Orator {
     name: string;
 }
 
+export interface Prefix {
+    id: number;
+    name: string;
+}
+
 export interface SevaType {
     id: number;
     name: string;
@@ -79,6 +84,7 @@ export class EventMasterDataService {
     private promotionMaterialTypesCache$?: Observable<PromotionMaterialType[]>;
     private languagesCache$?: Observable<Language[]>;
     private oratorsCache$?: Observable<Orator[]>;
+    private prefixesCache$?: Observable<Prefix[]>;
     private sevaTypesCache$?: Observable<SevaType[]>;
     private eventSubCategoriesCache$?: Observable<EventSubCategory[]>;
     private themesCache$?: Observable<Theme[]>;
@@ -151,6 +157,19 @@ export class EventMasterDataService {
             this.cacheTimestamps.set('orators', Date.now());
         }
         return this.oratorsCache$;
+    }
+
+    /**
+     * Get all prefixes (cached)
+     */
+    getPrefixes(forceRefresh: boolean = false): Observable<Prefix[]> {
+        if (forceRefresh || !this.prefixesCache$ || this.isCacheExpired('prefixes')) {
+            this.prefixesCache$ = this.apiClient.safeGet<Prefix[]>('/prefixes').pipe(
+                shareReplay({ bufferSize: 1, refCount: true })
+            );
+            this.cacheTimestamps.set('prefixes', Date.now());
+        }
+        return this.prefixesCache$;
     }
 
     /**

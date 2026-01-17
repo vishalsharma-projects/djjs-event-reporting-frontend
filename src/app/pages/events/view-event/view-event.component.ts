@@ -200,8 +200,24 @@ export class ViewEventComponent implements OnInit {
                 details = this.cleanTag(donation.kindtype.toString());
               }
             }
+            // Format donation type for display
+            let formattedType = donation.donation_type || 'N/A';
+            if (formattedType !== 'N/A') {
+              const lowerType = formattedType.toLowerCase().trim();
+              if (lowerType === 'cash') {
+                formattedType = 'Cash-Bank-Online';
+              } else if (lowerType === 'in-kind' || lowerType === 'inkind') {
+                formattedType = 'In-Kind';
+              } else {
+                // Capitalize first letter of each word
+                formattedType = formattedType.split('-').map(word => 
+                  word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                ).join('-');
+              }
+            }
+            
             return {
-              type: donation.donation_type || 'N/A',
+              type: formattedType,
               details: details,
               amount: donation.amount || 0
             };
@@ -346,5 +362,14 @@ export class ViewEventComponent implements OnInit {
       return 0;
     }
     return this.eventData.donations.reduce((sum, donation) => sum + (donation.amount || 0), 0);
+  }
+
+  /**
+   * Convert comma-separated email string to array for display
+   */
+  getEmailArray(emailString: string | string[] | null | undefined): string[] {
+    if (!emailString || emailString === 'N/A') return [];
+    if (Array.isArray(emailString)) return emailString;
+    return emailString.split(',').map(e => e.trim()).filter(e => e.length > 0);
   }
 }

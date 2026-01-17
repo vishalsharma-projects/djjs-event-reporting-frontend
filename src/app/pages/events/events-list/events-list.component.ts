@@ -29,6 +29,7 @@ interface EventData {
   scale: string;
   name: string;
   duration: string;
+  days: number;
   timing: string;
   state: string;
   city: string;
@@ -250,15 +251,17 @@ export class EventsListComponent implements OnInit, AfterViewChecked, OnDestroy 
     });
   }
   columnOrder: string[] = [
-  'eventType', 'name', 'duration', 'timing', 'state', 'city', 'branch',
+  'status', 'eventType', 'name', 'duration', 'days', 'timing', 'state', 'city', 'branch',
   'spiritualOrator', 'language', 'beneficiaries', 'initiation', 'specialGuests', 'volunteers'
 ];
 
   // Column display names mapping
   columnDisplayNames: Record<string, string> = {
+    'status': 'Status',
     'eventType': 'Type (S)',
     'name': 'Name',
     'duration': 'Duration',
+    'days': 'Days',
     'timing': 'Timing',
     'state': 'State',
     'city': 'City',
@@ -275,9 +278,11 @@ export class EventsListComponent implements OnInit, AfterViewChecked, OnDestroy 
   isColumnVisibilityMenuOpen: boolean = false;
 
 columnWidths: Record<string, number> = {
+  status: 120,
   eventType: 160,
   name: 180,
   duration: 160,
+  days: 80,
   timing: 140,
   state: 140,
   city: 140,
@@ -328,12 +333,43 @@ getPinnedStyle(field: string): Record<string, string> {
   }
 
   /**
+   * Calculate number of days between start and end date
+   */
+  calculateDays(startDate: string | null, endDate: string | null): number {
+    if (!startDate || !endDate) {
+      return 0;
+    }
+    
+    try {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      // Check if dates are valid
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        return 0;
+      }
+      
+      // Calculate difference in milliseconds
+      const diffTime = end.getTime() - start.getTime();
+      
+      // Convert to days (add 1 to include both start and end day)
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      
+      return diffDays > 0 ? diffDays : 0;
+    } catch (error) {
+      console.error('Error calculating days:', error);
+      return 0;
+    }
+  }
+
+  /**
    * Map API EventDetails to component EventData format
    */
   mapApiEventToEventData(event: EventDetails): EventData {
     const startDate = event.start_date ? new Date(event.start_date).toLocaleDateString() : '';
     const endDate = event.end_date ? new Date(event.end_date).toLocaleDateString() : '';
     const duration = startDate && endDate ? `${startDate} - ${endDate}` : '';
+    const days = this.calculateDays(event.start_date, event.end_date);
 
     return {
       id: String(event.id),
@@ -341,6 +377,7 @@ getPinnedStyle(field: string): Record<string, string> {
       scale: event.scale || '',
       name: event.event_category?.name || '',
       duration: duration,
+      days: days,
       timing: event.daily_start_time && event.daily_end_time
         ? `${event.daily_start_time} - ${event.daily_end_time}`
         : '',
@@ -592,12 +629,183 @@ getPinnedStyle(field: string): Record<string, string> {
     return this.columnOrder;
   }
 
+  // Get visible columns in order
+  getVisibleColumns(): string[] {
+    return this.columnOrder.filter(col => !this.isColumnHidden(col));
+  }
+
+  // Get column width style
+  getColumnWidth(column: string): string {
+    const width = this.columnWidths[column];
+    if (width) {
+      return `${width}px`;
+    }
+    // Default widths based on column type
+    const defaultWidths: Record<string, string> = {
+      'eventType': '12%',
+      'name': '12%',
+      'duration': '10%',
+      'timing': '8%',
+      'state': '8%',
+      'city': '8%',
+      'branch': '12%',
+      'spiritualOrator': '7%',
+      'language': '5%',
+      'beneficiaries': '6%',
+      'initiation': '6%',
+      'specialGuests': '5%',
+      'volunteers': '5%'
+    };
+    return defaultWidths[column] || 'auto';
+  }
+
+  // Get column cell content
+  getColumnCellContent(event: EventData, column: string): any {
+    switch (column) {
+      case 'status':
+        return null; // Special case - uses p-tag with action menu
+      case 'eventType':
+        return null; // Special case - uses p-tag
+      case 'name':
+        return event.name;
+      case 'duration':
+        return event.duration;
+      case 'days':
+        return event.days || 0;
+      case 'timing':
+        return event.timing;
+      case 'state':
+        return event.state;
+      case 'city':
+        return event.city;
+      case 'branch':
+        return event.branch;
+      case 'spiritualOrator':
+        return event.spiritualOrator || '-';
+      case 'language':
+        return event.language;
+      case 'beneficiaries':
+        return event.beneficiaries?.total;
+      case 'initiation':
+        return event.initiation?.total;
+      case 'specialGuests':
+        return event.specialGuests;
+      case 'volunteers':
+        return event.volunteers;
+      default:
+        return '';
+    }
+  }
+
+  // Check if column needs special rendering
+  isSpecialColumn(column: string): boolean {
+    return ['status', 'eventType', 'beneficiaries', 'initiation', 'specialGuests', 'volunteers'].includes(column);
+  }
+
   showAllColumns(): void {
     this.hiddenColumns = [];
     this.hiddenColumns = [...this.hiddenColumns];
     this.closeColumnVisibilityMenu();
     this.saveColumnPreferences();
     this.cdr.detectChanges();
+  }
+
+  // Drag and drop for column reordering
+  draggedColumn: string | null = null;
+  dragOverColumn: string | null = null;
+
+  onColumnDragStart(event: DragEvent, column: string): void {
+    // Don't start drag if clicking on interactive elements (buttons, dropdowns, inputs)
+    const target = event.target as HTMLElement;
+    // Allow dragging from anywhere except buttons, dropdown menus, and input fields
+    if (target.closest('button') || target.closest('.dropdown-menu') || target.closest('input') || target.closest('a')) {
+      event.preventDefault();
+      return;
+    }
+    
+    this.draggedColumn = column;
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', column);
+    }
+    // Add visual feedback
+    const thElement = (event.currentTarget as HTMLElement);
+    if (thElement) {
+      thElement.classList.add('dragging');
+    }
+  }
+
+  onColumnDragEnd(event: DragEvent): void {
+    this.draggedColumn = null;
+    this.dragOverColumn = null;
+    // Remove visual feedback
+    const thElement = (event.currentTarget as HTMLElement);
+    if (thElement) {
+      thElement.classList.remove('dragging');
+    }
+    // Remove drag-over class from all columns
+    document.querySelectorAll('.column-drag-over').forEach(el => {
+      el.classList.remove('column-drag-over');
+    });
+  }
+
+  onColumnDragOver(event: DragEvent, column: string): void {
+    if (this.draggedColumn && this.draggedColumn !== column) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = 'move';
+      }
+      this.dragOverColumn = column;
+      // Add visual feedback
+      if (event.currentTarget) {
+        (event.currentTarget as HTMLElement).classList.add('column-drag-over');
+      }
+    }
+  }
+
+  onColumnDragLeave(event: DragEvent): void {
+    // Remove visual feedback
+    if (event.currentTarget) {
+      (event.currentTarget as HTMLElement).classList.remove('column-drag-over');
+    }
+    this.dragOverColumn = null;
+  }
+
+  onColumnDrop(event: DragEvent, targetColumn: string): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!this.draggedColumn || this.draggedColumn === targetColumn) {
+      return;
+    }
+
+    // Remove visual feedback
+    if (event.currentTarget) {
+      (event.currentTarget as HTMLElement).classList.remove('column-drag-over');
+    }
+
+    // Find indices
+    const draggedIndex = this.columnOrder.indexOf(this.draggedColumn);
+    const targetIndex = this.columnOrder.indexOf(targetColumn);
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      return;
+    }
+
+    // Reorder columns
+    const newOrder = [...this.columnOrder];
+    newOrder.splice(draggedIndex, 1);
+    newOrder.splice(targetIndex, 0, this.draggedColumn);
+
+    this.columnOrder = newOrder;
+    this.recomputePinLeft();
+    this.saveColumnPreferences();
+    this.cdr.detectChanges();
+
+    // Reset drag state
+    this.draggedColumn = null;
+    this.dragOverColumn = null;
   }
 
   // Load column preferences from backend
@@ -610,8 +818,14 @@ getPinnedStyle(field: string): Record<string, string> {
           }
           if (preferences.pinned_columns && preferences.pinned_columns.length > 0) {
             this.pinnedColumns = [...preferences.pinned_columns];
-            this.recomputePinLeft();
           }
+          if (preferences.column_order && preferences.column_order.length > 0) {
+            // Validate column order - ensure all columns exist and add any missing ones
+            const validOrder = preferences.column_order.filter(col => this.columnOrder.includes(col));
+            const missingColumns = this.columnOrder.filter(col => !validOrder.includes(col));
+            this.columnOrder = [...validOrder, ...missingColumns];
+          }
+          this.recomputePinLeft();
           this.cdr.detectChanges();
         }
       },
@@ -626,7 +840,8 @@ getPinnedStyle(field: string): Record<string, string> {
   private saveColumnPreferences(): void {
     const preferences = {
       hidden_columns: this.hiddenColumns,
-      pinned_columns: this.pinnedColumns
+      pinned_columns: this.pinnedColumns,
+      column_order: this.columnOrder
     };
 
     this.userPreferencesService.saveEventsListColumnPreferences(preferences).subscribe({
@@ -1816,5 +2031,14 @@ private extractParenPart(scale: string): string {
    */
   getActionMenuPosition(eventId: string): 'up' | 'down' {
     return this.actionMenuPosition[eventId] || 'down';
+  }
+
+  /**
+   * Convert comma-separated email string to array for display
+   */
+  getEmailArray(emailString: string | string[] | null | undefined): string[] {
+    if (!emailString || emailString === 'N/A') return [];
+    if (Array.isArray(emailString)) return emailString;
+    return emailString.split(',').map(e => e.trim()).filter(e => e.length > 0);
   }
 }

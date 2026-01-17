@@ -5,6 +5,7 @@ import { LocationService, Branch } from 'src/app/core/services/location.service'
 import { ChildBranchService, ChildBranch, ChildBranchMember } from 'src/app/core/services/child-branch.service';
 import { TokenStorageService } from 'src/app/core/services/token-storage.service';
 import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
+import { UserPreferencesService, ColumnPreferences } from 'src/app/core/services/user-preferences.service';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
@@ -62,6 +63,13 @@ export class BranchListComponent implements OnInit, OnDestroy {
   activeFilter: string | null = null;
   dropdownOpen: { [key: string]: boolean } = {};
   pinnedColumns: string[] = [];
+  
+  // Column reordering and visibility
+  columnOrder: string[] = ['expand', 'branchName', 'coordinatorName', 'state', 'city', 'establishedOn', 'ashramArea', 'actions'];
+  hiddenColumns: string[] = [];
+  draggedColumn: string | null = null;
+  dragOverColumn: string | null = null;
+  isColumnVisibilityMenuOpen: boolean = false;
 
   // Action menu state
   openActionMenu: string | null = null;
@@ -81,7 +89,8 @@ export class BranchListComponent implements OnInit, OnDestroy {
     private messageService: MessageService,
     private tokenStorage: TokenStorageService,
     private confirmationDialog: ConfirmationDialogService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private userPreferencesService: UserPreferencesService
   ) { }
 
   ngOnInit(): void {
@@ -89,6 +98,9 @@ export class BranchListComponent implements OnInit, OnDestroy {
     this.breadCrumbItems = [
       { label: 'Branches', active: true }
     ];
+
+    // Load column preferences
+    this.loadColumnPreferences();
 
     // Load branches from service
     this.loadBranches();
@@ -785,6 +797,177 @@ export class BranchListComponent implements OnInit, OnDestroy {
   applyPinning() {
     // Custom logic to apply pinning if needed
     console.log('Pinned columns:', this.pinnedColumns);
+    this.saveColumnPreferences();
+  }
+
+  // Column reordering methods
+  onColumnDragStart(event: DragEvent, column: string): void {
+    const target = event.target as HTMLElement;
+    if (target.closest('button') || target.closest('.dropdown-menu') || target.closest('input') || target.closest('a')) {
+      event.preventDefault();
+      return;
+    }
+    this.draggedColumn = column;
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', column);
+    }
+    const thElement = (event.currentTarget as HTMLElement);
+    if (thElement) {
+      thElement.classList.add('dragging');
+    }
+  }
+
+  onColumnDragEnd(event: DragEvent): void {
+    this.draggedColumn = null;
+    this.dragOverColumn = null;
+    const thElement = (event.currentTarget as HTMLElement);
+    if (thElement) {
+      thElement.classList.remove('dragging');
+    }
+    document.querySelectorAll('.column-drag-over').forEach(el => {
+      el.classList.remove('column-drag-over');
+    });
+  }
+
+  onColumnDragOver(event: DragEvent, column: string): void {
+    if (this.draggedColumn && this.draggedColumn !== column) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = 'move';
+      }
+      this.dragOverColumn = column;
+      if (event.currentTarget) {
+        (event.currentTarget as HTMLElement).classList.add('column-drag-over');
+      }
+    }
+  }
+
+  onColumnDragLeave(event: DragEvent): void {
+    if (event.currentTarget) {
+      (event.currentTarget as HTMLElement).classList.remove('column-drag-over');
+    }
+    this.dragOverColumn = null;
+  }
+
+  onColumnDrop(event: DragEvent, targetColumn: string): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!this.draggedColumn || this.draggedColumn === targetColumn) {
+      return;
+    }
+
+    if (event.currentTarget) {
+      (event.currentTarget as HTMLElement).classList.remove('column-drag-over');
+    }
+
+    const draggedIndex = this.columnOrder.indexOf(this.draggedColumn);
+    const targetIndex = this.columnOrder.indexOf(targetColumn);
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      return;
+    }
+
+    const newOrder = [...this.columnOrder];
+    newOrder.splice(draggedIndex, 1);
+    newOrder.splice(targetIndex, 0, this.draggedColumn);
+
+    this.columnOrder = newOrder;
+    this.saveColumnPreferences();
+    this.cdr.detectChanges();
+
+    this.draggedColumn = null;
+    this.dragOverColumn = null;
+  }
+
+  private loadColumnPreferences(): void {
+    this.userPreferencesService.getColumnPreferences('branches_list_columns').subscribe({
+      next: (preferences) => {
+        if (preferences) {
+          if (preferences.hidden_columns && preferences.hidden_columns.length > 0) {
+            this.hiddenColumns = [...preferences.hidden_columns];
+          }
+          if (preferences.pinned_columns && preferences.pinned_columns.length > 0) {
+            this.pinnedColumns = [...preferences.pinned_columns];
+          }
+          if (preferences.column_order && preferences.column_order.length > 0) {
+            const validOrder = preferences.column_order.filter(col => this.columnOrder.includes(col));
+            const missingColumns = this.columnOrder.filter(col => !validOrder.includes(col));
+            this.columnOrder = [...validOrder, ...missingColumns];
+          }
+          this.cdr.detectChanges();
+        }
+      },
+      error: (error) => {
+        console.error('Error loading column preferences:', error);
+      }
+    });
+  }
+
+  private saveColumnPreferences(): void {
+    const preferences: ColumnPreferences = {
+      hidden_columns: this.hiddenColumns,
+      pinned_columns: this.pinnedColumns,
+      column_order: this.columnOrder
+    };
+    this.userPreferencesService.saveColumnPreferences('branches_list_columns', preferences).subscribe({
+      next: () => {},
+      error: (error) => {
+        console.error('Error saving column preferences:', error);
+      }
+    });
+  }
+
+  isColumnHidden(column: string): boolean {
+    return this.hiddenColumns.includes(column);
+  }
+
+  toggleColumnVisibility(column: string): void {
+    const index = this.hiddenColumns.indexOf(column);
+    if (index > -1) {
+      this.hiddenColumns.splice(index, 1);
+    } else {
+      this.hiddenColumns.push(column);
+    }
+    this.hiddenColumns = [...this.hiddenColumns];
+    this.saveColumnPreferences();
+    this.cdr.detectChanges();
+  }
+
+  toggleColumnVisibilityMenu(): void {
+    this.isColumnVisibilityMenuOpen = !this.isColumnVisibilityMenuOpen;
+  }
+
+  closeColumnVisibilityMenu(): void {
+    this.isColumnVisibilityMenuOpen = false;
+  }
+
+  getColumnDisplayName(column: string): string {
+    const names: Record<string, string> = {
+      'expand': '',
+      'branchName': 'Branch Name',
+      'coordinatorName': 'Coordinator',
+      'state': 'State',
+      'city': 'City',
+      'establishedOn': 'Established On',
+      'ashramArea': 'Ashram Area',
+      'actions': 'Actions'
+    };
+    return names[column] || column;
+  }
+
+  getAllColumns(): string[] {
+    return this.columnOrder;
+  }
+
+  showAllColumns(): void {
+    this.hiddenColumns = [];
+    this.hiddenColumns = [...this.hiddenColumns];
+    this.closeColumnVisibilityMenu();
+    this.saveColumnPreferences();
+    this.cdr.detectChanges();
   }
 
   // Action menu methods
@@ -931,6 +1114,11 @@ export class BranchListComponent implements OnInit, OnDestroy {
     }
 
     const target = event.target as HTMLElement;
+
+    // Close column visibility menu if clicking outside
+    if (!target.closest('.column-visibility-manager')) {
+      this.closeColumnVisibilityMenu();
+    }
 
     // Close action menu if clicking outside
     if (!target.closest('.action-menu-container')) {

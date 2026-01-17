@@ -1,6 +1,35 @@
 <app-page-title [title]="'Branches'" [breadcrumbItems]="breadCrumbItems"></app-page-title>
 
 <div class="d-flex justify-content-end mb-3 gap-2">
+  <!-- Column Visibility Manager -->
+  <div class="column-visibility-manager" (click)="$event.stopPropagation()">
+    <button type="button" class="btn btn-outline-info btn-sm" (click)="toggleColumnVisibilityMenu()">
+      <i class="pi pi-eye me-1"></i>
+      Columns
+      <span class="badge bg-info ms-1" *ngIf="hiddenColumns.length > 0">{{ hiddenColumns.length }}</span>
+    </button>
+    <div class="column-visibility-dropdown" [class.show]="isColumnVisibilityMenuOpen">
+      <div class="dropdown-header">
+        <h6>Column Visibility</h6>
+        <button type="button" class="btn btn-link p-0" (click)="closeColumnVisibilityMenu()">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+      <div class="dropdown-body">
+        <div class="column-visibility-item" *ngFor="let column of getAllColumns()">
+          <label class="d-flex align-items-center">
+            <input type="checkbox" [checked]="!isColumnHidden(column)" (change)="toggleColumnVisibility(column)" />
+            <span class="ms-2">{{ getColumnDisplayName(column) || 'Expand' }}</span>
+          </label>
+        </div>
+      </div>
+      <div class="dropdown-footer">
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="showAllColumns()" [disabled]="hiddenColumns.length === 0">
+          Show All
+        </button>
+      </div>
+    </div>
+  </div>
   <button class="btn btn-outline-success" (click)="exportBranchesToExcel()" [disabled]="exporting">
     <i class="pi pi-file-excel me-1"></i>
     <span *ngIf="!exporting">Export to Excel</span>
@@ -56,93 +85,162 @@
           <!-- Table Header -->
           <ng-template pTemplate="header">
             <tr>
-              <th style="width: 5rem"></th>
-              <th>
-                <div class="d-flex align-items-center justify-content-between">
-                  <span>Branch Name</span>
-                  <div class="d-flex gap-1">
+              <ng-container *ngFor="let column of columnOrder">
+                <th *ngIf="column === 'expand' && !isColumnHidden('expand')" style="width: 5rem"></th>
+                <th *ngIf="column === 'branchName' && !isColumnHidden('branchName')"
+                    draggable="true"
+                    (dragstart)="onColumnDragStart($event, 'branchName')"
+                    (dragend)="onColumnDragEnd($event)"
+                    (dragover)="onColumnDragOver($event, 'branchName')"
+                    (dragleave)="onColumnDragLeave($event)"
+                    (drop)="onColumnDrop($event, 'branchName')"
+                    class="column-header-draggable">
+                  <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                      <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                      <span>Branch Name</span>
+                    </div>
+                    <div class="d-flex gap-1">
+                      <button
+                        class="btn btn-sm btn-link p-0"
+                        (click)="toggleColumnPin('branchName')"
+                        [class.text-warning]="isColumnPinned('branchName')"
+                      >
+                        <i class="pi pi-thumbtack"></i>
+                      </button>
+                      <button
+                        class="btn btn-sm btn-link p-0"
+                        (click)="showFilter('branchName')"
+                      >
+                        <i class="pi pi-filter"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div *ngIf="activeFilter === 'branchName'" class="mt-2">
+                    <input
+                      type="text"
+                      pInputText
+                      class="form-control form-control-sm"
+                      placeholder="Filter Branch Name"
+                      [(ngModel)]="filters['branchName']"
+                      (input)="applyFilter()"
+                    />
                     <button
-                      class="btn btn-sm btn-link p-0"
-                      (click)="toggleColumnPin('branchName')"
-                      [class.text-warning]="isColumnPinned('branchName')"
+                      class="btn btn-sm btn-link p-0 ms-1"
+                      (click)="clearFilter('branchName')"
                     >
-                      <i class="pi pi-thumbtack"></i>
-                    </button>
-                    <button
-                      class="btn btn-sm btn-link p-0"
-                      (click)="showFilter('branchName')"
-                    >
-                      <i class="pi pi-filter"></i>
+                      <i class="pi pi-times"></i>
                     </button>
                   </div>
-                </div>
-                <div *ngIf="activeFilter === 'branchName'" class="mt-2">
-                  <input
-                    type="text"
-                    pInputText
-                    class="form-control form-control-sm"
-                    placeholder="Filter Branch Name"
-                    [(ngModel)]="filters['branchName']"
-                    (input)="applyFilter()"
-                  />
-                  <button
-                    class="btn btn-sm btn-link p-0 ms-1"
-                    (click)="clearFilter('branchName')"
-                  >
-                    <i class="pi pi-times"></i>
-                  </button>
-                </div>
-              </th>
-
-              <th>
-                <span>Coordinator</span>
-              </th>
-
-              <th>
-                <span>State</span>
-              </th>
-
-              <th>
-                <span>City</span>
-              </th>
-
-              <th>
-                <span>Established On</span>
-              </th>
-
-              <th>
-                <span>Ashram Area</span>
-              </th>
-
-              <th>Actions</th>
+                </th>
+                <th *ngIf="column === 'coordinatorName' && !isColumnHidden('coordinatorName')"
+                    draggable="true"
+                    (dragstart)="onColumnDragStart($event, 'coordinatorName')"
+                    (dragend)="onColumnDragEnd($event)"
+                    (dragover)="onColumnDragOver($event, 'coordinatorName')"
+                    (dragleave)="onColumnDragLeave($event)"
+                    (drop)="onColumnDrop($event, 'coordinatorName')"
+                    class="column-header-draggable">
+                  <div class="d-flex align-items-center">
+                    <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                    <span>Coordinator</span>
+                  </div>
+                </th>
+                <th *ngIf="column === 'state' && !isColumnHidden('state')"
+                    draggable="true"
+                    (dragstart)="onColumnDragStart($event, 'state')"
+                    (dragend)="onColumnDragEnd($event)"
+                    (dragover)="onColumnDragOver($event, 'state')"
+                    (dragleave)="onColumnDragLeave($event)"
+                    (drop)="onColumnDrop($event, 'state')"
+                    class="column-header-draggable">
+                  <div class="d-flex align-items-center">
+                    <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                    <span>State</span>
+                  </div>
+                </th>
+                <th *ngIf="column === 'city' && !isColumnHidden('city')"
+                    draggable="true"
+                    (dragstart)="onColumnDragStart($event, 'city')"
+                    (dragend)="onColumnDragEnd($event)"
+                    (dragover)="onColumnDragOver($event, 'city')"
+                    (dragleave)="onColumnDragLeave($event)"
+                    (drop)="onColumnDrop($event, 'city')"
+                    class="column-header-draggable">
+                  <div class="d-flex align-items-center">
+                    <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                    <span>City</span>
+                  </div>
+                </th>
+                <th *ngIf="column === 'establishedOn' && !isColumnHidden('establishedOn')"
+                    draggable="true"
+                    (dragstart)="onColumnDragStart($event, 'establishedOn')"
+                    (dragend)="onColumnDragEnd($event)"
+                    (dragover)="onColumnDragOver($event, 'establishedOn')"
+                    (dragleave)="onColumnDragLeave($event)"
+                    (drop)="onColumnDrop($event, 'establishedOn')"
+                    class="column-header-draggable">
+                  <div class="d-flex align-items-center">
+                    <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                    <span>Established On</span>
+                  </div>
+                </th>
+                <th *ngIf="column === 'ashramArea' && !isColumnHidden('ashramArea')"
+                    draggable="true"
+                    (dragstart)="onColumnDragStart($event, 'ashramArea')"
+                    (dragend)="onColumnDragEnd($event)"
+                    (dragover)="onColumnDragOver($event, 'ashramArea')"
+                    (dragleave)="onColumnDragLeave($event)"
+                    (drop)="onColumnDrop($event, 'ashramArea')"
+                    class="column-header-draggable">
+                  <div class="d-flex align-items-center">
+                    <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                    <span>Ashram Area</span>
+                  </div>
+                </th>
+                <th *ngIf="column === 'actions' && !isColumnHidden('actions')"
+                    draggable="true"
+                    (dragstart)="onColumnDragStart($event, 'actions')"
+                    (dragend)="onColumnDragEnd($event)"
+                    (dragover)="onColumnDragOver($event, 'actions')"
+                    (dragleave)="onColumnDragLeave($event)"
+                    (drop)="onColumnDrop($event, 'actions')"
+                    class="column-header-draggable">
+                  <div class="d-flex align-items-center">
+                    <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                    <span>Actions</span>
+                  </div>
+                </th>
+              </ng-container>
             </tr>
           </ng-template>
 
           <!-- Table Body -->
           <ng-template pTemplate="body" let-branch let-expanded="expanded">
             <tr>
-              <td>
-                <p-button
-                  type="button"
-                  pRipple
-                  [pRowToggler]="branch"
-                  [text]="true"
-                  severity="secondary"
-                  [rounded]="true"
-                  [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-                ></p-button>
-              </td>
-              <td>
-                <a href="#" class="text-primary text-decoration-none" (click)="viewBranch(branch.id); $event.preventDefault()">
-                  {{ branch.branchName }}
-                </a>
-              </td>
-              <td>{{ branch.coordinatorName }}</td>
-              <td>{{ branch.state }}</td>
-              <td>{{ branch.city }}</td>
-              <td>{{ branch.establishedOn | date: 'mediumDate' }}</td>
-              <td>{{ branch.ashramArea }}</td>
-              <td>
+              <ng-container *ngFor="let column of columnOrder">
+                <td *ngIf="column === 'expand' && !isColumnHidden('expand')">
+                  <p-button
+                    type="button"
+                    pRipple
+                    [pRowToggler]="branch"
+                    [text]="true"
+                    severity="secondary"
+                    [rounded]="true"
+                    [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                  ></p-button>
+                </td>
+                <td *ngIf="column === 'branchName' && !isColumnHidden('branchName')">
+                  <a href="#" class="text-primary text-decoration-none" (click)="viewBranch(branch.id); $event.preventDefault()">
+                    {{ branch.branchName }}
+                  </a>
+                </td>
+                <td *ngIf="column === 'coordinatorName' && !isColumnHidden('coordinatorName')">{{ branch.coordinatorName }}</td>
+                <td *ngIf="column === 'state' && !isColumnHidden('state')">{{ branch.state }}</td>
+                <td *ngIf="column === 'city' && !isColumnHidden('city')">{{ branch.city }}</td>
+                <td *ngIf="column === 'establishedOn' && !isColumnHidden('establishedOn')">{{ branch.establishedOn | date: 'mediumDate' }}</td>
+                <td *ngIf="column === 'ashramArea' && !isColumnHidden('ashramArea')">{{ branch.ashramArea }}</td>
+                <td *ngIf="column === 'actions' && !isColumnHidden('actions')">
                 <div class="action-menu-container" (click)="$event.stopPropagation()">
                   <button
                     class="btn btn-link p-0 action-menu-btn"
@@ -191,6 +289,7 @@
                   </div>
                 </div>
               </td>
+              </ng-container>
             </tr>
           </ng-template>
 

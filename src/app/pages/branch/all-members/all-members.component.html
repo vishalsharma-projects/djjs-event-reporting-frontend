@@ -7,6 +7,35 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h5 class="mb-0">All Members ({{ members.length }})</h5>
           <div class="d-flex gap-2">
+            <!-- Column Visibility Manager -->
+            <div class="column-visibility-manager" (click)="$event.stopPropagation()">
+              <button type="button" class="btn btn-outline-info btn-sm" (click)="toggleColumnVisibilityMenu()">
+                <i class="pi pi-eye me-1"></i>
+                Columns
+                <span class="badge bg-info ms-1" *ngIf="hiddenColumns.length > 0">{{ hiddenColumns.length }}</span>
+              </button>
+              <div class="column-visibility-dropdown" [class.show]="isColumnVisibilityMenuOpen">
+                <div class="dropdown-header">
+                  <h6>Column Visibility</h6>
+                  <button type="button" class="btn btn-link p-0" (click)="closeColumnVisibilityMenu()">
+                    <i class="pi pi-times"></i>
+                  </button>
+                </div>
+                <div class="dropdown-body">
+                  <div class="column-visibility-item" *ngFor="let column of getAllColumns()">
+                    <label class="d-flex align-items-center">
+                      <input type="checkbox" [checked]="!isColumnHidden(column)" (change)="toggleColumnVisibility(column)" />
+                      <span class="ms-2">{{ getColumnDisplayName(column) }}</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="dropdown-footer">
+                  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="showAllColumns()" [disabled]="hiddenColumns.length === 0">
+                    Show All
+                  </button>
+                </div>
+              </div>
+            </div>
             <button class="btn btn-outline-success" (click)="exportMembersToExcel()" [disabled]="exporting">
               <i class="pi pi-file-excel me-1"></i>
               <span *ngIf="!exporting">Export to Excel</span>
@@ -56,45 +85,139 @@
             [tableStyle]="{ 'min-width': '100%' }">
             <ng-template pTemplate="header">
               <tr>
-                <th>Name</th>
-                <th>Member Type</th>
-                <!-- <th>Branch Type</th> -->
-                <th>Branch Name</th>
-                <th>Branch Role</th>
-                <th>Responsibility</th>
-                <th>Age</th>
-                <th>Qualification</th>
-                <th>Actions</th>
+                <ng-container *ngFor="let column of columnOrder">
+                  <th *ngIf="column === 'name' && !isColumnHidden('name')"
+                      draggable="true"
+                      (dragstart)="onColumnDragStart($event, 'name')"
+                      (dragend)="onColumnDragEnd($event)"
+                      (dragover)="onColumnDragOver($event, 'name')"
+                      (dragleave)="onColumnDragLeave($event)"
+                      (drop)="onColumnDrop($event, 'name')"
+                      class="column-header-draggable">
+                    <div class="d-flex align-items-center">
+                      <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                      <span>Name</span>
+                    </div>
+                  </th>
+                  <th *ngIf="column === 'memberType' && !isColumnHidden('memberType')"
+                      draggable="true"
+                      (dragstart)="onColumnDragStart($event, 'memberType')"
+                      (dragend)="onColumnDragEnd($event)"
+                      (dragover)="onColumnDragOver($event, 'memberType')"
+                      (dragleave)="onColumnDragLeave($event)"
+                      (drop)="onColumnDrop($event, 'memberType')"
+                      class="column-header-draggable">
+                    <div class="d-flex align-items-center">
+                      <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                      <span>Member Type</span>
+                    </div>
+                  </th>
+                  <th *ngIf="column === 'branchName' && !isColumnHidden('branchName')"
+                      draggable="true"
+                      (dragstart)="onColumnDragStart($event, 'branchName')"
+                      (dragend)="onColumnDragEnd($event)"
+                      (dragover)="onColumnDragOver($event, 'branchName')"
+                      (dragleave)="onColumnDragLeave($event)"
+                      (drop)="onColumnDrop($event, 'branchName')"
+                      class="column-header-draggable">
+                    <div class="d-flex align-items-center">
+                      <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                      <span>Branch Name</span>
+                    </div>
+                  </th>
+                  <th *ngIf="column === 'branchRole' && !isColumnHidden('branchRole')"
+                      draggable="true"
+                      (dragstart)="onColumnDragStart($event, 'branchRole')"
+                      (dragend)="onColumnDragEnd($event)"
+                      (dragover)="onColumnDragOver($event, 'branchRole')"
+                      (dragleave)="onColumnDragLeave($event)"
+                      (drop)="onColumnDrop($event, 'branchRole')"
+                      class="column-header-draggable">
+                    <div class="d-flex align-items-center">
+                      <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                      <span>Branch Role</span>
+                    </div>
+                  </th>
+                  <th *ngIf="column === 'responsibility' && !isColumnHidden('responsibility')"
+                      draggable="true"
+                      (dragstart)="onColumnDragStart($event, 'responsibility')"
+                      (dragend)="onColumnDragEnd($event)"
+                      (dragover)="onColumnDragOver($event, 'responsibility')"
+                      (dragleave)="onColumnDragLeave($event)"
+                      (drop)="onColumnDrop($event, 'responsibility')"
+                      class="column-header-draggable">
+                    <div class="d-flex align-items-center">
+                      <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                      <span>Responsibility</span>
+                    </div>
+                  </th>
+                  <th *ngIf="column === 'age' && !isColumnHidden('age')"
+                      draggable="true"
+                      (dragstart)="onColumnDragStart($event, 'age')"
+                      (dragend)="onColumnDragEnd($event)"
+                      (dragover)="onColumnDragOver($event, 'age')"
+                      (dragleave)="onColumnDragLeave($event)"
+                      (drop)="onColumnDrop($event, 'age')"
+                      class="column-header-draggable">
+                    <div class="d-flex align-items-center">
+                      <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                      <span>Age</span>
+                    </div>
+                  </th>
+                  <th *ngIf="column === 'qualification' && !isColumnHidden('qualification')"
+                      draggable="true"
+                      (dragstart)="onColumnDragStart($event, 'qualification')"
+                      (dragend)="onColumnDragEnd($event)"
+                      (dragover)="onColumnDragOver($event, 'qualification')"
+                      (dragleave)="onColumnDragLeave($event)"
+                      (drop)="onColumnDrop($event, 'qualification')"
+                      class="column-header-draggable">
+                    <div class="d-flex align-items-center">
+                      <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                      <span>Qualification</span>
+                    </div>
+                  </th>
+                  <th *ngIf="column === 'actions' && !isColumnHidden('actions')"
+                      draggable="true"
+                      (dragstart)="onColumnDragStart($event, 'actions')"
+                      (dragend)="onColumnDragEnd($event)"
+                      (dragover)="onColumnDragOver($event, 'actions')"
+                      (dragleave)="onColumnDragLeave($event)"
+                      (drop)="onColumnDrop($event, 'actions')"
+                      class="column-header-draggable">
+                    <div class="d-flex align-items-center">
+                      <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                      <span>Actions</span>
+                    </div>
+                  </th>
+                </ng-container>
               </tr>
             </ng-template>
             <ng-template pTemplate="body" let-member>
               <tr style="cursor: pointer;" (click)="viewMember(member)">
-                <td>{{ member.name }}</td>
-                <td>
-                  <span class="badge" [ngClass]="member.member_type === 'preacher' ? 'bg-info' : 'bg-success'">
-                    {{ member.member_type === 'preacher' ? 'Preacher' : 'Samarpit Sevadar' }}
-                  </span>
-                </td>
-                <!-- <td>
-                  <span class="badge" [ngClass]="member.branch_type === 'branch' ? 'bg-primary' : 'bg-warning'">
-                    {{ member.branch_type === 'branch' ? 'Branch' : 'Child Branch' }}
-                  </span>
-                </td> -->
-                <td>{{ member.branch_name || member.child_branch_name || 'N/A' }}</td>
-                <td>{{ member.branch_role || 'N/A' }}</td>
-                <td>{{ member.responsibility || 'N/A' }}</td>
-                <td>{{ member.age || 'N/A' }}</td>
-                <td>{{ member.qualification || 'N/A' }}</td>
-                <td (click)="$event.stopPropagation()">
-                  <div class="d-flex gap-1">
-                    <button class="btn btn-sm btn-outline-primary" (click)="openEditMemberModal(member)" title="Edit Member">
-                      <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" (click)="deleteMember(member)" title="Delete Member">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  </div>
-                </td>
+                <ng-container *ngFor="let column of columnOrder">
+                  <td *ngIf="column === 'name' && !isColumnHidden('name')">{{ member.name }}</td>
+                  <td *ngIf="column === 'memberType' && !isColumnHidden('memberType')">
+                    <span class="badge" [ngClass]="member.member_type === 'preacher' ? 'bg-info' : 'bg-success'">
+                      {{ member.member_type === 'preacher' ? 'Preacher' : 'Samarpit Sevadar' }}
+                    </span>
+                  </td>
+                  <td *ngIf="column === 'branchName' && !isColumnHidden('branchName')">{{ member.branch_name || member.child_branch_name || 'N/A' }}</td>
+                  <td *ngIf="column === 'branchRole' && !isColumnHidden('branchRole')">{{ member.branch_role || 'N/A' }}</td>
+                  <td *ngIf="column === 'responsibility' && !isColumnHidden('responsibility')">{{ member.responsibility || 'N/A' }}</td>
+                  <td *ngIf="column === 'age' && !isColumnHidden('age')">{{ member.age || 'N/A' }}</td>
+                  <td *ngIf="column === 'qualification' && !isColumnHidden('qualification')">{{ member.qualification || 'N/A' }}</td>
+                  <td *ngIf="column === 'actions' && !isColumnHidden('actions')" (click)="$event.stopPropagation()">
+                    <div class="d-flex gap-1">
+                      <button class="btn btn-sm btn-outline-primary" (click)="openEditMemberModal(member)" title="Edit Member">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="btn btn-sm btn-outline-danger" (click)="deleteMember(member)" title="Delete Member">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </ng-container>
               </tr>
             </ng-template>
             <ng-template pTemplate="emptymessage">

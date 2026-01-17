@@ -1,0 +1,173 @@
+// Drag and drop column reordering styles
+.column-header-draggable {
+  cursor: move;
+  user-select: none;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: rgba(255, 107, 53, 0.05);
+  }
+
+  &.dragging {
+    opacity: 0.5;
+    background-color: rgba(255, 107, 53, 0.1);
+    transform: scale(0.98);
+  }
+
+  &.column-drag-over {
+    border-left: 3px solid #ff6b35;
+    background-color: rgba(255, 107, 53, 0.1);
+    box-shadow: inset 0 0 10px rgba(255, 107, 53, 0.2);
+  }
+
+  .pi-bars {
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+
+    &:hover {
+      opacity: 1;
+      color: #ff6b35;
+    }
+  }
+}
+
+// Column Visibility Manager
+.column-visibility-manager {
+  position: relative;
+  display: inline-block;
+
+  .btn-outline-info {
+    border-color: #0dcaf0;
+    color: #0dcaf0;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: #0dcaf0;
+      color: white;
+      border-color: #0dcaf0;
+    }
+
+    &.active {
+      background-color: #0dcaf0;
+      color: white;
+      border-color: #0dcaf0;
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.4rem;
+    }
+  }
+
+  .column-visibility-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    min-width: 280px;
+    max-width: 320px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1050;
+    display: none;
+    overflow: hidden;
+
+    &.show {
+      display: block;
+    }
+
+    .dropdown-header {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #dee2e6;
+      background-color: #f8f9fa;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      h6 {
+        margin: 0;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #495057;
+      }
+
+      .btn-link {
+        color: #6c757d;
+        padding: 0;
+        border: none;
+        background: transparent;
+        font-size: 1rem;
+        line-height: 1;
+
+        &:hover {
+          color: #495057;
+        }
+      }
+    }
+
+    .dropdown-body {
+      max-height: 400px;
+      overflow-y: auto;
+      padding: 0.5rem 0;
+
+      .column-visibility-item {
+        padding: 0.5rem 1rem;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+          background-color: #f8f9fa;
+        }
+
+        label {
+          margin: 0;
+          cursor: pointer;
+          font-size: 0.875rem;
+          color: #495057;
+          font-weight: 400;
+          width: 100%;
+          display: flex;
+          align-items: center;
+
+          input[type="checkbox"] {
+            cursor: pointer;
+            width: 1rem;
+            height: 1rem;
+            accent-color: #0dcaf0;
+          }
+
+          span {
+            flex: 1;
+            margin-left: 0.5rem;
+          }
+        }
+      }
+    }
+
+    .dropdown-footer {
+      padding: 0.75rem 1rem;
+      border-top: 1px solid #dee2e6;
+      background-color: #f8f9fa;
+
+      .btn {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.75rem;
+        border-color: #6c757d;
+        color: #6c757d;
+
+        &:hover:not(:disabled) {
+          background-color: #6c757d;
+          color: white;
+          border-color: #6c757d;
+        }
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      }
+    }
+  }
+}
+

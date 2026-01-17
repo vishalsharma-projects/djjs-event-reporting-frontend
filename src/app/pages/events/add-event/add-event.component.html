@@ -34,8 +34,11 @@
               Validation {{ validationSettings.getSettings().enabled ? 'ON' : 'OFF' }}
             </label>
           </div> -->
-          <button class="btn btn-outline-danger btn-sm" (click)="clearDraftAndStartFresh()" *ngIf="draftId">
-            <i class="fas fa-trash-alt me-1"></i> Clear Draft
+          <button class="btn btn-outline-warning btn-sm" (click)="clearDraftAndStartFresh()" *ngIf="draftId">
+            <i class="fas fa-eraser me-1"></i> Clear Data
+          </button>
+          <button class="btn btn-outline-danger btn-sm" (click)="deleteIncompleteEvent()" *ngIf="isEditing && eventId && eventStatus === 'incomplete'">
+            <i class="fas fa-trash-alt me-1"></i> Delete Event
           </button>
         </div>
       </div>
@@ -160,12 +163,14 @@
             <div class="col-6">
               <input type="date" class="form-control" placeholder="Start Date" formControlName="startDate"
                 (change)="onStartDateChange()" autocomplete="off"
-                [ngClass]="{'is-invalid': isFieldInvalid('duration')}">
+                [max]="getMaxStartDate()"
+                [ngClass]="{'is-invalid': isFieldInvalid('duration') || isDateRangeInvalid()}">
             </div>
             <div class="col-6">
               <input type="date" class="form-control" placeholder="End Date" formControlName="endDate"
                 (change)="onEndDateChange()" autocomplete="off"
-                [ngClass]="{'is-invalid': isFieldInvalid('duration')}">
+                [min]="getMinEndDate()"
+                [ngClass]="{'is-invalid': isFieldInvalid('duration') || isDateRangeInvalid()}">
             </div>
           </div>
           <input type="hidden" formControlName="duration">
@@ -173,27 +178,44 @@
           <div class="invalid-feedback d-block" *ngIf="isFieldInvalid('duration')">
             Duration is required. Please select start and end dates.
           </div>
+          <div class="invalid-feedback d-block" *ngIf="isDateRangeInvalid() && !isFieldInvalid('duration')">
+            End date cannot be before start date.
+          </div>
         </div>
         <div class="col-md-4 mb-3">
           <label class="form-label">Daily Start Time</label>
-          <input type="time" class="form-control" formControlName="dailyStartTime">
+          <input type="time" class="form-control" formControlName="dailyStartTime"
+            (change)="onDailyStartTimeChange()"
+            [max]="getMaxDailyStartTime()"
+            [ngClass]="{'is-invalid': isTimeRangeInvalid()}">
+          <div class="invalid-feedback d-block" *ngIf="isTimeRangeInvalid()">
+            Daily end time must be after daily start time.
+          </div>
         </div>
         <div class="col-md-4 mb-3">
           <label class="form-label">Daily End Time</label>
-          <input type="time" class="form-control" formControlName="dailyEndTime">
+          <input type="time" class="form-control" formControlName="dailyEndTime"
+            (change)="onDailyEndTimeChange()"
+            [min]="getMinDailyEndTime()"
+            [ngClass]="{'is-invalid': isTimeRangeInvalid()}">
+          <div class="invalid-feedback d-block" *ngIf="isTimeRangeInvalid()">
+            Daily end time must be after daily start time.
+          </div>
         </div>
       </div>
 
       <div class="row">
         <div class="col-md-6 mb-3">
-          <label class="form-label">Orator</label>
+          <label class="form-label">Orator(s)</label>
           <ng-select formControlName="spiritualOrator"
             [items]="orators"
             bindLabel="name"
             bindValue="name"
+            [multiple]="true"
             [searchable]="true"
             [clearable]="true"
-            [placeholder]="loadingOrators ? 'Loading...' : 'Select Spiritual Orator'"
+            [closeOnSelect]="false"
+            [placeholder]="loadingOrators ? 'Loading...' : 'Select Orator(s)'"
             [disabled]="loadingOrators">
           </ng-select>
         </div>
@@ -354,7 +376,9 @@
         <div class="col-md-3">
           <label class="form-label">Donation type</label>
           <ng-select [(ngModel)]="donation.type" [ngModelOptions]="{standalone: true}" (change)="onDonationTypeChange(i)"
-            [items]="['cash', 'in-kind']"
+            [items]="getDonationTypeOptions()"
+            bindLabel="label"
+            bindValue="value"
             [searchable]="true"
             [clearable]="false"
             placeholder="Select Donation Type">
@@ -434,7 +458,7 @@
     </div>
     <!-- Initiations -->
     <div class="common-stepper">
-      <h5 class="mb-3">Initiations (0)</h5>
+      <h5 class="mb-3">Initiation (0)</h5>
       <div class="row">
         <div class="col-md-4 mb-3">
           <label class="form-label">Men</label>
@@ -480,9 +504,40 @@
   <div class="common-stepper">
     <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
       <h6 class="mb-0">List of Event Media ({{ filteredEventMediaList.length }})</h6>
+      <div class="d-flex gap-2 align-items-center">
+        <!-- Column Visibility Manager -->
+        <div class="column-visibility-manager" (click)="$event.stopPropagation()">
+          <button type="button" class="btn btn-outline-info btn-sm" (click)="toggleEventMediaColumnVisibilityMenu()">
+            <i class="pi pi-eye me-1"></i>
+            Columns
+            <span class="badge bg-info ms-1" *ngIf="getHiddenColumnsCount(EVENT_MEDIA_CONFIG) > 0">{{ getHiddenColumnsCount(EVENT_MEDIA_CONFIG) }}</span>
+          </button>
+          <div class="column-visibility-dropdown" [class.show]="isColumnVisibilityMenuOpen(EVENT_MEDIA_CONFIG)">
+            <div class="dropdown-header">
+              <h6>Column Visibility</h6>
+              <button type="button" class="btn btn-link p-0" (click)="closeEventMediaColumnVisibilityMenu()">
+                <i class="pi pi-times"></i>
+              </button>
+            </div>
+            <div class="dropdown-body">
+              <div class="column-visibility-item" *ngFor="let column of getAllEventMediaColumns()">
+                <label class="d-flex align-items-center">
+                  <input type="checkbox" [checked]="!isEventMediaColumnHidden(column)" (change)="toggleEventMediaColumnVisibility(column)" />
+                  <span class="ms-2">{{ getEventMediaColumnDisplayName(column) }}</span>
+                </label>
+              </div>
+            </div>
+            <div class="dropdown-footer">
+              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="showAllEventMediaColumns()" [disabled]="getHiddenColumnsCount(EVENT_MEDIA_CONFIG) === 0">
+                Show All
+              </button>
+            </div>
+          </div>
+        </div>
       <div class="search-box" style="width: 300px;">
         <input type="text" class="form-control form-control-sm" placeholder="Search media..." 
           [(ngModel)]="eventMediaSearchTerm" />
+        </div>
       </div>
     </div>
     <div class="event-table-container mt-3">
@@ -494,20 +549,119 @@
         [tableStyle]="{ 'min-width': '100%' }">
         <ng-template pTemplate="header">
           <tr>
-            <th style="width: 120px;">Actions</th>
-            <th>Type</th>
-            <th>Company Name</th>
-            <th>Company Email</th>
-            <th>Company Website</th>
-            <th>Gender</th>
-            <th>Designation</th>
-            <th>Contact</th>
-            <!-- <th>Reference Person</th> -->
+            <ng-container *ngFor="let column of getAllEventMediaColumns()">
+              <th *ngIf="column === 'actions' && !isEventMediaColumnHidden('actions')" 
+                  style="width: 120px;"
+                  draggable="true"
+                  (dragstart)="onEventMediaColumnDragStart($event, 'actions')"
+                  (dragend)="onEventMediaColumnDragEnd($event)"
+                  (dragover)="onEventMediaColumnDragOver($event, 'actions')"
+                  (dragleave)="onEventMediaColumnDragLeave($event)"
+                  (drop)="onEventMediaColumnDrop($event, 'actions')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Actions</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'type' && !isEventMediaColumnHidden('type')"
+                  draggable="true"
+                  (dragstart)="onEventMediaColumnDragStart($event, 'type')"
+                  (dragend)="onEventMediaColumnDragEnd($event)"
+                  (dragover)="onEventMediaColumnDragOver($event, 'type')"
+                  (dragleave)="onEventMediaColumnDragLeave($event)"
+                  (drop)="onEventMediaColumnDrop($event, 'type')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Type</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'companyName' && !isEventMediaColumnHidden('companyName')"
+                  draggable="true"
+                  (dragstart)="onEventMediaColumnDragStart($event, 'companyName')"
+                  (dragend)="onEventMediaColumnDragEnd($event)"
+                  (dragover)="onEventMediaColumnDragOver($event, 'companyName')"
+                  (dragleave)="onEventMediaColumnDragLeave($event)"
+                  (drop)="onEventMediaColumnDrop($event, 'companyName')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Company Name</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'companyEmail' && !isEventMediaColumnHidden('companyEmail')"
+                  draggable="true"
+                  (dragstart)="onEventMediaColumnDragStart($event, 'companyEmail')"
+                  (dragend)="onEventMediaColumnDragEnd($event)"
+                  (dragover)="onEventMediaColumnDragOver($event, 'companyEmail')"
+                  (dragleave)="onEventMediaColumnDragLeave($event)"
+                  (drop)="onEventMediaColumnDrop($event, 'companyEmail')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Company Email</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'companyWebsite' && !isEventMediaColumnHidden('companyWebsite')"
+                  draggable="true"
+                  (dragstart)="onEventMediaColumnDragStart($event, 'companyWebsite')"
+                  (dragend)="onEventMediaColumnDragEnd($event)"
+                  (dragover)="onEventMediaColumnDragOver($event, 'companyWebsite')"
+                  (dragleave)="onEventMediaColumnDragLeave($event)"
+                  (drop)="onEventMediaColumnDrop($event, 'companyWebsite')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Company Website</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'gender' && !isEventMediaColumnHidden('gender')"
+                  draggable="true"
+                  (dragstart)="onEventMediaColumnDragStart($event, 'gender')"
+                  (dragend)="onEventMediaColumnDragEnd($event)"
+                  (dragover)="onEventMediaColumnDragOver($event, 'gender')"
+                  (dragleave)="onEventMediaColumnDragLeave($event)"
+                  (drop)="onEventMediaColumnDrop($event, 'gender')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Gender</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'designation' && !isEventMediaColumnHidden('designation')"
+                  draggable="true"
+                  (dragstart)="onEventMediaColumnDragStart($event, 'designation')"
+                  (dragend)="onEventMediaColumnDragEnd($event)"
+                  (dragover)="onEventMediaColumnDragOver($event, 'designation')"
+                  (dragleave)="onEventMediaColumnDragLeave($event)"
+                  (drop)="onEventMediaColumnDrop($event, 'designation')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Designation</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'contact' && !isEventMediaColumnHidden('contact')"
+                  draggable="true"
+                  (dragstart)="onEventMediaColumnDragStart($event, 'contact')"
+                  (dragend)="onEventMediaColumnDragEnd($event)"
+                  (dragover)="onEventMediaColumnDragOver($event, 'contact')"
+                  (dragleave)="onEventMediaColumnDragLeave($event)"
+                  (drop)="onEventMediaColumnDrop($event, 'contact')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Contact</span>
+                </div>
+              </th>
+            </ng-container>
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-media let-i="rowIndex">
           <tr>
-            <td>
+            <ng-container *ngFor="let column of getAllEventMediaColumns()">
+              <td *ngIf="column === 'actions' && !isEventMediaColumnHidden('actions')">
               <div class="d-flex gap-1">
                 <button class="btn btn-primary btn-sm" (click)="editEventMedia(i)" title="Edit">
                   <i class="fas fa-edit"></i>
@@ -517,19 +671,22 @@
                 </button>
               </div>
             </td>
-            <td>{{ media.mediaCoverageType }}</td>
-            <td>{{ media.companyName }}</td>
-            <td>{{ media.companyEmail }}</td>
-            <td>{{ media.companyWebsite }}</td>
-            <td>{{ media.gender }}</td>
-            <td>{{ media.designation }}</td>
-            <td>{{ media.contact }}</td>
-            <!-- <td>{{ media.referencePersonName }}</td> -->
+              <td *ngIf="column === 'type' && !isEventMediaColumnHidden('type')">{{ media.mediaCoverageType }}</td>
+              <td *ngIf="column === 'companyName' && !isEventMediaColumnHidden('companyName')">{{ media.companyName }}</td>
+              <td *ngIf="column === 'companyEmail' && !isEventMediaColumnHidden('companyEmail')">
+                <span *ngIf="media.companyEmail">{{ media.companyEmail }}</span>
+                <span *ngIf="!media.companyEmail" class="text-muted">-</span>
+              </td>
+              <td *ngIf="column === 'companyWebsite' && !isEventMediaColumnHidden('companyWebsite')">{{ media.companyWebsite }}</td>
+              <td *ngIf="column === 'gender' && !isEventMediaColumnHidden('gender')">{{ media.gender }}</td>
+              <td *ngIf="column === 'designation' && !isEventMediaColumnHidden('designation')">{{ media.designation }}</td>
+              <td *ngIf="column === 'contact' && !isEventMediaColumnHidden('contact')">{{ media.contact }}</td>
+            </ng-container>
           </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="9" class="text-center text-muted">No event media added yet. Click "Add Media Details" to add.</td>
+            <td [attr.colspan]="getEventMediaVisibleColumnCount()" class="text-center text-muted">No event media added yet. Click "Add Media Details" to add.</td>
           </tr>
         </ng-template>
       </p-table>
@@ -546,9 +703,40 @@
     </div>
     <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
       <h6 class="mb-0">List of Promotional Materials ({{ getFilteredPromotionalMaterials().length }})</h6>
+      <div class="d-flex gap-2 align-items-center">
+        <!-- Column Visibility Manager -->
+        <div class="column-visibility-manager" (click)="$event.stopPropagation()">
+          <button type="button" class="btn btn-outline-info btn-sm" (click)="togglePromotionalMaterialColumnVisibilityMenu()">
+            <i class="pi pi-eye me-1"></i>
+            Columns
+            <span class="badge bg-info ms-1" *ngIf="getHiddenColumnsCount(PROMOTIONAL_MATERIAL_CONFIG) > 0">{{ getHiddenColumnsCount(PROMOTIONAL_MATERIAL_CONFIG) }}</span>
+          </button>
+          <div class="column-visibility-dropdown" [class.show]="isColumnVisibilityMenuOpen(PROMOTIONAL_MATERIAL_CONFIG)">
+            <div class="dropdown-header">
+              <h6>Column Visibility</h6>
+              <button type="button" class="btn btn-link p-0" (click)="closePromotionalMaterialColumnVisibilityMenu()">
+                <i class="pi pi-times"></i>
+              </button>
+            </div>
+            <div class="dropdown-body">
+              <div class="column-visibility-item" *ngFor="let column of getAllPromotionalMaterialColumns()">
+                <label class="d-flex align-items-center">
+                  <input type="checkbox" [checked]="!isPromotionalMaterialColumnHidden(column)" (change)="togglePromotionalMaterialColumnVisibility(column)" />
+                  <span class="ms-2">{{ getPromotionalMaterialColumnDisplayName(column) }}</span>
+                </label>
+              </div>
+            </div>
+            <div class="dropdown-footer">
+              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="showAllPromotionalMaterialColumns()" [disabled]="getHiddenColumnsCount(PROMOTIONAL_MATERIAL_CONFIG) === 0">
+                Show All
+              </button>
+            </div>
+          </div>
+        </div>
       <div class="search-box" style="width: 300px;">
         <input type="text" class="form-control form-control-sm" placeholder="Search materials..." 
           [(ngModel)]="promotionalMaterialSearchTerm" />
+        </div>
       </div>
     </div>
     <div class="event-table-container mt-3">
@@ -560,29 +748,99 @@
         [tableStyle]="{ 'min-width': '100%' }">
         <ng-template pTemplate="header">
           <tr>
-            <th style="width: 80px;">Actions</th>
-            <th>Material Type</th>
-            <th>Quantity</th>
-            <th>Size</th>
-            <th>Custom Dimension</th>
+            <ng-container *ngFor="let column of getAllPromotionalMaterialColumns()">
+              <th *ngIf="column === 'actions' && !isPromotionalMaterialColumnHidden('actions')" 
+                  style="width: 80px;"
+                  draggable="true"
+                  (dragstart)="onPromotionalMaterialColumnDragStart($event, 'actions')"
+                  (dragend)="onPromotionalMaterialColumnDragEnd($event)"
+                  (dragover)="onPromotionalMaterialColumnDragOver($event, 'actions')"
+                  (dragleave)="onPromotionalMaterialColumnDragLeave($event)"
+                  (drop)="onPromotionalMaterialColumnDrop($event, 'actions')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Actions</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'materialType' && !isPromotionalMaterialColumnHidden('materialType')"
+                  draggable="true"
+                  (dragstart)="onPromotionalMaterialColumnDragStart($event, 'materialType')"
+                  (dragend)="onPromotionalMaterialColumnDragEnd($event)"
+                  (dragover)="onPromotionalMaterialColumnDragOver($event, 'materialType')"
+                  (dragleave)="onPromotionalMaterialColumnDragLeave($event)"
+                  (drop)="onPromotionalMaterialColumnDrop($event, 'materialType')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Material Type</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'quantity' && !isPromotionalMaterialColumnHidden('quantity')"
+                  draggable="true"
+                  (dragstart)="onPromotionalMaterialColumnDragStart($event, 'quantity')"
+                  (dragend)="onPromotionalMaterialColumnDragEnd($event)"
+                  (dragover)="onPromotionalMaterialColumnDragOver($event, 'quantity')"
+                  (dragleave)="onPromotionalMaterialColumnDragLeave($event)"
+                  (drop)="onPromotionalMaterialColumnDrop($event, 'quantity')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Quantity</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'size' && !isPromotionalMaterialColumnHidden('size')"
+                  draggable="true"
+                  (dragstart)="onPromotionalMaterialColumnDragStart($event, 'size')"
+                  (dragend)="onPromotionalMaterialColumnDragEnd($event)"
+                  (dragover)="onPromotionalMaterialColumnDragOver($event, 'size')"
+                  (dragleave)="onPromotionalMaterialColumnDragLeave($event)"
+                  (drop)="onPromotionalMaterialColumnDrop($event, 'size')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Size</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'customDimension' && !isPromotionalMaterialColumnHidden('customDimension')"
+                  draggable="true"
+                  (dragstart)="onPromotionalMaterialColumnDragStart($event, 'customDimension')"
+                  (dragend)="onPromotionalMaterialColumnDragEnd($event)"
+                  (dragover)="onPromotionalMaterialColumnDragOver($event, 'customDimension')"
+                  (dragleave)="onPromotionalMaterialColumnDragLeave($event)"
+                  (drop)="onPromotionalMaterialColumnDrop($event, 'customDimension')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Custom Dimension</span>
+                </div>
+              </th>
+            </ng-container>
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-material let-i="rowIndex">
           <tr>
-            <td>
+            <ng-container *ngFor="let column of getAllPromotionalMaterialColumns()">
+              <td *ngIf="column === 'actions' && !isPromotionalMaterialColumnHidden('actions')">
               <button class="btn btn-danger btn-sm" (click)="removeMaterialTypeByValidIndex(i)" title="Remove">
                 <i class="fas fa-trash"></i>
               </button>
             </td>
-            <td>{{ material.materialType }}</td>
-            <td>{{ material.quantity }}</td>
-            <td>{{ material.size }}</td>
-            <td>{{ material.customHeight }} x {{ material.customWidth }} inch</td>
+              <td *ngIf="column === 'materialType' && !isPromotionalMaterialColumnHidden('materialType')">{{ material.materialType }}</td>
+              <td *ngIf="column === 'quantity' && !isPromotionalMaterialColumnHidden('quantity')">{{ material.quantity }}</td>
+              <td *ngIf="column === 'size' && !isPromotionalMaterialColumnHidden('size')">{{ material.size }}</td>
+              <td *ngIf="column === 'customDimension' && !isPromotionalMaterialColumnHidden('customDimension')">
+                <span *ngIf="material.customHeight && material.customWidth">
+                  {{ material.customHeight }} {{ material.customHeightUnit || 'inch' }} x {{ material.customWidth }} {{ material.customWidthUnit || 'inch' }}
+                </span>
+                <span *ngIf="!material.customHeight || !material.customWidth" class="text-muted">-</span>
+              </td>
+            </ng-container>
           </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="5" class="text-center text-muted">No promotional materials added yet. Click "Add Material Type" to add.</td>
+            <td [attr.colspan]="getPromotionalMaterialVisibleColumnCount()" class="text-center text-muted">No promotional materials added yet. Click "Add Material Type" to add.</td>
           </tr>
         </ng-template>
       </p-table>
@@ -642,9 +900,40 @@
   <div class="common-stepper">
     <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
       <h6 class="mb-0">List of Special Guests ({{ filteredSpecialGuestList.length }})</h6>
+      <div class="d-flex gap-2 align-items-center">
+        <!-- Column Visibility Manager -->
+        <div class="column-visibility-manager" (click)="$event.stopPropagation()">
+          <button type="button" class="btn btn-outline-info btn-sm" (click)="toggleSpecialGuestsColumnVisibilityMenu()">
+            <i class="pi pi-eye me-1"></i>
+            Columns
+            <span class="badge bg-info ms-1" *ngIf="getHiddenColumnsCount(SPECIAL_GUESTS_CONFIG) > 0">{{ getHiddenColumnsCount(SPECIAL_GUESTS_CONFIG) }}</span>
+          </button>
+          <div class="column-visibility-dropdown" [class.show]="isColumnVisibilityMenuOpen(SPECIAL_GUESTS_CONFIG)">
+            <div class="dropdown-header">
+              <h6>Column Visibility</h6>
+              <button type="button" class="btn btn-link p-0" (click)="closeSpecialGuestsColumnVisibilityMenu()">
+                <i class="pi pi-times"></i>
+              </button>
+            </div>
+            <div class="dropdown-body">
+              <div class="column-visibility-item" *ngFor="let column of getAllSpecialGuestsColumns()">
+                <label class="d-flex align-items-center">
+                  <input type="checkbox" [checked]="!isSpecialGuestsColumnHidden(column)" (change)="toggleSpecialGuestsColumnVisibility(column)" />
+                  <span class="ms-2">{{ getSpecialGuestsColumnDisplayName(column) }}</span>
+                </label>
+              </div>
+            </div>
+            <div class="dropdown-footer">
+              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="showAllSpecialGuestsColumns()" [disabled]="getHiddenColumnsCount(SPECIAL_GUESTS_CONFIG) === 0">
+                Show All
+              </button>
+            </div>
+          </div>
+        </div>
       <div class="search-box" style="width: 300px;">
         <input type="text" class="form-control form-control-sm" placeholder="Search guests..." 
           [(ngModel)]="specialGuestSearchTerm" />
+        </div>
       </div>
     </div>
     <div class="event-table-container mt-3">
@@ -656,21 +945,145 @@
         [tableStyle]="{ 'min-width': '100%' }">
         <ng-template pTemplate="header">
           <tr>
-            <th style="width: 120px;">Actions</th>
-            <th>Name (Phone no.)</th>
-            <th>Gender</th>
-            <th>Designation</th>
-            <th>Organization</th>
-            <th>Email</th>
-            <th>City, State</th>
-            <th>Personal no.</th>
-            <th>Contact Person (Phone no.)</th>
-            <th>Reference Person (Phone no.)</th>
+            <ng-container *ngFor="let column of getAllSpecialGuestsColumns()">
+              <th *ngIf="column === 'actions' && !isSpecialGuestsColumnHidden('actions')" 
+                  style="width: 120px;"
+                  draggable="true"
+                  (dragstart)="onSpecialGuestsColumnDragStart($event, 'actions')"
+                  (dragend)="onSpecialGuestsColumnDragEnd($event)"
+                  (dragover)="onSpecialGuestsColumnDragOver($event, 'actions')"
+                  (dragleave)="onSpecialGuestsColumnDragLeave($event)"
+                  (drop)="onSpecialGuestsColumnDrop($event, 'actions')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Actions</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'name' && !isSpecialGuestsColumnHidden('name')"
+                  draggable="true"
+                  (dragstart)="onSpecialGuestsColumnDragStart($event, 'name')"
+                  (dragend)="onSpecialGuestsColumnDragEnd($event)"
+                  (dragover)="onSpecialGuestsColumnDragOver($event, 'name')"
+                  (dragleave)="onSpecialGuestsColumnDragLeave($event)"
+                  (drop)="onSpecialGuestsColumnDrop($event, 'name')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Name (Phone no.)</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'gender' && !isSpecialGuestsColumnHidden('gender')"
+                  draggable="true"
+                  (dragstart)="onSpecialGuestsColumnDragStart($event, 'gender')"
+                  (dragend)="onSpecialGuestsColumnDragEnd($event)"
+                  (dragover)="onSpecialGuestsColumnDragOver($event, 'gender')"
+                  (dragleave)="onSpecialGuestsColumnDragLeave($event)"
+                  (drop)="onSpecialGuestsColumnDrop($event, 'gender')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Gender</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'designation' && !isSpecialGuestsColumnHidden('designation')"
+                  draggable="true"
+                  (dragstart)="onSpecialGuestsColumnDragStart($event, 'designation')"
+                  (dragend)="onSpecialGuestsColumnDragEnd($event)"
+                  (dragover)="onSpecialGuestsColumnDragOver($event, 'designation')"
+                  (dragleave)="onSpecialGuestsColumnDragLeave($event)"
+                  (drop)="onSpecialGuestsColumnDrop($event, 'designation')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Designation</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'organization' && !isSpecialGuestsColumnHidden('organization')"
+                  draggable="true"
+                  (dragstart)="onSpecialGuestsColumnDragStart($event, 'organization')"
+                  (dragend)="onSpecialGuestsColumnDragEnd($event)"
+                  (dragover)="onSpecialGuestsColumnDragOver($event, 'organization')"
+                  (dragleave)="onSpecialGuestsColumnDragLeave($event)"
+                  (drop)="onSpecialGuestsColumnDrop($event, 'organization')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Organization</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'email' && !isSpecialGuestsColumnHidden('email')"
+                  draggable="true"
+                  (dragstart)="onSpecialGuestsColumnDragStart($event, 'email')"
+                  (dragend)="onSpecialGuestsColumnDragEnd($event)"
+                  (dragover)="onSpecialGuestsColumnDragOver($event, 'email')"
+                  (dragleave)="onSpecialGuestsColumnDragLeave($event)"
+                  (drop)="onSpecialGuestsColumnDrop($event, 'email')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Email</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'cityState' && !isSpecialGuestsColumnHidden('cityState')"
+                  draggable="true"
+                  (dragstart)="onSpecialGuestsColumnDragStart($event, 'cityState')"
+                  (dragend)="onSpecialGuestsColumnDragEnd($event)"
+                  (dragover)="onSpecialGuestsColumnDragOver($event, 'cityState')"
+                  (dragleave)="onSpecialGuestsColumnDragLeave($event)"
+                  (drop)="onSpecialGuestsColumnDrop($event, 'cityState')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>City, State</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'personalNumber' && !isSpecialGuestsColumnHidden('personalNumber')"
+                  draggable="true"
+                  (dragstart)="onSpecialGuestsColumnDragStart($event, 'personalNumber')"
+                  (dragend)="onSpecialGuestsColumnDragEnd($event)"
+                  (dragover)="onSpecialGuestsColumnDragOver($event, 'personalNumber')"
+                  (dragleave)="onSpecialGuestsColumnDragLeave($event)"
+                  (drop)="onSpecialGuestsColumnDrop($event, 'personalNumber')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Personal no.</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'contactPerson' && !isSpecialGuestsColumnHidden('contactPerson')"
+                  draggable="true"
+                  (dragstart)="onSpecialGuestsColumnDragStart($event, 'contactPerson')"
+                  (dragend)="onSpecialGuestsColumnDragEnd($event)"
+                  (dragover)="onSpecialGuestsColumnDragOver($event, 'contactPerson')"
+                  (dragleave)="onSpecialGuestsColumnDragLeave($event)"
+                  (drop)="onSpecialGuestsColumnDrop($event, 'contactPerson')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Contact Person (Phone no.)</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'referencePerson' && !isSpecialGuestsColumnHidden('referencePerson')"
+                  draggable="true"
+                  (dragstart)="onSpecialGuestsColumnDragStart($event, 'referencePerson')"
+                  (dragend)="onSpecialGuestsColumnDragEnd($event)"
+                  (dragover)="onSpecialGuestsColumnDragOver($event, 'referencePerson')"
+                  (dragleave)="onSpecialGuestsColumnDragLeave($event)"
+                  (drop)="onSpecialGuestsColumnDrop($event, 'referencePerson')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Reference Person (Phone no.)</span>
+                </div>
+              </th>
+            </ng-container>
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-guest let-i="rowIndex">
           <tr>
-            <td>
+            <ng-container *ngFor="let column of getAllSpecialGuestsColumns()">
+              <td *ngIf="column === 'actions' && !isSpecialGuestsColumnHidden('actions')">
               <div class="d-flex gap-1">
                 <button class="btn btn-primary btn-sm" (click)="editSpecialGuest(i)" title="Edit">
                   <i class="fas fa-edit"></i>
@@ -680,20 +1093,21 @@
                 </button>
               </div>
             </td>
-            <td>{{ guest.firstName }} {{ guest.lastName }} ({{ guest.personalNumber }})</td>
-            <td>{{ guest.gender }}</td>
-            <td>{{ guest.designation }}</td>
-            <td>{{ guest.organization }}</td>
-            <td>{{ guest.email }}</td>
-            <td>{{ guest.city }}, {{ guest.state }}</td>
-            <td>{{ guest.personalNumber }}</td>
-            <td>{{ guest.contactPerson }} ({{ guest.contactPersonNumber }})</td>
-            <td>{{ guest.referencePersonName }} ({{ guest.referenceVolunteerId }})</td>
+              <td *ngIf="column === 'name' && !isSpecialGuestsColumnHidden('name')">{{ guest.firstName }} {{ guest.lastName }} ({{ guest.personalNumber }})</td>
+              <td *ngIf="column === 'gender' && !isSpecialGuestsColumnHidden('gender')">{{ guest.gender }}</td>
+              <td *ngIf="column === 'designation' && !isSpecialGuestsColumnHidden('designation')">{{ guest.designation }}</td>
+              <td *ngIf="column === 'organization' && !isSpecialGuestsColumnHidden('organization')">{{ guest.organization }}</td>
+              <td *ngIf="column === 'email' && !isSpecialGuestsColumnHidden('email')">{{ guest.email }}</td>
+              <td *ngIf="column === 'cityState' && !isSpecialGuestsColumnHidden('cityState')">{{ guest.city }}, {{ guest.state }}</td>
+              <td *ngIf="column === 'personalNumber' && !isSpecialGuestsColumnHidden('personalNumber')">{{ guest.personalNumber }}</td>
+              <td *ngIf="column === 'contactPerson' && !isSpecialGuestsColumnHidden('contactPerson')">{{ guest.contactPerson }} ({{ guest.contactPersonNumber }})</td>
+              <td *ngIf="column === 'referencePerson' && !isSpecialGuestsColumnHidden('referencePerson')">{{ guest.referencePersonName }} ({{ guest.referenceVolunteerId }})</td>
+            </ng-container>
           </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="10" class="text-center text-muted">No special guests added yet. Click "Add Special Guest" to add.</td>
+            <td [attr.colspan]="getSpecialGuestsVisibleColumnCount()" class="text-center text-muted">No special guests added yet. Click "Add Special Guest" to add.</td>
           </tr>
         </ng-template>
       </p-table>
@@ -726,9 +1140,40 @@
   <div class="common-stepper">
     <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
       <h6 class="mb-0">List of Volunteers ({{ filteredVolunteerList.length }})</h6>
+      <div class="d-flex gap-2 align-items-center">
+        <!-- Column Visibility Manager -->
+        <div class="column-visibility-manager" (click)="$event.stopPropagation()">
+          <button type="button" class="btn btn-outline-info btn-sm" (click)="toggleVolunteersColumnVisibilityMenu()">
+            <i class="pi pi-eye me-1"></i>
+            Columns
+            <span class="badge bg-info ms-1" *ngIf="getHiddenColumnsCount(VOLUNTEERS_CONFIG) > 0">{{ getHiddenColumnsCount(VOLUNTEERS_CONFIG) }}</span>
+          </button>
+          <div class="column-visibility-dropdown" [class.show]="isColumnVisibilityMenuOpen(VOLUNTEERS_CONFIG)">
+            <div class="dropdown-header">
+              <h6>Column Visibility</h6>
+              <button type="button" class="btn btn-link p-0" (click)="closeVolunteersColumnVisibilityMenu()">
+                <i class="pi pi-times"></i>
+              </button>
+            </div>
+            <div class="dropdown-body">
+              <div class="column-visibility-item" *ngFor="let column of getAllVolunteersColumns()">
+                <label class="d-flex align-items-center">
+                  <input type="checkbox" [checked]="!isVolunteersColumnHidden(column)" (change)="toggleVolunteersColumnVisibility(column)" />
+                  <span class="ms-2">{{ getVolunteersColumnDisplayName(column) }}</span>
+                </label>
+              </div>
+            </div>
+            <div class="dropdown-footer">
+              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="showAllVolunteersColumns()" [disabled]="getHiddenColumnsCount(VOLUNTEERS_CONFIG) === 0">
+                Show All
+              </button>
+            </div>
+          </div>
+        </div>
       <div class="search-box" style="width: 300px;">
         <input type="text" class="form-control form-control-sm" placeholder="Search volunteers..." 
           [(ngModel)]="volunteerSearchTerm" />
+        </div>
       </div>
     </div>
     <div class="event-table-container mt-3">
@@ -740,16 +1185,80 @@
         [tableStyle]="{ 'min-width': '100%' }">
         <ng-template pTemplate="header">
           <tr>
-            <th style="width: 120px;">Actions</th>
-            <th>Name</th>
-            <th>Contact no.</th>
-            <th>No. of Days</th>
-            <th>Seva involved</th>
+            <ng-container *ngFor="let column of getAllVolunteersColumns()">
+              <th *ngIf="column === 'actions' && !isVolunteersColumnHidden('actions')" 
+                  style="width: 120px;"
+                  draggable="true"
+                  (dragstart)="onVolunteersColumnDragStart($event, 'actions')"
+                  (dragend)="onVolunteersColumnDragEnd($event)"
+                  (dragover)="onVolunteersColumnDragOver($event, 'actions')"
+                  (dragleave)="onVolunteersColumnDragLeave($event)"
+                  (drop)="onVolunteersColumnDrop($event, 'actions')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Actions</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'name' && !isVolunteersColumnHidden('name')"
+                  draggable="true"
+                  (dragstart)="onVolunteersColumnDragStart($event, 'name')"
+                  (dragend)="onVolunteersColumnDragEnd($event)"
+                  (dragover)="onVolunteersColumnDragOver($event, 'name')"
+                  (dragleave)="onVolunteersColumnDragLeave($event)"
+                  (drop)="onVolunteersColumnDrop($event, 'name')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Name</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'contact' && !isVolunteersColumnHidden('contact')"
+                  draggable="true"
+                  (dragstart)="onVolunteersColumnDragStart($event, 'contact')"
+                  (dragend)="onVolunteersColumnDragEnd($event)"
+                  (dragover)="onVolunteersColumnDragOver($event, 'contact')"
+                  (dragleave)="onVolunteersColumnDragLeave($event)"
+                  (drop)="onVolunteersColumnDrop($event, 'contact')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Contact no.</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'days' && !isVolunteersColumnHidden('days')"
+                  draggable="true"
+                  (dragstart)="onVolunteersColumnDragStart($event, 'days')"
+                  (dragend)="onVolunteersColumnDragEnd($event)"
+                  (dragover)="onVolunteersColumnDragOver($event, 'days')"
+                  (dragleave)="onVolunteersColumnDragLeave($event)"
+                  (drop)="onVolunteersColumnDrop($event, 'days')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>No. of Days</span>
+                </div>
+              </th>
+              <th *ngIf="column === 'seva' && !isVolunteersColumnHidden('seva')"
+                  draggable="true"
+                  (dragstart)="onVolunteersColumnDragStart($event, 'seva')"
+                  (dragend)="onVolunteersColumnDragEnd($event)"
+                  (dragover)="onVolunteersColumnDragOver($event, 'seva')"
+                  (dragleave)="onVolunteersColumnDragLeave($event)"
+                  (drop)="onVolunteersColumnDrop($event, 'seva')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Seva involved</span>
+                </div>
+              </th>
+            </ng-container>
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-vol let-i="rowIndex">
           <tr>
-            <td>
+            <ng-container *ngFor="let column of getAllVolunteersColumns()">
+              <td *ngIf="column === 'actions' && !isVolunteersColumnHidden('actions')">
               <div class="d-flex gap-1">
                 <button class="btn btn-primary btn-sm" (click)="editVolunteer(i)" title="Edit">
                   <i class="fas fa-edit"></i>
@@ -759,15 +1268,16 @@
                 </button>
               </div>
             </td>
-            <td>{{ vol.name }}</td>
-            <td>{{ vol.contact }}</td>
-            <td>{{ vol.days }}</td>
-            <td>{{ vol.seva }}</td>
+              <td *ngIf="column === 'name' && !isVolunteersColumnHidden('name')">{{ vol.name }}</td>
+              <td *ngIf="column === 'contact' && !isVolunteersColumnHidden('contact')">{{ vol.contact }}</td>
+              <td *ngIf="column === 'days' && !isVolunteersColumnHidden('days')">{{ vol.days }}</td>
+              <td *ngIf="column === 'seva' && !isVolunteersColumnHidden('seva')">{{ vol.seva }}</td>
+            </ng-container>
           </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="5" class="text-center text-muted">No volunteers added yet. Click "Add Volunteer" to add.</td>
+            <td [attr.colspan]="getVolunteersVisibleColumnCount()" class="text-center text-muted">No volunteers added yet. Click "Add Volunteer" to add.</td>
           </tr>
         </ng-template>
       </p-table>

@@ -1,10 +1,11 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { LocationService, Branch } from 'src/app/core/services/location.service';
 import { ChildBranchService, ChildBranchMember, ChildBranch } from 'src/app/core/services/child-branch.service';
 import { MessageService } from 'primeng/api';
 import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
+import { UserPreferencesService, ColumnPreferences } from 'src/app/core/services/user-preferences.service';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
@@ -62,6 +63,13 @@ export class AllMembersComponent implements OnInit {
   // Export state
   exporting: boolean = false;
 
+  // Column reordering and visibility
+  columnOrder: string[] = ['name', 'memberType', 'branchName', 'branchRole', 'responsibility', 'age', 'qualification', 'actions'];
+  hiddenColumns: string[] = [];
+  draggedColumn: string | null = null;
+  dragOverColumn: string | null = null;
+  isColumnVisibilityMenuOpen: boolean = false;
+
   constructor(
     private locationService: LocationService,
     private childBranchService: ChildBranchService,
@@ -69,7 +77,8 @@ export class AllMembersComponent implements OnInit {
     private messageService: MessageService,
     private confirmationDialog: ConfirmationDialogService,
     private fb: FormBuilder,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private userPreferencesService: UserPreferencesService
   ) {
     this.memberForm = this.fb.group({
       branch_id: [null], // Optional field - not mandatory
@@ -109,9 +118,212 @@ export class AllMembersComponent implements OnInit {
       { label: 'Members', routerLink: '/branch/members' },
       { label: 'All Members', active: true }
     ];
-    this.loadAllMembers();
+    
+    // Check if we need to open edit modal for a specific member
+    const navigation = this.router.getCurrentNavigation();
+    const navState = navigation?.extras?.state || (window.history.state || {});
+    const editMemberId = navState['editMemberId'];
+    
+    this.loadAllMembers(editMemberId);
     this.loadBranches();
     this.loadChildBranches();
+    this.loadColumnPreferences();
+  }
+
+  // Column reordering methods
+  onColumnDragStart(event: DragEvent, column: string): void {
+    const target = event.target as HTMLElement;
+    if (target.closest('button') || target.closest('.dropdown-menu') || target.closest('input') || target.closest('a')) {
+      event.preventDefault();
+      return;
+    }
+    this.draggedColumn = column;
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', column);
+    }
+    const thElement = (event.currentTarget as HTMLElement);
+    if (thElement) {
+      thElement.classList.add('dragging');
+    }
+  }
+
+  onColumnDragEnd(event: DragEvent): void {
+    this.draggedColumn = null;
+    this.dragOverColumn = null;
+    const thElement = (event.currentTarget as HTMLElement);
+    if (thElement) {
+      thElement.classList.remove('dragging');
+    }
+    document.querySelectorAll('.column-drag-over').forEach(el => {
+      el.classList.remove('column-drag-over');
+    });
+  }
+
+  onColumnDragOver(event: DragEvent, column: string): void {
+    if (this.draggedColumn && this.draggedColumn !== column) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = 'move';
+      }
+      this.dragOverColumn = column;
+      if (event.currentTarget) {
+        (event.currentTarget as HTMLElement).classList.add('column-drag-over');
+      }
+    }
+  }
+
+  onColumnDragLeave(event: DragEvent): void {
+    if (event.currentTarget) {
+      (event.currentTarget as HTMLElement).classList.remove('column-drag-over');
+    }
+    this.dragOverColumn = null;
+  }
+
+  onColumnDrop(event: DragEvent, targetColumn: string): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!this.draggedColumn || this.draggedColumn === targetColumn) {
+      return;
+    }
+
+    if (event.currentTarget) {
+      (event.currentTarget as HTMLElement).classList.remove('column-drag-over');
+    }
+
+    const draggedIndex = this.columnOrder.indexOf(this.draggedColumn);
+    const targetIndex = this.columnOrder.indexOf(targetColumn);
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      return;
+    }
+
+    const newOrder = [...this.columnOrder];
+    newOrder.splice(draggedIndex, 1);
+    newOrder.splice(targetIndex, 0, this.draggedColumn);
+
+    this.columnOrder = newOrder;
+    this.saveColumnPreferences();
+    this.cdr.detectChanges();
+
+    this.draggedColumn = null;
+    this.dragOverColumn = null;
+  }
+
+  private loadColumnPreferences(): void {
+    this.userPreferencesService.getColumnPreferences('all_members_columns').subscribe({
+      next: (preferences) => {
+        if (preferences) {
+          if (preferences.hidden_columns && preferences.hidden_columns.length > 0) {
+            this.hiddenColumns = [...preferences.hidden_columns];
+          }
+          if (preferences.column_order && preferences.column_order.length > 0) {
+            const validOrder = preferences.column_order.filter(col => this.columnOrder.includes(col));
+            const missingColumns = this.columnOrder.filter(col => !validOrder.includes(col));
+            this.columnOrder = [...validOrder, ...missingColumns];
+          }
+          this.cdr.detectChanges();
+        }
+      },
+      error: (error) => {
+        console.error('Error loading column preferences:', error);
+      }
+    });
+  }
+
+  private saveColumnPreferences(): void {
+    const preferences: ColumnPreferences = {
+      hidden_columns: this.hiddenColumns,
+      column_order: this.columnOrder
+    };
+    this.userPreferencesService.saveColumnPreferences('all_members_columns', preferences).subscribe({
+      next: () => {
+        // Preferences saved successfully
+      },
+      error: (error) => {
+        console.error('Error saving column preferences:', error);
+      }
+    });
+  }
+
+  isColumnHidden(column: string): boolean {
+    return this.hiddenColumns.includes(column);
+  }
+
+  toggleColumnVisibility(column: string): void {
+    const index = this.hiddenColumns.indexOf(column);
+    if (index > -1) {
+      this.hiddenColumns.splice(index, 1);
+    } else {
+      this.hiddenColumns.push(column);
+    }
+    this.hiddenColumns = [...this.hiddenColumns];
+    this.saveColumnPreferences();
+    this.cdr.detectChanges();
+  }
+
+  toggleColumnVisibilityMenu(): void {
+    this.isColumnVisibilityMenuOpen = !this.isColumnVisibilityMenuOpen;
+  }
+
+  closeColumnVisibilityMenu(): void {
+    this.isColumnVisibilityMenuOpen = false;
+  }
+
+  getColumnDisplayName(column: string): string {
+    const names: Record<string, string> = {
+      'name': 'Name',
+      'memberType': 'Member Type',
+      'branchName': 'Branch Name',
+      'branchRole': 'Branch Role',
+      'responsibility': 'Responsibility',
+      'age': 'Age',
+      'qualification': 'Qualification',
+      'actions': 'Actions'
+    };
+    return names[column] || column;
+  }
+
+  getAllColumns(): string[] {
+    return this.columnOrder;
+  }
+
+  showAllColumns(): void {
+    this.hiddenColumns = [];
+    this.hiddenColumns = [...this.hiddenColumns];
+    this.closeColumnVisibilityMenu();
+    this.saveColumnPreferences();
+    this.cdr.detectChanges();
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    if (!(event.target as HTMLElement).closest('.column-visibility-manager')) {
+      this.closeColumnVisibilityMenu();
+    }
+  }
+
+  getColumnCellContent(member: UnifiedMember, column: string): any {
+    switch (column) {
+      case 'name':
+        return member.name;
+      case 'memberType':
+        return member.member_type === 'preacher' ? 'Preacher' : 'Samarpit Sevadar';
+      case 'branchName':
+        return member.branch_name || member.child_branch_name || 'N/A';
+      case 'branchRole':
+        return member.branch_role || 'N/A';
+      case 'responsibility':
+        return member.responsibility || 'N/A';
+      case 'age':
+        return member.age || 'N/A';
+      case 'qualification':
+        return member.qualification || 'N/A';
+      default:
+        return '';
+    }
   }
 
   loadBranches() {
@@ -146,7 +358,7 @@ export class AllMembersComponent implements OnInit {
     // This method is kept for backward compatibility but loadBranches now handles both
   }
 
-  loadAllMembers() {
+  loadAllMembers(editMemberId?: number) {
     this.loading = true;
     this.members = [];
     this.filteredMembers = [];
@@ -193,6 +405,17 @@ export class AllMembersComponent implements OnInit {
         this.filteredMembers = allMembers;
         this.applyFilters();
         this.loading = false;
+        
+        // If editMemberId is provided, open edit modal for that member
+        if (editMemberId) {
+          const memberToEdit = this.members.find(m => m.id === editMemberId);
+          if (memberToEdit) {
+            // Wait a bit for the UI to render, then open modal
+            setTimeout(() => {
+              this.openEditMemberModal(memberToEdit);
+            }, 300);
+          }
+        }
       },
       error: (error) => {
         console.error('Error in loadAllMembers:', error);
@@ -257,16 +480,38 @@ export class AllMembersComponent implements OnInit {
       // Check if it's a child branch to determine the correct route
       const isChildBranch = member.branch_type === 'child_branch';
       if (isChildBranch) {
-        this.router.navigate(['/branch/child-branch/view', member.branch_id.toString()]);
+        this.router.navigate(['/branch/child-branch/view', member.branch_id.toString()], {
+          state: { returnUrl: '/branch/members' }
+        });
       } else {
-        this.router.navigate(['/branch', member.branch_id.toString(), 'members', member.id.toString()]);
+        this.router.navigate(['/branch', member.branch_id.toString(), 'members', member.id.toString()], {
+          state: { returnUrl: '/branch/members' }
+        });
       }
     } else {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Warning',
-        detail: 'Cannot view member. Branch information is missing.',
-        life: 3000
+      // If branch_id is missing, try to fetch it from all members
+      this.locationService.getAllBranchMembers().subscribe({
+        next: (allMembers: any[]) => {
+          const foundMember = allMembers.find(m => m.id === member.id);
+          if (foundMember && foundMember.branch_id) {
+            // Navigate with the found branch_id
+            this.router.navigate(['/branch', foundMember.branch_id.toString(), 'members', member.id.toString()], {
+              state: { returnUrl: '/branch/members' }
+            });
+          } else {
+            // Member has no branch assigned - navigate to member view without branch
+            this.router.navigate(['/branch/members/view', member.id.toString()], {
+              state: { returnUrl: '/branch/members', noBranch: true }
+            });
+          }
+        },
+        error: (error) => {
+          console.error('Error fetching member branch information:', error);
+          // Even if fetch fails, try to navigate to member view without branch
+          this.router.navigate(['/branch/members/view', member.id.toString()], {
+            state: { returnUrl: '/branch/members', noBranch: true }
+          });
+        }
       });
     }
   }

@@ -17,6 +17,7 @@ export class MediaPromotionModalComponent implements OnInit {
   mediaTypes: string[] = [];
   materialTypeOptions: string[] = [];
   loadingMaterialTypes: boolean = false;
+  isEditing: boolean = false;
 
   @Output() close = new EventEmitter<void>();
   @Output() addEventMedia = new EventEmitter<void>();

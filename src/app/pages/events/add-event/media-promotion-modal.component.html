@@ -1,5 +1,5 @@
 <div class="modal-header">
-  <h5 class="modal-title">Add Media Details</h5>
+  <h5 class="modal-title">{{ isEditing ? 'Edit Media Details' : 'Add Media Details' }}</h5>
   <button type="button" class="btn-close" (click)="onClose()" aria-label="Close"></button>
 </div>
 <div class="modal-body">
@@ -18,6 +18,9 @@
         <div *ngIf="mediaPromotionForm.get('mediaCoverageType')?.invalid && mediaPromotionForm.get('mediaCoverageType')?.touched" class="invalid-feedback">
           Media coverage type is required
         </div>
+        <small class="text-muted" *ngIf="mediaPromotionForm.get('mediaCoverageType')?.value === 'Electronic'" style="font-size: 0.875rem; margin-top: 0.25rem; display: block;">
+          <i class="fas fa-info-circle me-1"></i>Suggestions: Radio, TV, etc.
+        </small>
       </div>
       <div class="col-md-6 mb-2">
         <label class="form-label">Company name <span class="text-danger">*</span></label>
@@ -33,7 +36,7 @@
           [ngClass]="{'is-invalid': mediaPromotionForm.get('companyEmail')?.invalid && mediaPromotionForm.get('companyEmail')?.touched}" />
         <div *ngIf="mediaPromotionForm.get('companyEmail')?.invalid && mediaPromotionForm.get('companyEmail')?.touched" class="invalid-feedback">
           <span *ngIf="mediaPromotionForm.get('companyEmail')?.errors?.['required']">Company email is required</span>
-          <span *ngIf="mediaPromotionForm.get('companyEmail')?.errors?.['email']">Please enter a valid email</span>
+          <span *ngIf="mediaPromotionForm.get('companyEmail')?.errors?.['email']">Please enter a valid email address</span>
         </div>
       </div>
       <div class="col-md-6 mb-2">
@@ -108,7 +111,7 @@
           [ngClass]="{'is-invalid': mediaPromotionForm.get('mediaEmail')?.invalid && mediaPromotionForm.get('mediaEmail')?.touched}" />
         <div *ngIf="mediaPromotionForm.get('mediaEmail')?.invalid && mediaPromotionForm.get('mediaEmail')?.touched" class="invalid-feedback">
           <span *ngIf="mediaPromotionForm.get('mediaEmail')?.errors?.['required']">Email is required</span>
-          <span *ngIf="mediaPromotionForm.get('mediaEmail')?.errors?.['email']">Please enter a valid email</span>
+          <span *ngIf="mediaPromotionForm.get('mediaEmail')?.errors?.['email']">Please enter a valid email address</span>
         </div>
       </div>
     </div>
@@ -135,7 +138,7 @@
   <button type="button" class="btn btn-primary" (click)="onAddEventMedia()" 
     [disabled]="mediaPromotionForm.invalid"
     style="background: linear-gradient(135deg, #ff6b35, #f7931e); border: none;">
-    Add Event Media
+    {{ isEditing ? 'Update Event Media' : 'Add Event Media' }}
   </button>
 </div>
 

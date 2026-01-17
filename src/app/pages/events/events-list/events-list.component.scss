@@ -862,6 +862,39 @@
     }
   }
 
+  // Drag and drop column reordering styles
+  .column-header-draggable {
+    cursor: move;
+    user-select: none;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: rgba(255, 107, 53, 0.05);
+    }
+
+    &.dragging {
+      opacity: 0.5;
+      background-color: rgba(255, 107, 53, 0.1);
+      transform: scale(0.98);
+    }
+
+    &.column-drag-over {
+      border-left: 3px solid #ff6b35;
+      background-color: rgba(255, 107, 53, 0.1);
+      box-shadow: inset 0 0 10px rgba(255, 107, 53, 0.2);
+    }
+
+    .pi-bars {
+      opacity: 0.5;
+      transition: opacity 0.2s ease;
+
+      &:hover {
+        opacity: 1;
+        color: #ff6b35;
+      }
+    }
+  }
+
   // Pinned columns styling - only change text color of column heading
   .p-datatable {
     .p-datatable-thead > tr > th.pinned-column {

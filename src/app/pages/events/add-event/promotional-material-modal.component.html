@@ -33,15 +33,39 @@
           </div>
           <div class="col-md-6 mb-3">
             <label class="form-label">Size</label>
-            <input type="text" class="form-control" formControlName="size" placeholder="Enter size" />
+            <ng-select formControlName="size"
+              [items]="sizeOptions"
+              [searchable]="false"
+              [clearable]="true"
+              placeholder="Select Size">
+            </ng-select>
           </div>
-          <div class="col-md-6 mb-3">
-            <label class="form-label">Custom dimension</label>
-            <div class="input-group">
-              <input type="number" class="form-control" placeholder="Height" formControlName="customHeight" />
-              <span class="input-group-text">x</span>
-              <input type="number" class="form-control" placeholder="Width" formControlName="customWidth" />
-              <span class="input-group-text">inch</span>
+          <div class="col-12 mb-3" *ngIf="isCustomSize(i)">
+            <label class="form-label">Custom Dimension</label>
+            <div class="row g-2">
+              <div class="col-md-5">
+                <input type="number" class="form-control" placeholder="Height" formControlName="customHeight" step="0.01" />
+              </div>
+              <div class="col-md-3">
+                <ng-select formControlName="customHeightUnit"
+                  [items]="unitOptions"
+                  [searchable]="false"
+                  [clearable]="false">
+                </ng-select>
+              </div>
+              <div class="col-md-1 text-center d-flex align-items-center justify-content-center">
+                <span class="fw-bold">x</span>
+              </div>
+              <div class="col-md-5">
+                <input type="number" class="form-control" placeholder="Width" formControlName="customWidth" step="0.01" />
+              </div>
+              <div class="col-md-3">
+                <ng-select formControlName="customWidthUnit"
+                  [items]="unitOptions"
+                  [searchable]="false"
+                  [clearable]="false">
+                </ng-select>
+              </div>
             </div>
           </div>
           <div class="col-12 mb-3">

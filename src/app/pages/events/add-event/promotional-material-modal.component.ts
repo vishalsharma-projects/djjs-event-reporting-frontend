@@ -12,6 +12,8 @@ export class PromotionalMaterialModalComponent implements OnInit {
   materialTypes: any[] = [];
   materialTypeOptions: string[] = [];
   loadingMaterialTypes: boolean = false;
+  sizeOptions: string[] = ['Small', 'Medium', 'Large', 'Custom'];
+  unitOptions: string[] = ['feet', 'inch'];
   
   // Form array for material types
   materialTypesForm!: FormGroup;
@@ -33,7 +35,7 @@ export class PromotionalMaterialModalComponent implements OnInit {
     
     // Ensure at least one material type entry exists
     if (this.materialTypes.length === 0) {
-      this.materialTypes.push({ materialType: '', quantity: '', size: '', customHeight: '', customWidth: '' });
+      this.materialTypes.push({ materialType: '', quantity: '', size: '', customHeight: '', customWidth: '', customHeightUnit: 'inch', customWidthUnit: 'inch' });
     }
     
     // Create form controls for each material type
@@ -48,7 +50,9 @@ export class PromotionalMaterialModalComponent implements OnInit {
       quantity: [material.quantity || '', Validators.required],
       size: [material.size || ''],
       customHeight: [material.customHeight || ''],
-      customWidth: [material.customWidth || '']
+      customWidth: [material.customWidth || ''],
+      customHeightUnit: [material.customHeightUnit || 'inch'],
+      customWidthUnit: [material.customWidthUnit || 'inch']
     });
     this.materialTypesFormArray.push(materialGroup);
   }
@@ -96,7 +100,7 @@ export class PromotionalMaterialModalComponent implements OnInit {
   }
 
   onAddMaterialType(): void {
-    const newMaterial = { materialType: '', quantity: '', size: '', customHeight: '', customWidth: '' };
+    const newMaterial = { materialType: '', quantity: '', size: '', customHeight: '', customWidth: '', customHeightUnit: 'inch', customWidthUnit: 'inch' };
     this.materialTypes.push(newMaterial);
     this.addMaterialTypeFormControl(newMaterial);
     this.addMaterialType.emit();
@@ -118,8 +122,19 @@ export class PromotionalMaterialModalComponent implements OnInit {
         this.materialTypes[index].size = control.get('size')?.value || '';
         this.materialTypes[index].customHeight = control.get('customHeight')?.value || '';
         this.materialTypes[index].customWidth = control.get('customWidth')?.value || '';
+        this.materialTypes[index].customHeightUnit = control.get('customHeightUnit')?.value || 'inch';
+        this.materialTypes[index].customWidthUnit = control.get('customWidthUnit')?.value || 'inch';
       }
     });
   }
+
+  /**
+   * Check if custom dimension inputs should be shown
+   */
+  isCustomSize(index: number): boolean {
+    const formGroup = this.getMaterialFormGroup(index);
+    return formGroup.get('size')?.value === 'Custom';
+  }
+
 }
 

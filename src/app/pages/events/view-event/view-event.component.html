@@ -53,7 +53,7 @@
             <span class="ms-2">{{ eventData.timing || 'N/A' }}</span>
           </div>
           <div class="col-md-4 mb-3">
-            <label class="form-label fw-bold">Spiritual Orator:</label>
+            <label class="form-label fw-bold">Spiritual Orator(s):</label>
             <span class="ms-2">{{ eventData.spiritualOrator || 'N/A' }}</span>
           </div>
           <div class="col-md-4 mb-3" *ngIf="eventData.branch">
@@ -274,14 +274,24 @@
           <div class="col-md-6">
             <p><strong>Coverage Type:</strong> {{ eventData.media.coverageType }}</p>
             <p><strong>Organization:</strong> {{ eventData.media.organization }}</p>
-            <p><strong>Email:</strong> {{ eventData.media.email }}</p>
+            <p><strong>Email:</strong> 
+              <span *ngFor="let email of getEmailArray(eventData.media.email); let last = last" class="me-2">
+                <span class="badge bg-info text-dark">{{ email }}</span>
+              </span>
+              <span *ngIf="!eventData.media.email || getEmailArray(eventData.media.email).length === 0" class="text-muted">N/A</span>
+            </p>
             <p><strong>Website:</strong> {{ eventData.media.website }}</p>
           </div>
           <div class="col-md-6">
             <p><strong>Contact Person:</strong> {{ eventData.media.person }}</p>
             <p><strong>Designation:</strong> {{ eventData.media.designation }}</p>
             <p><strong>Contact:</strong> {{ eventData.media.contact }}</p>
-            <p><strong>Person Email:</strong> {{ eventData.media.personEmail }}</p>
+            <p><strong>Person Email:</strong> 
+              <span *ngFor="let email of getEmailArray(eventData.media.personEmail); let last = last" class="me-2">
+                <span class="badge bg-info text-dark">{{ email }}</span>
+              </span>
+              <span *ngIf="!eventData.media.personEmail || getEmailArray(eventData.media.personEmail).length === 0" class="text-muted">N/A</span>
+            </p>
           </div>
         </div>
       </div>

@@ -18,25 +18,24 @@
                     [class.active]="isColumnVisibilityMenuOpen">
               <i class="pi pi-th-large me-1"></i>
               Columns
-              <span *ngIf="hiddenColumns.length > 0" class="badge bg-warning text-dark ms-1">
+              <span class="badge bg-info ms-1" *ngIf="hiddenColumns.length > 0">
                 {{ hiddenColumns.length }}
               </span>
             </button>
             <div class="column-visibility-dropdown" [class.show]="isColumnVisibilityMenuOpen">
               <div class="dropdown-header">
-                <h6 class="mb-0">Column Visibility</h6>
-                <button class="btn btn-sm btn-link p-0" (click)="closeColumnVisibilityMenu()">
+                <h6>Column Visibility</h6>
+                <button type="button" class="btn btn-link p-0" (click)="closeColumnVisibilityMenu()">
                   <i class="pi pi-times"></i>
                 </button>
               </div>
               <div class="dropdown-body">
-                <div *ngFor="let column of getAllColumns()" class="column-visibility-item">
+                <div class="column-visibility-item" *ngFor="let column of getAllColumns()">
                   <label class="d-flex align-items-center">
                     <input type="checkbox" 
                            [checked]="!isColumnHidden(column)"
-                           (change)="toggleColumnVisibility(column)"
-                           class="me-2">
-                    <span>{{ getColumnDisplayName(column) }}</span>
+                           (change)="toggleColumnVisibility(column)" />
+                    <span class="ms-2">{{ getColumnDisplayName(column) }}</span>
                     <span *ngIf="isColumnPinned(column)" class="badge bg-warning text-dark ms-2" style="font-size: 0.65rem;">
                       <i class="pi pi-thumbtack"></i> Pinned
                     </span>
@@ -44,7 +43,7 @@
                 </div>
               </div>
               <div class="dropdown-footer">
-                <button class="btn btn-sm btn-outline-secondary w-100" 
+                <button type="button" class="btn btn-sm btn-outline-secondary" 
                         (click)="showAllColumns()"
                         [disabled]="hiddenColumns.length === 0">
                   Show All
@@ -110,12 +109,54 @@
         <!-- Table Header -->
         <ng-template pTemplate="header">
           <tr>
-            <th style="width: 10%">Status</th>
+            <ng-container *ngFor="let column of columnOrder">
+              <!-- Status Column -->
+              <th *ngIf="column === 'status' && !isColumnHidden('status')" style="width: 10%"
+                  [class.pinned-column]="isColumnPinned('status')"
+                  [ngStyle]="getPinnedStyle('status')"
+                  draggable="true"
+                  (dragstart)="onColumnDragStart($event, 'status')"
+                  (dragend)="onColumnDragEnd($event)"
+                  (dragover)="onColumnDragOver($event, 'status')"
+                  (dragleave)="onColumnDragLeave($event)"
+                  (drop)="onColumnDrop($event, 'status')"
+                  class="column-header-draggable">
+                <div class="d-flex align-items-center justify-content-between">
+                  <div class="d-flex align-items-center">
+                    <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                    <span>Status</span>
+                  </div>
+                  <div class="dropdown-container" (click)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
+                    <button class="btn btn-sm btn-link p-0" type="button" (click)="toggleDropdown('status')">
+                      <i class="pi pi-ellipsis-v"></i>
+                    </button>
+                    <div class="dropdown-menu" [class.show]="isDropdownOpen('status')">
+                      <a class="dropdown-item" href="#" (click)="toggleColumnPin('status'); $event.preventDefault(); $event.stopPropagation()">
+                        <i class="pi pi-thumbtack me-2" [class.text-warning]="isColumnPinned('status')"></i>
+                        {{ isColumnPinned('status') ? 'Unpin' : 'Pin' }}
+                      </a>
+                      <a class="dropdown-item" href="#" (click)="toggleColumnVisibility('status'); $event.preventDefault(); $event.stopPropagation()">
+                        <i class="pi pi-eye me-2" [class.text-muted]="isColumnHidden('status')"></i>
+                        {{ isColumnHidden('status') ? 'Show' : 'Hide' }}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </th>
 
-            <th *ngIf="!isColumnHidden('eventType')" style="width: 12%"
+              <!-- Event Type Column -->
+              <th *ngIf="column === 'eventType' && !isColumnHidden('eventType')" style="width: 12%"
                 [class.pinned-column]="isColumnPinned('eventType')"
-                [ngStyle]="getPinnedStyle('eventType')">              
+                [ngStyle]="getPinnedStyle('eventType')"
+                draggable="true"
+                (dragstart)="onColumnDragStart($event, 'eventType')"
+                (dragend)="onColumnDragEnd($event)"
+                (dragover)="onColumnDragOver($event, 'eventType')"
+                (dragleave)="onColumnDragLeave($event)"
+                (drop)="onColumnDrop($event, 'eventType')"
+                class="column-header-draggable">              
               <div class="d-flex align-items-center sortable-area" pSortableColumn="eventType">
+                <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
                 <span>Type (S)</span>
                 <p-sortIcon field="eventType"></p-sortIcon>
               </div>
@@ -129,15 +170,23 @@
               </div>
             </th>
 
-            <th *ngIf="!isColumnHidden('name')" style="width: 12%"
+            <th *ngIf="column === 'name' && !isColumnHidden('name')" style="width: 12%"
                 [class.pinned-column]="isColumnPinned('name')"
-                [ngStyle]="getPinnedStyle('name')">
+                [ngStyle]="getPinnedStyle('name')"
+                draggable="true"
+                (dragstart)="onColumnDragStart($event, 'name')"
+                (dragend)="onColumnDragEnd($event)"
+                (dragover)="onColumnDragOver($event, 'name')"
+                (dragleave)="onColumnDragLeave($event)"
+                (drop)="onColumnDrop($event, 'name')"
+                class="column-header-draggable">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="name">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
                   <span>Name</span>
                   <p-sortIcon field="name"></p-sortIcon>
                 </div>
-                <div class="dropdown-container" (click)="$event.stopPropagation()">
+                <div class="dropdown-container" (click)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
                   <button class="btn btn-sm btn-link p-0" type="button" (click)="toggleDropdown('name')">
                     <i class="pi pi-ellipsis-v"></i>
                   </button>
@@ -166,15 +215,23 @@
               </div>
             </th>
 
-            <th *ngIf="!isColumnHidden('duration')" style="width: 10%"
+            <th *ngIf="column === 'duration' && !isColumnHidden('duration')" style="width: 10%"
                 [class.pinned-column]="isColumnPinned('duration')"
-                [ngStyle]="getPinnedStyle('duration')">
+                [ngStyle]="getPinnedStyle('duration')"
+                draggable="true"
+                (dragstart)="onColumnDragStart($event, 'duration')"
+                (dragend)="onColumnDragEnd($event)"
+                (dragover)="onColumnDragOver($event, 'duration')"
+                (dragleave)="onColumnDragLeave($event)"
+                (drop)="onColumnDrop($event, 'duration')"
+                class="column-header-draggable">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="duration">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
                   <span>Duration</span>
                   <p-sortIcon field="duration"></p-sortIcon>
                 </div>
-                <div class="dropdown-container" (click)="$event.stopPropagation()">
+                <div class="dropdown-container" (click)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
                   <button class="btn btn-sm btn-link p-0" type="button" (click)="toggleDropdown('duration')">
                     <i class="pi pi-ellipsis-v"></i>
                   </button>
@@ -203,15 +260,68 @@
               </div>
             </th>
 
-            <th *ngIf="!isColumnHidden('timing')" style="width: 8%"
+            <th *ngIf="column === 'days' && !isColumnHidden('days')" style="width: 5%"
+                [class.pinned-column]="isColumnPinned('days')"
+                [ngStyle]="getPinnedStyle('days')"
+                draggable="true"
+                (dragstart)="onColumnDragStart($event, 'days')"
+                (dragend)="onColumnDragEnd($event)"
+                (dragover)="onColumnDragOver($event, 'days')"
+                (dragleave)="onColumnDragLeave($event)"
+                (drop)="onColumnDrop($event, 'days')"
+                class="column-header-draggable">
+              <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center sortable-area" pSortableColumn="days">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
+                  <span>Days</span>
+                  <p-sortIcon field="days"></p-sortIcon>
+                </div>
+                <div class="dropdown-container" (click)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
+                  <button class="btn btn-sm btn-link p-0" type="button" (click)="toggleDropdown('days')">
+                    <i class="pi pi-ellipsis-v"></i>
+                  </button>
+                  <div class="dropdown-menu" [class.show]="isDropdownOpen('days')">
+                    <a class="dropdown-item" href="#" (click)="showFilter('days'); $event.preventDefault()">
+                      <i class="pi pi-filter me-2"></i>Filter
+                    </a>
+                    <a class="dropdown-item" href="#" (click)="toggleColumnPin('days'); $event.preventDefault(); $event.stopPropagation()">
+                      <i class="pi pi-thumbtack me-2" [class.text-warning]="isColumnPinned('days')"></i>
+                      {{ isColumnPinned('days') ? 'Unpin' : 'Pin' }}
+                    </a>
+                    <a class="dropdown-item" href="#" (click)="toggleColumnVisibility('days'); $event.preventDefault(); $event.stopPropagation()">
+                      <i class="pi pi-eye me-2" [class.text-muted]="isColumnHidden('days')"></i>
+                      {{ isColumnHidden('days') ? 'Show' : 'Hide' }}
+                    </a>
+                  </div>
+                </div>
+              </div>
+              <!-- Filter input inside column header -->
+              <div *ngIf="activeFilter === 'days'" class="mt-2 filter-overlay" (click)="$event.stopPropagation()">
+                <input type="text" pInputText class="form-control form-control-sm" placeholder="Filter Days"
+                  [(ngModel)]="filters['days']" (input)="applyFilter()" />
+                <button class="btn btn-sm btn-link p-0 ms-1" (click)="clearFilter('days')">
+                  <i class="pi pi-times"></i>
+                </button>
+              </div>
+            </th>
+
+            <th *ngIf="column === 'timing' && !isColumnHidden('timing')" style="width: 8%"
                 [class.pinned-column]="isColumnPinned('timing')"
-                [ngStyle]="getPinnedStyle('timing')">
+                [ngStyle]="getPinnedStyle('timing')"
+                draggable="true"
+                (dragstart)="onColumnDragStart($event, 'timing')"
+                (dragend)="onColumnDragEnd($event)"
+                (dragover)="onColumnDragOver($event, 'timing')"
+                (dragleave)="onColumnDragLeave($event)"
+                (drop)="onColumnDrop($event, 'timing')"
+                class="column-header-draggable">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="timing">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
                   <span>Timing</span>
                   <p-sortIcon field="timing"></p-sortIcon>
                 </div>
-                <div class="dropdown-container" (click)="$event.stopPropagation()">
+                <div class="dropdown-container" (click)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
                   <button class="btn btn-sm btn-link p-0" type="button" (click)="toggleDropdown('timing')">
                     <i class="pi pi-ellipsis-v"></i>
                   </button>
@@ -240,15 +350,23 @@
               </div>
             </th>
 
-            <th *ngIf="!isColumnHidden('state')" style="width: 8%"
+            <th *ngIf="column === 'state' && !isColumnHidden('state')" style="width: 8%"
                 [class.pinned-column]="isColumnPinned('state')"
-                [ngStyle]="getPinnedStyle('state')">
+                [ngStyle]="getPinnedStyle('state')"
+                draggable="true"
+                (dragstart)="onColumnDragStart($event, 'state')"
+                (dragend)="onColumnDragEnd($event)"
+                (dragover)="onColumnDragOver($event, 'state')"
+                (dragleave)="onColumnDragLeave($event)"
+                (drop)="onColumnDrop($event, 'state')"
+                class="column-header-draggable">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="state">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
                   <span>State</span>
                   <p-sortIcon field="state"></p-sortIcon>
                 </div>
-                <div class="dropdown-container" (click)="$event.stopPropagation()">
+                <div class="dropdown-container" (click)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
                   <button class="btn btn-sm btn-link p-0" type="button" (click)="toggleDropdown('state')">
                     <i class="pi pi-ellipsis-v"></i>
                   </button>
@@ -277,15 +395,23 @@
               </div>
             </th>
 
-            <th *ngIf="!isColumnHidden('city')" style="width: 8%"
+            <th *ngIf="column === 'city' && !isColumnHidden('city')" style="width: 8%"
                 [class.pinned-column]="isColumnPinned('city')"
-                [ngStyle]="getPinnedStyle('city')">
+                [ngStyle]="getPinnedStyle('city')"
+                draggable="true"
+                (dragstart)="onColumnDragStart($event, 'city')"
+                (dragend)="onColumnDragEnd($event)"
+                (dragover)="onColumnDragOver($event, 'city')"
+                (dragleave)="onColumnDragLeave($event)"
+                (drop)="onColumnDrop($event, 'city')"
+                class="column-header-draggable">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="city">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
                   <span>City</span>
                   <p-sortIcon field="city"></p-sortIcon>
                 </div>
-                <div class="dropdown-container" (click)="$event.stopPropagation()">
+                <div class="dropdown-container" (click)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
                   <button class="btn btn-sm btn-link p-0" type="button" (click)="toggleDropdown('city')">
                     <i class="pi pi-ellipsis-v"></i>
                   </button>
@@ -314,15 +440,23 @@
               </div>
             </th>
 
-            <th *ngIf="!isColumnHidden('branch')" style="width: 12%"
+            <th *ngIf="column === 'branch' && !isColumnHidden('branch')" style="width: 12%"
                 [class.pinned-column]="isColumnPinned('branch')"
-                [ngStyle]="getPinnedStyle('branch')">
+                [ngStyle]="getPinnedStyle('branch')"
+                draggable="true"
+                (dragstart)="onColumnDragStart($event, 'branch')"
+                (dragend)="onColumnDragEnd($event)"
+                (dragover)="onColumnDragOver($event, 'branch')"
+                (dragleave)="onColumnDragLeave($event)"
+                (drop)="onColumnDrop($event, 'branch')"
+                class="column-header-draggable">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="branch">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
                   <span>Branch</span>
                   <p-sortIcon field="branch"></p-sortIcon>
                 </div>
-                <div class="dropdown-container" (click)="$event.stopPropagation()">
+                <div class="dropdown-container" (click)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
                   <button class="btn btn-sm btn-link p-0" type="button" (click)="toggleDropdown('branch')">
                     <i class="pi pi-ellipsis-v"></i>
                   </button>
@@ -351,15 +485,23 @@
               </div>
             </th>
 
-            <th *ngIf="!isColumnHidden('spiritualOrator')" style="width: 7%; min-width: 100px;"
+            <th *ngIf="column === 'spiritualOrator' && !isColumnHidden('spiritualOrator')" style="width: 7%; min-width: 100px;"
                 [class.pinned-column]="isColumnPinned('spiritualOrator')"
-                [ngStyle]="getPinnedStyle('spiritualOrator')">
+                [ngStyle]="getPinnedStyle('spiritualOrator')"
+                draggable="true"
+                (dragstart)="onColumnDragStart($event, 'spiritualOrator')"
+                (dragend)="onColumnDragEnd($event)"
+                (dragover)="onColumnDragOver($event, 'spiritualOrator')"
+                (dragleave)="onColumnDragLeave($event)"
+                (drop)="onColumnDrop($event, 'spiritualOrator')"
+                class="column-header-draggable">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="spiritualOrator">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
                   <span>Orator</span>
                   <p-sortIcon field="spiritualOrator"></p-sortIcon>
                 </div>
-                <div class="dropdown-container" (click)="$event.stopPropagation()">
+                <div class="dropdown-container" (click)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
                   <button class="btn btn-sm btn-link p-0" type="button" (click)="toggleDropdown('spiritualOrator')">
                     <i class="pi pi-ellipsis-v"></i>
                   </button>
@@ -389,15 +531,23 @@
               </div>
             </th>
 
-            <th *ngIf="!isColumnHidden('language')" style="width: 5%; min-width: 80px;"
+            <th *ngIf="column === 'language' && !isColumnHidden('language')" style="width: 5%; min-width: 80px;"
                 [class.pinned-column]="isColumnPinned('language')"
-                [ngStyle]="getPinnedStyle('language')">
+                [ngStyle]="getPinnedStyle('language')"
+                draggable="true"
+                (dragstart)="onColumnDragStart($event, 'language')"
+                (dragend)="onColumnDragEnd($event)"
+                (dragover)="onColumnDragOver($event, 'language')"
+                (dragleave)="onColumnDragLeave($event)"
+                (drop)="onColumnDrop($event, 'language')"
+                class="column-header-draggable">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="language">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
                   <span>Language</span>
                   <p-sortIcon field="language"></p-sortIcon>
                 </div>
-                <div class="dropdown-container" (click)="$event.stopPropagation()">
+                <div class="dropdown-container" (click)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
                   <button class="btn btn-sm btn-link p-0" type="button" (click)="toggleDropdown('language')">
                     <i class="pi pi-ellipsis-v"></i>
                   </button>
@@ -426,15 +576,23 @@
               </div>
             </th>
 
-            <th *ngIf="!isColumnHidden('beneficiaries')" style="width: 6%; min-width: 90px;"
+            <th *ngIf="column === 'beneficiaries' && !isColumnHidden('beneficiaries')" style="width: 6%; min-width: 90px;"
                 [class.pinned-column]="isColumnPinned('beneficiaries')"
-                [ngStyle]="getPinnedStyle('beneficiaries')">
+                [ngStyle]="getPinnedStyle('beneficiaries')"
+                draggable="true"
+                (dragstart)="onColumnDragStart($event, 'beneficiaries')"
+                (dragend)="onColumnDragEnd($event)"
+                (dragover)="onColumnDragOver($event, 'beneficiaries')"
+                (dragleave)="onColumnDragLeave($event)"
+                (drop)="onColumnDrop($event, 'beneficiaries')"
+                class="column-header-draggable">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="beneficiaries">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
                   <span>Beneficiaries</span>
                   <p-sortIcon field="beneficiaries"></p-sortIcon>
                 </div>
-                <div class="dropdown-container" (click)="$event.stopPropagation()">
+                <div class="dropdown-container" (click)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
                   <button class="btn btn-sm btn-link p-0" type="button" (click)="toggleDropdown('beneficiaries')">
                     <i class="pi pi-ellipsis-v"></i>
                   </button>
@@ -464,15 +622,23 @@
               </div>
             </th>
 
-            <th *ngIf="!isColumnHidden('initiation')" style="width: 6%; min-width: 85px;"
+            <th *ngIf="column === 'initiation' && !isColumnHidden('initiation')" style="width: 6%; min-width: 85px;"
                 [class.pinned-column]="isColumnPinned('initiation')"
-                [ngStyle]="getPinnedStyle('initiation')">
+                [ngStyle]="getPinnedStyle('initiation')"
+                draggable="true"
+                (dragstart)="onColumnDragStart($event, 'initiation')"
+                (dragend)="onColumnDragEnd($event)"
+                (dragover)="onColumnDragOver($event, 'initiation')"
+                (dragleave)="onColumnDragLeave($event)"
+                (drop)="onColumnDrop($event, 'initiation')"
+                class="column-header-draggable">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="initiation">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
                   <span>Initiation</span>
                   <p-sortIcon field="initiation"></p-sortIcon>
                 </div>
-                <div class="dropdown-container" (click)="$event.stopPropagation()">
+                <div class="dropdown-container" (click)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
                   <button class="btn btn-sm btn-link p-0" type="button" (click)="toggleDropdown('initiation')">
                     <i class="pi pi-ellipsis-v"></i>
                   </button>
@@ -501,15 +667,23 @@
               </div>
             </th>
 
-            <th *ngIf="!isColumnHidden('specialGuests')" style="width: 5%; min-width: 100px;"
+            <th *ngIf="column === 'specialGuests' && !isColumnHidden('specialGuests')" style="width: 5%; min-width: 100px;"
                 [class.pinned-column]="isColumnPinned('specialGuests')"
-                [ngStyle]="getPinnedStyle('specialGuests')">
+                [ngStyle]="getPinnedStyle('specialGuests')"
+                draggable="true"
+                (dragstart)="onColumnDragStart($event, 'specialGuests')"
+                (dragend)="onColumnDragEnd($event)"
+                (dragover)="onColumnDragOver($event, 'specialGuests')"
+                (dragleave)="onColumnDragLeave($event)"
+                (drop)="onColumnDrop($event, 'specialGuests')"
+                class="column-header-draggable">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="specialGuests">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
                   <span>Special Guests</span>
                   <p-sortIcon field="specialGuests"></p-sortIcon>
                 </div>
-                <div class="dropdown-container" (click)="$event.stopPropagation()">
+                <div class="dropdown-container" (click)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
                   <button class="btn btn-sm btn-link p-0" type="button" (click)="toggleDropdown('specialGuests')">
                     <i class="pi pi-ellipsis-v"></i>
                   </button>
@@ -539,15 +713,23 @@
               </div>
             </th>
 
-            <th *ngIf="!isColumnHidden('volunteers')" style="width: 5%; min-width: 90px;"
+            <th *ngIf="column === 'volunteers' && !isColumnHidden('volunteers')" style="width: 5%; min-width: 90px;"
                 [class.pinned-column]="isColumnPinned('volunteers')"
-                [ngStyle]="getPinnedStyle('volunteers')">
+                [ngStyle]="getPinnedStyle('volunteers')"
+                draggable="true"
+                (dragstart)="onColumnDragStart($event, 'volunteers')"
+                (dragend)="onColumnDragEnd($event)"
+                (dragover)="onColumnDragOver($event, 'volunteers')"
+                (dragleave)="onColumnDragLeave($event)"
+                (drop)="onColumnDrop($event, 'volunteers')"
+                class="column-header-draggable">
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center sortable-area" pSortableColumn="volunteers">
+                  <i class="pi pi-bars me-1 text-muted" style="cursor: move; font-size: 0.8rem;" title="Drag to reorder"></i>
                   <span>Volunteers</span>
                   <p-sortIcon field="volunteers"></p-sortIcon>
                 </div>
-                <div class="dropdown-container" (click)="$event.stopPropagation()">
+                <div class="dropdown-container" (click)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
                   <button class="btn btn-sm btn-link p-0" type="button" (click)="toggleDropdown('volunteers')">
                     <i class="pi pi-ellipsis-v"></i>
                   </button>
@@ -575,104 +757,108 @@
                 </button>
               </div>
             </th>
+            </ng-container>
           </tr>
         </ng-template>
 
         <!-- Table Body -->
         <ng-template pTemplate="body" let-event>
           <tr>
-            <td>
-              <div class="d-flex align-items-center ">
-                <div class="action-menu-container" (click)="$event.stopPropagation()">
-                  <button
-                    class="btn btn-link p-0 action-menu-btn"
-                    type="button"
-                    (click)="toggleActionMenu(event.id, $event)">
-                    <i class="pi pi-ellipsis-v"></i>
-                  </button>
-                  <div class="action-menu-dropdown" 
-                       [class.show]="isActionMenuOpen(event.id)"
-                       [class.position-up]="getActionMenuPosition(event.id) === 'up'">
-                    <a class="dropdown-item" href="#"
-                      [routerLink]="['/events/edit', event.id]"
-                      (click)="closeActionMenu()"
-                      title="Edit">
-                      <i class="pi pi-pencil"></i>
-                      <span>Edit</span>
-                    </a>
-                    <a class="dropdown-item" href="#" [routerLink]="['/events/view', event.id]" (click)="closeActionMenu()"
-                      title="More details">
-                      <i class="pi pi-eye"></i>
-                      <span>View</span>
-                    </a>
-                    <a class="dropdown-item" href="#" (click)="downloadEvent(event.id); closeActionMenu(); $event.preventDefault()"
-                      title="Download">
-                      <i class="pi pi-download"></i>
-                      <span>Download</span>
-                    </a>
-                    <a class="dropdown-item" href="#" (click)="openGallery(event); closeActionMenu(); $event.preventDefault()"
-                      title="View in Gallery">
-                      <i class="pi pi-images"></i>
-                      <span>Gallery</span>
-                    </a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item text-danger" href="#" (click)="deleteEvent(event.id); closeActionMenu(); $event.preventDefault()"
-                      title="Delete Event">
-                      <i class="pi pi-trash"></i>
-                      <span>Delete</span>
-                    </a>
+            <ng-container *ngFor="let column of columnOrder">
+              <td *ngIf="!isColumnHidden(column)" 
+                  [class.pinned-column]="isColumnPinned(column)" 
+                  [ngStyle]="getPinnedStyle(column)">
+                <!-- Special rendering for status -->
+                <ng-container *ngIf="column === 'status'">
+                  <div class="d-flex align-items-center ">
+                    <div class="action-menu-container" (click)="$event.stopPropagation()">
+                      <button
+                        class="btn btn-link p-0 action-menu-btn"
+                        type="button"
+                        (click)="toggleActionMenu(event.id, $event)">
+                        <i class="pi pi-ellipsis-v"></i>
+                      </button>
+                      <div class="action-menu-dropdown" 
+                           [class.show]="isActionMenuOpen(event.id)"
+                           [class.position-up]="getActionMenuPosition(event.id) === 'up'">
+                        <a class="dropdown-item" href="#"
+                          [routerLink]="['/events/edit', event.id]"
+                          (click)="closeActionMenu()"
+                          title="Edit">
+                          <i class="pi pi-pencil"></i>
+                          <span>Edit</span>
+                        </a>
+                        <a class="dropdown-item" href="#" [routerLink]="['/events/view', event.id]" (click)="closeActionMenu()"
+                          title="More details">
+                          <i class="pi pi-eye"></i>
+                          <span>View</span>
+                        </a>
+                        <a class="dropdown-item" href="#" (click)="downloadEvent(event.id); closeActionMenu(); $event.preventDefault()"
+                          title="Download">
+                          <i class="pi pi-download"></i>
+                          <span>Download</span>
+                        </a>
+                        <a class="dropdown-item" href="#" (click)="openGallery(event); closeActionMenu(); $event.preventDefault()"
+                          title="View in Gallery">
+                          <i class="pi pi-images"></i>
+                          <span>Gallery</span>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item text-danger" href="#" (click)="deleteEvent(event.id); closeActionMenu(); $event.preventDefault()"
+                          title="Delete Event">
+                          <i class="pi pi-trash"></i>
+                          <span>Delete</span>
+                        </a>
+                      </div>
+                    </div>
+                    <p-tag
+                      [value]="event.status === 'complete' ? 'Complete' : 'incomplete'"
+                      [severity]="event.status === 'complete' ? 'success' : 'warning'">
+                    </p-tag>
                   </div>
-                </div>
-                <p-tag
-                  [value]="event.status === 'complete' ? 'Complete' : 'Draft'"
-                  [severity]="event.status === 'complete' ? 'success' : 'warning'">
-                </p-tag>
-              </div>
-            </td>
-
-            <td *ngIf="!isColumnHidden('eventType')" [class.pinned-column]="isColumnPinned('eventType')" [ngStyle]="getPinnedStyle('eventType')">
-              <p-tag [value]="getEventTypeDisplay(event)" [severity]="getSeverity(event.scale)" />
-            </td>
-            <td *ngIf="!isColumnHidden('name')" [class.pinned-column]="isColumnPinned('name')" [ngStyle]="getPinnedStyle('name')">{{ event.name }}</td>
-            <td *ngIf="!isColumnHidden('duration')" [class.pinned-column]="isColumnPinned('duration')" [ngStyle]="getPinnedStyle('duration')">{{ event.duration }}</td>
-            <td *ngIf="!isColumnHidden('timing')" [class.pinned-column]="isColumnPinned('timing')" [ngStyle]="getPinnedStyle('timing')">{{ event.timing }}</td>
-            <td *ngIf="!isColumnHidden('state')" [class.pinned-column]="isColumnPinned('state')" [ngStyle]="getPinnedStyle('state')">{{ event.state }}</td>
-            <td *ngIf="!isColumnHidden('city')" [class.pinned-column]="isColumnPinned('city')" [ngStyle]="getPinnedStyle('city')">{{ event.city }}</td>
-            <td *ngIf="!isColumnHidden('branch')" [class.pinned-column]="isColumnPinned('branch')" [ngStyle]="getPinnedStyle('branch')">{{ event.branch }}</td>
-            <td *ngIf="!isColumnHidden('spiritualOrator')" [class.pinned-column]="isColumnPinned('spiritualOrator')" [ngStyle]="getPinnedStyle('spiritualOrator')">{{ event.spiritualOrator || '-' }}</td>
-            <td *ngIf="!isColumnHidden('language')" [class.pinned-column]="isColumnPinned('language')" [ngStyle]="getPinnedStyle('language')">{{ event.language }}</td>
-
-            <td *ngIf="!isColumnHidden('beneficiaries')" [class.pinned-column]="isColumnPinned('beneficiaries')" [ngStyle]="getPinnedStyle('beneficiaries')">
-              <span class="cursor-pointer text-primary" (click)="openBeneficiariesModal(event); $event.stopPropagation()">
-                {{ event.beneficiaries.total }}
-              </span>
-              <i class="pi pi-info-circle text-primary ms-1" pTooltip="Click to view Beneficiaries details"
-                tooltipPosition="top"></i>
-            </td>
-
-            <td *ngIf="!isColumnHidden('initiation')" [class.pinned-column]="isColumnPinned('initiation')" [ngStyle]="getPinnedStyle('initiation')">
-              <span class="cursor-pointer text-primary" (click)="openInitiationModal(event); $event.stopPropagation()">
-                {{ event.initiation.total }}
-              </span>
-              <i class="pi pi-info-circle text-primary ms-1" pTooltip="Click to view Initiation details"
-                tooltipPosition="top"></i>
-            </td>
-
-            <td *ngIf="!isColumnHidden('specialGuests')" [class.pinned-column]="isColumnPinned('specialGuests')" [ngStyle]="getPinnedStyle('specialGuests')">
-              <span class="cursor-pointer text-primary" (click)="openSpecialGuestsModal(event); $event.stopPropagation()">
-                {{ event.specialGuests }}
-              </span>
-              <i class="pi pi-info-circle text-primary ms-1" pTooltip="Click to view Special Guests"
-                tooltipPosition="top"></i>
-            </td>
-
-            <td *ngIf="!isColumnHidden('volunteers')" [class.pinned-column]="isColumnPinned('volunteers')" [ngStyle]="getPinnedStyle('volunteers')">
-              <span class="cursor-pointer text-primary" (click)="openVolunteersModal(event); $event.stopPropagation()">
-                {{ event.volunteers }}
-              </span>
-              <i class="pi pi-info-circle text-primary ms-1" pTooltip="Click to view Volunteers"
-                tooltipPosition="top"></i>
-            </td>
+                </ng-container>
+                <!-- Special rendering for eventType -->
+                <ng-container *ngIf="column === 'eventType'">
+                  <p-tag [value]="getEventTypeDisplay(event)" [severity]="getSeverity(event.scale)" />
+                </ng-container>
+                <!-- Special rendering for beneficiaries -->
+                <ng-container *ngIf="column === 'beneficiaries'">
+                  <span class="cursor-pointer text-primary" (click)="openBeneficiariesModal(event); $event.stopPropagation()">
+                    {{ event.beneficiaries.total }}
+                  </span>
+                  <i class="pi pi-info-circle text-primary ms-1" pTooltip="Click to view Beneficiaries details"
+                    tooltipPosition="top"></i>
+                </ng-container>
+                <!-- Special rendering for initiation -->
+                <ng-container *ngIf="column === 'initiation'">
+                  <span class="cursor-pointer text-primary" (click)="openInitiationModal(event); $event.stopPropagation()">
+                    {{ event.initiation.total }}
+                  </span>
+                  <i class="pi pi-info-circle text-primary ms-1" pTooltip="Click to view Initiation details"
+                    tooltipPosition="top"></i>
+                </ng-container>
+                <!-- Special rendering for specialGuests -->
+                <ng-container *ngIf="column === 'specialGuests'">
+                  <span class="cursor-pointer text-primary" (click)="openSpecialGuestsModal(event); $event.stopPropagation()">
+                    {{ event.specialGuests }}
+                  </span>
+                  <i class="pi pi-info-circle text-primary ms-1" pTooltip="Click to view Special Guests"
+                    tooltipPosition="top"></i>
+                </ng-container>
+                <!-- Special rendering for volunteers -->
+                <ng-container *ngIf="column === 'volunteers'">
+                  <span class="cursor-pointer text-primary" (click)="openVolunteersModal(event); $event.stopPropagation()">
+                    {{ event.volunteers }}
+                  </span>
+                  <i class="pi pi-info-circle text-primary ms-1" pTooltip="Click to view Volunteers"
+                    tooltipPosition="top"></i>
+                </ng-container>
+                <!-- Default rendering for other columns -->
+                <ng-container *ngIf="column !== 'status' && column !== 'eventType' && column !== 'beneficiaries' && column !== 'initiation' && column !== 'specialGuests' && column !== 'volunteers'">
+                  {{ getColumnCellContent(event, column) }}
+                </ng-container>
+              </td>
+            </ng-container>
           </tr>
         </ng-template>
 
@@ -991,8 +1177,12 @@
                     selectedEvent?.media?.coverageType || 'link' }}</span></p>
                 <p><strong>Organization/ Comp...:</strong> <span class="text-primary">{{
                     selectedEvent?.media?.organization || 'link' }}</span></p>
-                <p><strong>Media email:</strong> <span class="text-primary">{{ selectedEvent?.media?.email ||
-                    'link.gmail.com' }}</span></p>
+                <p><strong>Media email:</strong> 
+                  <span *ngFor="let email of getEmailArray(selectedEvent?.media?.email); let last = last" class="me-2">
+                    <span class="badge bg-info text-dark">{{ email }}</span>
+                  </span>
+                  <span *ngIf="!selectedEvent?.media?.email || getEmailArray(selectedEvent?.media?.email).length === 0" class="text-muted">N/A</span>
+                </p>
                 <p><strong>Media website:</strong> <span class="text-primary">{{ selectedEvent?.media?.website ||
                     'www.link.in' }}</span></p>
               </div>
@@ -1001,8 +1191,12 @@
                 <p><strong>Designation:</strong> <span class="text-primary">{{ selectedEvent?.media?.designation ||
                     'link' }}</span></p>
                 <p><strong>Contact:</strong> {{ selectedEvent?.media?.contact || '000000000' }}</p>
-                <p><strong>Email:</strong> <span class="text-primary">{{ selectedEvent?.media?.personEmail ||
-                    'name.gmail.com' }}</span></p>
+                <p><strong>Email:</strong> 
+                  <span *ngFor="let email of getEmailArray(selectedEvent?.media?.personEmail); let last = last" class="me-2">
+                    <span class="badge bg-info text-dark">{{ email }}</span>
+                  </span>
+                  <span *ngIf="!selectedEvent?.media?.personEmail || getEmailArray(selectedEvent?.media?.personEmail).length === 0" class="text-muted">N/A</span>
+                </p>
                 <p><strong>Reference person:</strong> {{ selectedEvent?.media?.referencePerson || 'Mr. First middle
                   last' }}</p>
               </div>

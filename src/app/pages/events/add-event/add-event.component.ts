@@ -1,5 +1,5 @@
 
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, HostListener } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { LocationService, Country, State, City } from 'src/app/core/services/location.service';
@@ -9,6 +9,8 @@ import { EventDraftService } from 'src/app/core/services/event-draft.service';
 import { EventApiService, EventDetails, EventWithRelatedData, SpecialGuest, Volunteer, EventMedia } from 'src/app/core/services/event-api.service';
 import { ToastService } from 'src/app/core/services/toast.service';
 import { ValidationSettingsService } from 'src/app/core/services/validation-settings.service';
+import { ColumnPreferencesHelperService, ColumnConfig } from 'src/app/core/services/column-preferences-helper.service';
+import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
 import { debounceTime, Subscription } from 'rxjs';
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
 import { MediaPromotionModalComponent } from './media-promotion-modal.component';
@@ -49,6 +51,7 @@ export class AddEventComponent implements OnInit, OnDestroy {
 
   isEditing: boolean = false;
   loadingEvent: boolean = false;
+  eventStatus: string = 'incomplete'; // Track event status (incomplete/complete)
 
   // Form data for different steps
   generalDetailsForm: FormGroup;
@@ -71,7 +74,7 @@ export class AddEventComponent implements OnInit, OnDestroy {
     }
   ];
 
-  materialTypes: any[] = [{ materialType: '', quantity: '', size: '', customHeight: '', customWidth: '' }];
+  materialTypes: any[] = [{ materialType: '', quantity: '', size: '', customHeight: '', customWidth: '', customHeightUnit: 'inch', customWidthUnit: 'inch' }];
   specialGuests: any[] = [];
   volunteers: any[] = [];
   eventMediaList: any[] = [];
@@ -98,6 +101,63 @@ export class AddEventComponent implements OnInit, OnDestroy {
   editingPromotionalMaterialIndex: number | null = null;
   editingSpecialGuestIndex: number | null = null;
   editingVolunteerIndex: number | null = null;
+
+  // Column preference configurations (public for template access)
+  readonly EVENT_MEDIA_CONFIG: ColumnConfig = {
+    key: 'event_media_columns',
+    defaultOrder: ['actions', 'type', 'companyName', 'companyEmail', 'companyWebsite', 'gender', 'designation', 'contact'],
+    displayNames: {
+      'actions': 'Actions',
+      'type': 'Type',
+      'companyName': 'Company Name',
+      'companyEmail': 'Company Email',
+      'companyWebsite': 'Company Website',
+      'gender': 'Gender',
+      'designation': 'Designation',
+      'contact': 'Contact'
+    }
+  };
+
+  readonly PROMOTIONAL_MATERIAL_CONFIG: ColumnConfig = {
+    key: 'promotional_materials_columns',
+    defaultOrder: ['actions', 'materialType', 'quantity', 'size', 'customDimension'],
+    displayNames: {
+      'actions': 'Actions',
+      'materialType': 'Material Type',
+      'quantity': 'Quantity',
+      'size': 'Size',
+      'customDimension': 'Custom Dimension'
+    }
+  };
+
+  readonly SPECIAL_GUESTS_CONFIG: ColumnConfig = {
+    key: 'special_guests_columns',
+    defaultOrder: ['actions', 'name', 'gender', 'designation', 'organization', 'email', 'cityState', 'personalNumber', 'contactPerson', 'referencePerson'],
+    displayNames: {
+      'actions': 'Actions',
+      'name': 'Name (Phone no.)',
+      'gender': 'Gender',
+      'designation': 'Designation',
+      'organization': 'Organization',
+      'email': 'Email',
+      'cityState': 'City, State',
+      'personalNumber': 'Personal no.',
+      'contactPerson': 'Contact Person (Phone no.)',
+      'referencePerson': 'Reference Person (Phone no.)'
+    }
+  };
+
+  readonly VOLUNTEERS_CONFIG: ColumnConfig = {
+    key: 'volunteers_columns',
+    defaultOrder: ['actions', 'name', 'contact', 'days', 'seva'],
+    displayNames: {
+      'actions': 'Actions',
+      'name': 'Name',
+      'contact': 'Contact no.',
+      'days': 'No. of Days',
+      'seva': 'Seva involved'
+    }
+  };
 
   // Getters for template compatibility
   get specialGuestList(): any[] {
@@ -143,7 +203,7 @@ export class AddEventComponent implements OnInit, OnDestroy {
       duration: '15 Jan 2024 - 20 Jan 2024',
       dailyStartTime: '06:00',
       dailyEndTime: '08:00',
-      spiritualOrator: 'Swami Ji',
+      spiritualOrator: ['Swami Ji'],
       country: 'India',
       state: 'Karnataka',
       city: 'Bangalore',
@@ -164,7 +224,7 @@ export class AddEventComponent implements OnInit, OnDestroy {
       duration: '25 Feb 2024 - 27 Feb 2024',
       dailyStartTime: '17:30',
       dailyEndTime: '20:30',
-      spiritualOrator: 'Dr. Anya Sharma',
+      spiritualOrator: ['Dr. Anya Sharma'],
       country: 'India',
       state: 'Maharashtra',
       city: 'Mumbai',
@@ -185,7 +245,7 @@ export class AddEventComponent implements OnInit, OnDestroy {
       duration: '10 Mar 2024 - 12 Mar 2024',
       dailyStartTime: '09:00',
       dailyEndTime: '17:00',
-      spiritualOrator: 'Mr. Rohan Verma',
+      spiritualOrator: ['Mr. Rohan Verma'],
       country: 'India',
       state: 'Delhi',
       city: 'New Delhi',
@@ -372,7 +432,7 @@ export class AddEventComponent implements OnInit, OnDestroy {
   loadingCities = false;
   addressTypes = ['Residential', 'Commercial', 'Temple', 'Community Center', 'Other'];
   donationTypeOptions = ['Cash', 'In-kind', 'Bank Transfer', 'Cheque'];
-  mediaCoverageTypes = ['Print', 'Digital', 'TV', 'Radio', 'Social Media'];
+  mediaCoverageTypes = ['Print', 'Electronic', 'Social Media'];
   materialTypeOptions: string[] = []; // Will be loaded from API
   promotionMaterialTypes: PromotionMaterialType[] = [];
   loadingMaterialTypes = false;
@@ -397,7 +457,10 @@ export class AddEventComponent implements OnInit, OnDestroy {
     private toastService: ToastService,
     public validationSettings: ValidationSettingsService,
     private modalService: BsModalService,
-    private branchOptionsService: BranchOptionsService
+    private branchOptionsService: BranchOptionsService,
+    private columnPreferencesHelper: ColumnPreferencesHelperService,
+    private cdr: ChangeDetectorRef,
+    private confirmationDialog: ConfirmationDialogService
   ) { }
 
   ngOnInit(): void {
@@ -421,6 +484,9 @@ export class AddEventComponent implements OnInit, OnDestroy {
     this.setupFormValueChanges();
     this.setupAutoSave();
     this.loadBranches();
+
+    // Initialize column preferences for all tables
+    this.initializeColumnPreferences();
 
     // Load countries first, then load draft (draft needs countries list to be populated)
     this.loadCountriesAndThenDraft();
@@ -455,6 +521,442 @@ export class AddEventComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     // Unsubscribe from all subscriptions
     this.subscriptions.forEach(sub => sub.unsubscribe());
+    // Cleanup column preference states
+    this.columnPreferencesHelper.cleanup(this.EVENT_MEDIA_CONFIG.key);
+    this.columnPreferencesHelper.cleanup(this.PROMOTIONAL_MATERIAL_CONFIG.key);
+    this.columnPreferencesHelper.cleanup(this.SPECIAL_GUESTS_CONFIG.key);
+    this.columnPreferencesHelper.cleanup(this.VOLUNTEERS_CONFIG.key);
+  }
+
+  /**
+   * Initialize column preferences for all tables
+   */
+  private initializeColumnPreferences(): void {
+    // Initialize all tables - state is set synchronously, preferences load async
+    this.columnPreferencesHelper.initializeTable(this.EVENT_MEDIA_CONFIG).subscribe({
+      next: () => {
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error initializing event media columns:', error);
+        this.cdr.detectChanges();
+      }
+    });
+    this.columnPreferencesHelper.initializeTable(this.PROMOTIONAL_MATERIAL_CONFIG).subscribe({
+      next: () => {
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error initializing promotional materials columns:', error);
+        this.cdr.detectChanges();
+      }
+    });
+    this.columnPreferencesHelper.initializeTable(this.SPECIAL_GUESTS_CONFIG).subscribe({
+      next: () => {
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error initializing special guests columns:', error);
+        this.cdr.detectChanges();
+      }
+    });
+    this.columnPreferencesHelper.initializeTable(this.VOLUNTEERS_CONFIG).subscribe({
+      next: () => {
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error initializing volunteers columns:', error);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // ==================== Generic Column Preference Helpers ====================
+  
+  /**
+   * Generic drag start handler
+   */
+  onColumnDragStart(event: DragEvent, column: string, config: ColumnConfig): void {
+    const target = event.target as HTMLElement;
+    if (target.closest('button') || target.closest('.dropdown-menu') || target.closest('input') || target.closest('a')) {
+      event.preventDefault();
+      return;
+    }
+
+    this.columnPreferencesHelper.setDraggedColumn(config.key, column);
+    
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', column);
+    }
+    
+    const thElement = event.currentTarget as HTMLElement;
+    if (thElement) {
+      thElement.classList.add('dragging');
+    }
+  }
+
+  /**
+   * Generic drag end handler
+   */
+  onColumnDragEnd(event: DragEvent, config: ColumnConfig): void {
+    this.columnPreferencesHelper.setDraggedColumn(config.key, null);
+    this.columnPreferencesHelper.setDragOverColumn(config.key, null);
+    
+    const thElement = event.currentTarget as HTMLElement;
+    if (thElement) {
+      thElement.classList.remove('dragging');
+    }
+    
+    document.querySelectorAll('.column-drag-over').forEach(el => {
+      el.classList.remove('column-drag-over');
+    });
+  }
+
+  /**
+   * Generic drag over handler
+   */
+  onColumnDragOver(event: DragEvent, column: string, config: ColumnConfig): void {
+    const state = this.columnPreferencesHelper.getState(config.key);
+    if (!state || !state.draggedColumn || state.draggedColumn === column) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+    
+    this.columnPreferencesHelper.setDragOverColumn(config.key, column);
+    
+    const thElement = event.currentTarget as HTMLElement;
+    if (thElement) {
+      thElement.classList.add('column-drag-over');
+    }
+  }
+
+  /**
+   * Generic drag leave handler
+   */
+  onColumnDragLeave(event: DragEvent, config: ColumnConfig): void {
+    const thElement = event.currentTarget as HTMLElement;
+    if (thElement) {
+      thElement.classList.remove('column-drag-over');
+    }
+    this.columnPreferencesHelper.setDragOverColumn(config.key, null);
+  }
+
+  /**
+   * Generic drop handler
+   */
+  onColumnDrop(event: DragEvent, targetColumn: string, config: ColumnConfig): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const state = this.columnPreferencesHelper.getState(config.key);
+    if (!state || !state.draggedColumn || state.draggedColumn === targetColumn) {
+      return;
+    }
+
+    const thElement = event.currentTarget as HTMLElement;
+    if (thElement) {
+      thElement.classList.remove('column-drag-over');
+    }
+
+    const draggedIndex = state.columnOrder.indexOf(state.draggedColumn);
+    const targetIndex = state.columnOrder.indexOf(targetColumn);
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      return;
+    }
+
+    const newOrder = [...state.columnOrder];
+    newOrder.splice(draggedIndex, 1);
+    newOrder.splice(targetIndex, 0, state.draggedColumn);
+
+    this.columnPreferencesHelper.updateColumnOrder(config.key, newOrder);
+    this.columnPreferencesHelper.setDraggedColumn(config.key, null);
+    this.columnPreferencesHelper.setDragOverColumn(config.key, null);
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Generic column visibility helpers
+   */
+  isColumnHidden(config: ColumnConfig, column: string): boolean {
+    return this.columnPreferencesHelper.isColumnHidden(config.key, column);
+  }
+
+  toggleColumnVisibility(config: ColumnConfig, column: string): void {
+    this.columnPreferencesHelper.toggleColumnVisibility(config.key, column);
+    this.cdr.detectChanges();
+  }
+
+  toggleColumnVisibilityMenu(config: ColumnConfig): void {
+    this.columnPreferencesHelper.toggleVisibilityMenu(config.key);
+    this.cdr.detectChanges();
+  }
+
+  closeColumnVisibilityMenu(config: ColumnConfig): void {
+    this.columnPreferencesHelper.closeVisibilityMenu(config.key);
+  }
+
+  getColumnDisplayName(config: ColumnConfig, column: string): string {
+    return config.displayNames[column] || column;
+  }
+
+  getAllColumns(config: ColumnConfig): string[] {
+    const state = this.columnPreferencesHelper.getState(config.key);
+    // Always return a valid array - use default order if state not initialized yet
+    if (state && state.columnOrder && state.columnOrder.length > 0) {
+      return state.columnOrder;
+    }
+    return config.defaultOrder;
+  }
+
+  showAllColumns(config: ColumnConfig): void {
+    this.columnPreferencesHelper.showAllColumns(config.key);
+    this.columnPreferencesHelper.closeVisibilityMenu(config.key);
+    this.cdr.detectChanges();
+  }
+
+  getVisibleColumnCount(config: ColumnConfig): number {
+    return this.columnPreferencesHelper.getVisibleColumnCount(config.key);
+  }
+
+  isColumnVisibilityMenuOpen(config: ColumnConfig): boolean {
+    const state = this.columnPreferencesHelper.getState(config.key);
+    return state ? state.visibilityMenuOpen : false;
+  }
+
+  getHiddenColumnsCount(config: ColumnConfig): number {
+    const state = this.columnPreferencesHelper.getState(config.key);
+    return state ? state.hiddenColumns.length : 0;
+  }
+
+  // ==================== Event Media Specific Wrappers ====================
+  onEventMediaColumnDragStart(event: DragEvent, column: string): void {
+    this.onColumnDragStart(event, column, this.EVENT_MEDIA_CONFIG);
+  }
+
+  onEventMediaColumnDragEnd(event: DragEvent): void {
+    this.onColumnDragEnd(event, this.EVENT_MEDIA_CONFIG);
+  }
+
+  onEventMediaColumnDragOver(event: DragEvent, column: string): void {
+    this.onColumnDragOver(event, column, this.EVENT_MEDIA_CONFIG);
+  }
+
+  onEventMediaColumnDragLeave(event: DragEvent): void {
+    this.onColumnDragLeave(event, this.EVENT_MEDIA_CONFIG);
+  }
+
+  onEventMediaColumnDrop(event: DragEvent, targetColumn: string): void {
+    this.onColumnDrop(event, targetColumn, this.EVENT_MEDIA_CONFIG);
+  }
+
+  isEventMediaColumnHidden(column: string): boolean {
+    return this.isColumnHidden(this.EVENT_MEDIA_CONFIG, column);
+  }
+
+  toggleEventMediaColumnVisibility(column: string): void {
+    this.toggleColumnVisibility(this.EVENT_MEDIA_CONFIG, column);
+  }
+
+  toggleEventMediaColumnVisibilityMenu(): void {
+    this.toggleColumnVisibilityMenu(this.EVENT_MEDIA_CONFIG);
+  }
+
+  closeEventMediaColumnVisibilityMenu(): void {
+    this.closeColumnVisibilityMenu(this.EVENT_MEDIA_CONFIG);
+  }
+
+  getEventMediaColumnDisplayName(column: string): string {
+    return this.getColumnDisplayName(this.EVENT_MEDIA_CONFIG, column);
+  }
+
+  getAllEventMediaColumns(): string[] {
+    return this.getAllColumns(this.EVENT_MEDIA_CONFIG);
+  }
+
+  showAllEventMediaColumns(): void {
+    this.showAllColumns(this.EVENT_MEDIA_CONFIG);
+  }
+
+  getEventMediaVisibleColumnCount(): number {
+    return this.getVisibleColumnCount(this.EVENT_MEDIA_CONFIG);
+  }
+
+  // ==================== Promotional Materials Specific Wrappers ====================
+  onPromotionalMaterialColumnDragStart(event: DragEvent, column: string): void {
+    this.onColumnDragStart(event, column, this.PROMOTIONAL_MATERIAL_CONFIG);
+  }
+
+  onPromotionalMaterialColumnDragEnd(event: DragEvent): void {
+    this.onColumnDragEnd(event, this.PROMOTIONAL_MATERIAL_CONFIG);
+  }
+
+  onPromotionalMaterialColumnDragOver(event: DragEvent, column: string): void {
+    this.onColumnDragOver(event, column, this.PROMOTIONAL_MATERIAL_CONFIG);
+  }
+
+  onPromotionalMaterialColumnDragLeave(event: DragEvent): void {
+    this.onColumnDragLeave(event, this.PROMOTIONAL_MATERIAL_CONFIG);
+  }
+
+  onPromotionalMaterialColumnDrop(event: DragEvent, targetColumn: string): void {
+    this.onColumnDrop(event, targetColumn, this.PROMOTIONAL_MATERIAL_CONFIG);
+  }
+
+  isPromotionalMaterialColumnHidden(column: string): boolean {
+    return this.isColumnHidden(this.PROMOTIONAL_MATERIAL_CONFIG, column);
+  }
+
+  togglePromotionalMaterialColumnVisibility(column: string): void {
+    this.toggleColumnVisibility(this.PROMOTIONAL_MATERIAL_CONFIG, column);
+  }
+
+  togglePromotionalMaterialColumnVisibilityMenu(): void {
+    this.toggleColumnVisibilityMenu(this.PROMOTIONAL_MATERIAL_CONFIG);
+  }
+
+  closePromotionalMaterialColumnVisibilityMenu(): void {
+    this.closeColumnVisibilityMenu(this.PROMOTIONAL_MATERIAL_CONFIG);
+  }
+
+  getPromotionalMaterialColumnDisplayName(column: string): string {
+    return this.getColumnDisplayName(this.PROMOTIONAL_MATERIAL_CONFIG, column);
+  }
+
+  getAllPromotionalMaterialColumns(): string[] {
+    return this.getAllColumns(this.PROMOTIONAL_MATERIAL_CONFIG);
+  }
+
+  showAllPromotionalMaterialColumns(): void {
+    this.showAllColumns(this.PROMOTIONAL_MATERIAL_CONFIG);
+  }
+
+  getPromotionalMaterialVisibleColumnCount(): number {
+    return this.getVisibleColumnCount(this.PROMOTIONAL_MATERIAL_CONFIG);
+  }
+
+  // ==================== Special Guests Specific Wrappers ====================
+  onSpecialGuestsColumnDragStart(event: DragEvent, column: string): void {
+    this.onColumnDragStart(event, column, this.SPECIAL_GUESTS_CONFIG);
+  }
+
+  onSpecialGuestsColumnDragEnd(event: DragEvent): void {
+    this.onColumnDragEnd(event, this.SPECIAL_GUESTS_CONFIG);
+  }
+
+  onSpecialGuestsColumnDragOver(event: DragEvent, column: string): void {
+    this.onColumnDragOver(event, column, this.SPECIAL_GUESTS_CONFIG);
+  }
+
+  onSpecialGuestsColumnDragLeave(event: DragEvent): void {
+    this.onColumnDragLeave(event, this.SPECIAL_GUESTS_CONFIG);
+  }
+
+  onSpecialGuestsColumnDrop(event: DragEvent, targetColumn: string): void {
+    this.onColumnDrop(event, targetColumn, this.SPECIAL_GUESTS_CONFIG);
+  }
+
+  isSpecialGuestsColumnHidden(column: string): boolean {
+    return this.isColumnHidden(this.SPECIAL_GUESTS_CONFIG, column);
+  }
+
+  toggleSpecialGuestsColumnVisibility(column: string): void {
+    this.toggleColumnVisibility(this.SPECIAL_GUESTS_CONFIG, column);
+  }
+
+  toggleSpecialGuestsColumnVisibilityMenu(): void {
+    this.toggleColumnVisibilityMenu(this.SPECIAL_GUESTS_CONFIG);
+  }
+
+  closeSpecialGuestsColumnVisibilityMenu(): void {
+    this.closeColumnVisibilityMenu(this.SPECIAL_GUESTS_CONFIG);
+  }
+
+  getSpecialGuestsColumnDisplayName(column: string): string {
+    return this.getColumnDisplayName(this.SPECIAL_GUESTS_CONFIG, column);
+  }
+
+  getAllSpecialGuestsColumns(): string[] {
+    return this.getAllColumns(this.SPECIAL_GUESTS_CONFIG);
+  }
+
+  showAllSpecialGuestsColumns(): void {
+    this.showAllColumns(this.SPECIAL_GUESTS_CONFIG);
+  }
+
+  getSpecialGuestsVisibleColumnCount(): number {
+    return this.getVisibleColumnCount(this.SPECIAL_GUESTS_CONFIG);
+  }
+
+  // ==================== Volunteers Specific Wrappers ====================
+  onVolunteersColumnDragStart(event: DragEvent, column: string): void {
+    this.onColumnDragStart(event, column, this.VOLUNTEERS_CONFIG);
+  }
+
+  onVolunteersColumnDragEnd(event: DragEvent): void {
+    this.onColumnDragEnd(event, this.VOLUNTEERS_CONFIG);
+  }
+
+  onVolunteersColumnDragOver(event: DragEvent, column: string): void {
+    this.onColumnDragOver(event, column, this.VOLUNTEERS_CONFIG);
+  }
+
+  onVolunteersColumnDragLeave(event: DragEvent): void {
+    this.onColumnDragLeave(event, this.VOLUNTEERS_CONFIG);
+  }
+
+  onVolunteersColumnDrop(event: DragEvent, targetColumn: string): void {
+    this.onColumnDrop(event, targetColumn, this.VOLUNTEERS_CONFIG);
+  }
+
+  isVolunteersColumnHidden(column: string): boolean {
+    return this.isColumnHidden(this.VOLUNTEERS_CONFIG, column);
+  }
+
+  toggleVolunteersColumnVisibility(column: string): void {
+    this.toggleColumnVisibility(this.VOLUNTEERS_CONFIG, column);
+  }
+
+  toggleVolunteersColumnVisibilityMenu(): void {
+    this.toggleColumnVisibilityMenu(this.VOLUNTEERS_CONFIG);
+  }
+
+  closeVolunteersColumnVisibilityMenu(): void {
+    this.closeColumnVisibilityMenu(this.VOLUNTEERS_CONFIG);
+  }
+
+  getVolunteersColumnDisplayName(column: string): string {
+    return this.getColumnDisplayName(this.VOLUNTEERS_CONFIG, column);
+  }
+
+  getAllVolunteersColumns(): string[] {
+    return this.getAllColumns(this.VOLUNTEERS_CONFIG);
+  }
+
+  showAllVolunteersColumns(): void {
+    this.showAllColumns(this.VOLUNTEERS_CONFIG);
+  }
+
+  getVolunteersVisibleColumnCount(): number {
+    return this.getVisibleColumnCount(this.VOLUNTEERS_CONFIG);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.column-visibility-manager')) {
+      this.closeColumnVisibilityMenu(this.EVENT_MEDIA_CONFIG);
+      this.closeColumnVisibilityMenu(this.PROMOTIONAL_MATERIAL_CONFIG);
+      this.closeColumnVisibilityMenu(this.SPECIAL_GUESTS_CONFIG);
+      this.closeColumnVisibilityMenu(this.VOLUNTEERS_CONFIG);
+    }
   }
 
   initializeForms(): void {
@@ -473,7 +975,7 @@ export class AddEventComponent implements OnInit, OnDestroy {
       duration: ['', Validators.required],
       dailyStartTime: [''],
       dailyEndTime: [''],
-      spiritualOrator: [''],
+      spiritualOrator: [[]], // Array for multiple selection
       country: ['', Validators.required],
       pincode: [''],
       postOffice: ['Karnataka'],
@@ -800,6 +1302,16 @@ export class AddEventComponent implements OnInit, OnDestroy {
       delete nonLocationFields.eventType;
       delete nonLocationFields.eventCategory;
 
+      // Convert spiritualOrator to array if it's a string (comma-separated)
+      if (nonLocationFields.spiritualOrator && typeof nonLocationFields.spiritualOrator === 'string') {
+        nonLocationFields.spiritualOrator = nonLocationFields.spiritualOrator
+          .split(',')
+          .map(s => s.trim())
+          .filter(s => s.length > 0);
+      } else if (!nonLocationFields.spiritualOrator || !Array.isArray(nonLocationFields.spiritualOrator)) {
+        nonLocationFields.spiritualOrator = [];
+      }
+
       // Set non-location fields first
       this.generalDetailsForm.patchValue(nonLocationFields, { emitEvent: false });
 
@@ -964,7 +1476,9 @@ export class AddEventComponent implements OnInit, OnDestroy {
         this.eventMediaList = draftData.mediaPromotion.eventMediaList.map((media: any) => ({
           mediaCoverageType: media.mediaCoverageType || media.mediaType || '',
           companyName: media.companyName || '',
-          companyEmail: media.companyEmail || '',
+          companyEmail: Array.isArray(media.companyEmail) && media.companyEmail.length > 0
+            ? media.companyEmail[0]
+            : (typeof media.companyEmail === 'string' ? media.companyEmail.split(',')[0].trim() : ''),
           companyWebsite: media.companyWebsite || '',
           gender: media.gender || '',
           prefix: media.prefix || '',
@@ -973,7 +1487,9 @@ export class AddEventComponent implements OnInit, OnDestroy {
           lastName: media.lastName || '',
           designation: media.designation || '',
           contact: media.contact || '',
-          email: media.email || '',
+          email: Array.isArray(media.email) && media.email.length > 0
+            ? media.email[0]
+            : (typeof media.email === 'string' ? media.email.split(',')[0].trim() : ''),
           referenceBranchId: media.referenceBranchId || '',
           referenceVolunteerId: media.referenceVolunteerId || '',
           referencePersonName: media.referencePersonName || ''
@@ -997,7 +1513,7 @@ export class AddEventComponent implements OnInit, OnDestroy {
         // If there are valid materials, use them; otherwise initialize with one empty entry
         this.materialTypes = validMaterials.length > 0 
           ? validMaterials 
-          : [{ materialType: '', quantity: '', size: '', customHeight: '', customWidth: '' }];
+          : [{ materialType: '', quantity: '', size: '', customHeight: '', customWidth: '', customHeightUnit: 'inch', customWidthUnit: 'inch' }];
       }
     }
 
@@ -1129,10 +1645,15 @@ export class AddEventComponent implements OnInit, OnDestroy {
    */
   loadOrators(): void {
     this.loadingOrators = true;
+    console.log('Loading orators...');
     this.eventMasterDataService.getOrators().subscribe({
       next: (orators: Orator[]) => {
+        console.log('Orators loaded successfully:', orators);
         this.orators = orators;
         this.loadingOrators = false;
+        if (!orators || orators.length === 0) {
+          console.warn('No orators returned from API');
+        }
       },
       error: (error) => {
         console.error('Error loading orators:', error);
@@ -1384,6 +1905,25 @@ export class AddEventComponent implements OnInit, OnDestroy {
    * Handle start date change
    */
   onStartDateChange(): void {
+    const startDateStr = this.generalDetailsForm.get('startDate')?.value;
+    const endDateStr = this.generalDetailsForm.get('endDate')?.value;
+
+    // If start date is changed and end date exists, validate it
+    if (startDateStr && endDateStr) {
+      const startDate = new Date(startDateStr);
+      const endDate = new Date(endDateStr);
+
+      // If end date is now before start date, clear it
+      if (endDate < startDate) {
+        this.toastService.warning('End date cannot be before start date', 'Invalid Date Range');
+        this.generalDetailsForm.patchValue({
+          endDate: '',
+          duration: ''
+        }, { emitEvent: false });
+        return;
+      }
+    }
+
     this.updateDurationString();
   }
 
@@ -1405,9 +1945,9 @@ export class AddEventComponent implements OnInit, OnDestroy {
       const startDate = new Date(startDateStr);
       const endDate = new Date(endDateStr);
 
-      // Validate that end date is after start date
+      // Validate that end date is not before start date (allows same day)
       if (endDate < startDate) {
-        this.toastService.warning('End date must be after start date', 'Invalid Date Range');
+        this.toastService.warning('End date cannot be before start date', 'Invalid Date Range');
         // Clear end date if invalid
         this.generalDetailsForm.patchValue({
           endDate: '',
@@ -1431,6 +1971,159 @@ export class AddEventComponent implements OnInit, OnDestroy {
         duration: ''
       }, { emitEvent: false });
     }
+  }
+
+  /**
+   * Get maximum date for start date (should be end date if set, otherwise no limit)
+   */
+  getMaxStartDate(): string | null {
+    const endDateStr = this.generalDetailsForm.get('endDate')?.value;
+    if (endDateStr) {
+      // Allow start date to be same as end date (for single-day events)
+      return endDateStr;
+    }
+    return null;
+  }
+
+  /**
+   * Get minimum date for end date (should be start date if set, otherwise no limit)
+   */
+  getMinEndDate(): string | null {
+    const startDateStr = this.generalDetailsForm.get('startDate')?.value;
+    if (startDateStr) {
+      // Allow end date to be same as start date (for single-day events)
+      return startDateStr;
+    }
+    return null;
+  }
+
+  /**
+   * Check if date range is invalid (end date before start date)
+   */
+  isDateRangeInvalid(): boolean {
+    const startDateStr = this.generalDetailsForm.get('startDate')?.value;
+    const endDateStr = this.generalDetailsForm.get('endDate')?.value;
+
+    if (startDateStr && endDateStr) {
+      const startDate = new Date(startDateStr);
+      const endDate = new Date(endDateStr);
+      return endDate < startDate;
+    }
+    return false;
+  }
+
+  /**
+   * Handle daily start time change
+   */
+  onDailyStartTimeChange(): void {
+    const startTime = this.generalDetailsForm.get('dailyStartTime')?.value;
+    const endTime = this.generalDetailsForm.get('dailyEndTime')?.value;
+
+    // If start time is changed and end time exists, validate it
+    if (startTime && endTime) {
+      if (this.compareTimes(endTime, startTime) <= 0) {
+        this.toastService.warning('Daily end time must be after daily start time', 'Invalid Time Range');
+        this.generalDetailsForm.patchValue({
+          dailyEndTime: ''
+        }, { emitEvent: false });
+      }
+    }
+  }
+
+  /**
+   * Handle daily end time change
+   */
+  onDailyEndTimeChange(): void {
+    const startTime = this.generalDetailsForm.get('dailyStartTime')?.value;
+    const endTime = this.generalDetailsForm.get('dailyEndTime')?.value;
+
+    if (startTime && endTime) {
+      if (this.compareTimes(endTime, startTime) <= 0) {
+        this.toastService.warning('Daily end time must be after daily start time', 'Invalid Time Range');
+        this.generalDetailsForm.patchValue({
+          dailyEndTime: ''
+        }, { emitEvent: false });
+      }
+    }
+  }
+
+  /**
+   * Compare two time strings (HH:mm format)
+   * Returns: -1 if time1 < time2, 0 if equal, 1 if time1 > time2
+   */
+  compareTimes(time1: string, time2: string): number {
+    if (!time1 || !time2) return 0;
+
+    const [hours1, minutes1] = time1.split(':').map(Number);
+    const [hours2, minutes2] = time2.split(':').map(Number);
+
+    const totalMinutes1 = hours1 * 60 + minutes1;
+    const totalMinutes2 = hours2 * 60 + minutes2;
+
+    if (totalMinutes1 < totalMinutes2) return -1;
+    if (totalMinutes1 > totalMinutes2) return 1;
+    return 0;
+  }
+
+  /**
+   * Get maximum time for daily start time (should be end time if set, otherwise no limit)
+   */
+  getMaxDailyStartTime(): string | null {
+    const endTime = this.generalDetailsForm.get('dailyEndTime')?.value;
+    if (endTime) {
+      // Return time that is 1 minute before end time to ensure end time is always after start time
+      const [hours, minutes] = endTime.split(':').map(Number);
+      let newMinutes = minutes - 1;
+      let newHours = hours;
+      
+      if (newMinutes < 0) {
+        newMinutes = 59;
+        newHours = hours - 1;
+        if (newHours < 0) {
+          newHours = 23;
+        }
+      }
+      
+      return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
+    }
+    return null;
+  }
+
+  /**
+   * Get minimum time for daily end time (should be start time if set, otherwise no limit)
+   */
+  getMinDailyEndTime(): string | null {
+    const startTime = this.generalDetailsForm.get('dailyStartTime')?.value;
+    if (startTime) {
+      // Return time that is 1 minute after start time to ensure end time is always after start time
+      const [hours, minutes] = startTime.split(':').map(Number);
+      let newMinutes = minutes + 1;
+      let newHours = hours;
+      
+      if (newMinutes > 59) {
+        newMinutes = 0;
+        newHours = hours + 1;
+        if (newHours > 23) {
+          newHours = 0;
+        }
+      }
+      
+      return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
+    }
+    return null;
+  }
+
+  /**
+   * Check if time range is invalid (end time before or equal to start time)
+   */
+  isTimeRangeInvalid(): boolean {
+    const startTime = this.generalDetailsForm.get('dailyStartTime')?.value;
+    const endTime = this.generalDetailsForm.get('dailyEndTime')?.value;
+
+    if (startTime && endTime) {
+      return this.compareTimes(endTime, startTime) <= 0;
+    }
+    return false;
   }
 
   /**
@@ -1499,20 +2192,40 @@ export class AddEventComponent implements OnInit, OnDestroy {
     return eventType === 'Spiritual' && this.availableKathaTypes.length > 0;
   }
 
-  // Add donation type functionality
-  // addDonationType(): void {
-  //   this.donationTypes.push({ type: 'Cash', amount: '', description: '' });
-  // }
 
-  // removeDonationType(index: number): void {
-  //   if (this.donationTypes.length > 1) {
-  //     this.donationTypes.splice(index, 1);
-  //   }
-  // }
+  /**
+   * Format donation type for display
+   */
+  formatDonationType(type: string): string {
+    if (!type) return '';
+    const lowerType = type.toLowerCase().trim();
+    switch (lowerType) {
+      case 'cash':
+        return 'Cash-Bank-Online';
+      case 'in-kind':
+      case 'inkind':
+        return 'In-Kind';
+      default:
+        // Capitalize first letter of each word
+        return type.split('-').map(word => 
+          word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).join('-');
+    }
+  }
+
+  /**
+   * Get donation type options for dropdown with formatted display names
+   */
+  getDonationTypeOptions(): Array<{ value: string; label: string }> {
+    return [
+      { value: 'cash', label: 'Cash-Bank-Online' },
+      { value: 'in-kind', label: 'In-Kind' }
+    ];
+  }
 
   // Add material type functionality
   addMaterialType(): void {
-    this.materialTypes.push({ materialType: '', quantity: '', size: '', customHeight: '', customWidth: '' });
+    this.materialTypes.push({ materialType: '', quantity: '', size: '', customHeight: '', customWidth: '', customHeightUnit: 'inch', customWidthUnit: 'inch' });
     // Trigger auto-save after adding
     this.autoSave('mediaPromotion', {
       ...this.mediaPromotionForm.value,
@@ -1663,13 +2376,13 @@ export class AddEventComponent implements OnInit, OnDestroy {
     const validMaterials = this.getValidMaterialTypes();
     if (validMaterials.length === 0 && this.materialTypes.length === 0) {
       // If no valid materials and array is empty, add one empty entry
-      this.materialTypes = [{ materialType: '', quantity: '', size: '', customHeight: '', customWidth: '' }];
+      this.materialTypes = [{ materialType: '', quantity: '', size: '', customHeight: '', customWidth: '', customHeightUnit: 'inch', customWidthUnit: 'inch' }];
     } else {
       // Remove all empty entries, keep only valid ones
       this.materialTypes = validMaterials;
       // If no valid materials remain, ensure at least one empty entry exists
       if (this.materialTypes.length === 0) {
-        this.materialTypes = [{ materialType: '', quantity: '', size: '', customHeight: '', customWidth: '' }];
+        this.materialTypes = [{ materialType: '', quantity: '', size: '', customHeight: '', customWidth: '', customHeightUnit: 'inch', customWidthUnit: 'inch' }];
       }
     }
   }
@@ -1729,7 +2442,8 @@ export class AddEventComponent implements OnInit, OnDestroy {
       uploadedFiles: this.uploadedFiles,
       mediaTypes: this.mediaCoverageTypes,
       materialTypeOptions: this.materialTypeOptions,
-      loadingMaterialTypes: this.loadingMaterialTypes
+      loadingMaterialTypes: this.loadingMaterialTypes,
+      isEditing: this.editingEventMediaIndex !== null
     };
 
     this.mediaPromotionModalRef = this.modalService.show(MediaPromotionModalComponent, {
@@ -1780,6 +2494,10 @@ export class AddEventComponent implements OnInit, OnDestroy {
           }
           // Trigger auto-save with updated file metadata
           this.saveFileMetadataToDraft();
+        }
+        // Reset editing state when modal closes
+        if (this.editingEventMediaIndex !== null) {
+          this.editingEventMediaIndex = null;
         }
       });
     }
@@ -2384,7 +3102,9 @@ export class AddEventComponent implements OnInit, OnDestroy {
     this.mediaPromotionForm.patchValue({
       mediaCoverageType: media.mediaCoverageType || '',
       companyName: media.companyName || '',
-      companyEmail: media.companyEmail || '',
+      companyEmail: Array.isArray(media.companyEmail) && media.companyEmail.length > 0
+        ? media.companyEmail[0]
+        : (typeof media.companyEmail === 'string' ? media.companyEmail.split(',')[0].trim() : ''),
       companyWebsite: media.companyWebsite || '',
       mediaGender: media.gender || '',
       mediaPrefix: media.prefix || '',
@@ -2393,7 +3113,9 @@ export class AddEventComponent implements OnInit, OnDestroy {
       mediaLastName: media.lastName || '',
       mediaDesignation: media.designation || '',
       mediaContact: media.contact || '',
-      mediaEmail: media.email || '',
+      mediaEmail: Array.isArray(media.email) && media.email.length > 0
+        ? media.email[0]
+        : (typeof media.email === 'string' ? media.email.split(',')[0].trim() : ''),
       referenceBranchId: media.referenceBranchId || '',
       referenceVolunteerId: media.referenceVolunteerId || '',
       referencePersonName: media.referencePersonName || ''
@@ -2472,6 +3194,7 @@ export class AddEventComponent implements OnInit, OnDestroy {
     this.editingEventMediaIndex = null;
     this.mediaPromotionForm.reset();
   }
+
 
   // Get filtered event media list
   get filteredEventMediaList(): any[] {
@@ -3033,7 +3756,9 @@ export class AddEventComponent implements OnInit, OnDestroy {
               this.eventMediaList = draftData.mediaPromotion.eventMediaList.map((media: any) => ({
                 mediaCoverageType: media.mediaCoverageType || media.mediaType || '',
                 companyName: media.companyName || '',
-                companyEmail: media.companyEmail || '',
+                companyEmail: Array.isArray(media.companyEmail) && media.companyEmail.length > 0
+            ? media.companyEmail[0]
+            : (typeof media.companyEmail === 'string' ? media.companyEmail.split(',')[0].trim() : ''),
                 companyWebsite: media.companyWebsite || '',
                 gender: media.gender || '',
                 prefix: media.prefix || '',
@@ -3042,7 +3767,9 @@ export class AddEventComponent implements OnInit, OnDestroy {
                 lastName: media.lastName || '',
                 designation: media.designation || '',
                 contact: media.contact || '',
-                email: media.email || '',
+                email: Array.isArray(media.email) && media.email.length > 0
+            ? media.email[0]
+            : (typeof media.email === 'string' ? media.email.split(',')[0].trim() : ''),
                 referenceBranchId: media.referenceBranchId || '',
                 referenceVolunteerId: media.referenceVolunteerId || '',
                 referencePersonName: media.referencePersonName || ''
@@ -3076,6 +3803,8 @@ export class AddEventComponent implements OnInit, OnDestroy {
    */
   populateFormsFromEvent(response: EventWithRelatedData): void {
     const event = response.event;
+    // Track event status
+    this.eventStatus = event.status || 'incomplete';
     // Parse duration dates - handle both date string and Date object
     let startDate = '';
     let endDate = '';
@@ -3116,7 +3845,13 @@ export class AddEventComponent implements OnInit, OnDestroy {
       duration: startDate && endDate ? this.formatDateRange(startDate, endDate) : '',
       dailyStartTime: event.daily_start_time || '',
       dailyEndTime: event.daily_end_time || '',
-      spiritualOrator: event.spiritual_orator || '',
+      spiritualOrator: event.spiritual_orator 
+        ? (typeof event.spiritual_orator === 'string' 
+          ? event.spiritual_orator.split(',').map(s => s.trim()).filter(s => s.length > 0)
+          : Array.isArray(event.spiritual_orator) 
+            ? event.spiritual_orator 
+            : [])
+        : [],
       language: event.language || '',
       pincode: event.pincode || '',
       postOffice: event.post_office || '',
@@ -3289,7 +4024,11 @@ export class AddEventComponent implements OnInit, OnDestroy {
       this.eventMediaList = response.media.map((media: EventMedia) => ({
         mediaCoverageType: media.media_coverage_type?.media_type || '',
         companyName: media.company_name || '',
-        companyEmail: media.company_email || '',
+        companyEmail: media.company_email 
+          ? (typeof media.company_email === 'string' 
+            ? media.company_email.split(',').map((e: string) => e.trim()).filter((e: string) => e.length > 0)
+            : Array.isArray(media.company_email) ? media.company_email : [])
+          : [],
         companyWebsite: media.company_website || '',
         gender: media.gender || '',
         prefix: media.prefix || '',
@@ -3298,7 +4037,9 @@ export class AddEventComponent implements OnInit, OnDestroy {
         lastName: media.last_name || '',
         designation: media.designation || '',
         contact: media.contact || '',
-        email: media.email || '',
+        email: Array.isArray(media.email) && media.email.length > 0
+          ? media.email[0]
+          : (typeof media.email === 'string' ? media.email.split(',')[0].trim() : ''),
         referenceBranchId: '', // Not stored in EventMedia model
         referenceVolunteerId: '', // Not stored in EventMedia model
         referencePersonName: '' // Not stored in EventMedia model
@@ -3389,7 +4130,7 @@ export class AddEventComponent implements OnInit, OnDestroy {
       }));
     } else {
       // Initialize with empty material if none exist
-      this.materialTypes = [{ materialType: '', quantity: '', size: '', customHeight: '', customWidth: '' }];
+      this.materialTypes = [{ materialType: '', quantity: '', size: '', customHeight: '', customWidth: '', customHeightUnit: 'inch', customWidthUnit: 'inch' }];
     }
 
     // Set eventSubCategory after categories are loaded (if available)
@@ -3472,7 +4213,9 @@ export class AddEventComponent implements OnInit, OnDestroy {
         duration: durationString || '', // Backend will parse this to start_date and end_date (empty if invalid)
         dailyStartTime: generalDetails.dailyStartTime || '',
         dailyEndTime: generalDetails.dailyEndTime || '',
-        spiritualOrator: generalDetails.spiritualOrator || '',
+        spiritualOrator: Array.isArray(generalDetails.spiritualOrator) 
+          ? generalDetails.spiritualOrator.join(', ') 
+          : (generalDetails.spiritualOrator || ''),
         country: generalDetails.country || '',
         state: generalDetails.state || '',
         city: generalDetails.city || '',
@@ -3795,6 +4538,43 @@ export class AddEventComponent implements OnInit, OnDestroy {
     setTimeout(() => this.successMessage = '', 3000);
   }
 
+  /**
+   * Delete incomplete event
+   */
+  deleteIncompleteEvent(): void {
+    if (!this.eventId) {
+      this.toastService.error('Event ID is required for deletion', 'Error');
+      return;
+    }
+
+    // Show confirmation dialog
+    this.confirmationDialog.confirmDelete({
+      title: 'Delete Event',
+      text: 'Are you sure you want to delete this incomplete event? This action cannot be undone.',
+      showSuccessMessage: false // We'll use toast service instead
+    }).then((result) => {
+      if (result.value) {
+        this.eventApiService.deleteEvent(this.eventId!).subscribe({
+          next: () => {
+            this.toastService.success('Event deleted successfully', 'Success');
+            // Clear draft if exists
+            this.eventDraftService.clearDraftIdFromStorage();
+            this.draftId = null;
+            // Navigate back to events list
+            setTimeout(() => {
+              this.router.navigate(['/events']);
+            }, 1000);
+          },
+          error: (error) => {
+            console.error('Error deleting event:', error);
+            const errorMessage = error?.error?.error || error?.message || 'Failed to delete event';
+            this.toastService.error(errorMessage, 'Error');
+          }
+        });
+      }
+    });
+  }
+
   // Mock data methods for testing
   fillWithSampleData(): void {
     this.generalDetailsForm.patchValue({
@@ -3910,7 +4690,7 @@ export class AddEventComponent implements OnInit, OnDestroy {
           duration: '15 Jan 2024 - 20 Jan 2024',
           dailyStartTime: '06:00',
           dailyEndTime: '08:00',
-          spiritualOrator: 'Swami Ji',
+          spiritualOrator: ['Swami Ji'],
           country: 'India',
           state: 'Karnataka',
           city: 'Bangalore',
@@ -3929,7 +4709,7 @@ export class AddEventComponent implements OnInit, OnDestroy {
           duration: '25 Feb 2024 - 27 Feb 2024',
           dailyStartTime: '17:30',
           dailyEndTime: '20:30',
-          spiritualOrator: 'Dr. Anya Sharma',
+          spiritualOrator: ['Dr. Anya Sharma'],
           country: 'India',
           state: 'Maharashtra',
           city: 'Mumbai',
@@ -3948,7 +4728,7 @@ export class AddEventComponent implements OnInit, OnDestroy {
           duration: '10 Mar 2024 - 12 Mar 2024',
           dailyStartTime: '09:00',
           dailyEndTime: '17:00',
-          spiritualOrator: 'Mr. Rohan Verma',
+          spiritualOrator: ['Mr. Rohan Verma'],
           country: 'India',
           state: 'Delhi',
           city: 'New Delhi',
@@ -4093,4 +4873,5 @@ export class AddEventComponent implements OnInit, OnDestroy {
       }
     }
   }
+
 }

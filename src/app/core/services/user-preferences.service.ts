@@ -17,6 +17,14 @@ export interface UserPreference {
 export interface EventsListColumnPreferences {
   hidden_columns: string[];
   pinned_columns: string[];
+  column_order?: string[];
+}
+
+// Generic column preferences interface for all components
+export interface ColumnPreferences {
+  hidden_columns?: string[];
+  pinned_columns?: string[];
+  column_order: string[];
 }
 
 @Injectable({
@@ -34,9 +42,13 @@ export class UserPreferencesService {
 
   /**
    * Save user preferences
+   * Note: The backend automatically extracts the logged-in user from the JWT token
+   * and saves preferences per user. Each user has their own isolated preferences.
    */
   savePreference(preferenceType: string, preferenceData: any): Observable<UserPreference> {
     const url = this.apiConfig.buildApiUrl('/user-preferences');
+    // The JWT token is automatically added by AuthInterceptor
+    // Backend extracts user email from token and saves preferences per user
     return this.http.post<UserPreference>(url, {
       preference_type: preferenceType,
       preference_data: preferenceData
@@ -45,10 +57,14 @@ export class UserPreferencesService {
 
   /**
    * Get user preferences by type
+   * Note: The backend automatically extracts the logged-in user from the JWT token
+   * and returns preferences for that specific user only.
    */
   getPreference(preferenceType: string): Observable<UserPreference | null> {
     const url = this.apiConfig.buildApiUrl('/user-preferences');
     const params = new HttpParams().set('preference_type', preferenceType);
+    // The JWT token is automatically added by AuthInterceptor
+    // Backend extracts user email from token and returns preferences for that user only
     
     return this.http.get<UserPreference>(url, { params }).pipe(
       catchError(() => {
@@ -88,5 +104,27 @@ export class UserPreferencesService {
       })
     );
   }
+
+  /**
+   * Save column preferences for any component
+   */
+  saveColumnPreferences(preferenceType: string, preferences: ColumnPreferences): Observable<UserPreference> {
+    return this.savePreference(preferenceType, preferences);
+  }
+
+  /**
+   * Get column preferences for any component
+   */
+  getColumnPreferences(preferenceType: string): Observable<ColumnPreferences | null> {
+    return this.getPreference(preferenceType).pipe(
+      map(pref => {
+        if (!pref || !pref.preference_data) {
+          return null;
+        }
+        return pref.preference_data as ColumnPreferences;
+      })
+    );
+  }
 }
+
 

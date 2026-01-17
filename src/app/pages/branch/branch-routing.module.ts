@@ -84,6 +84,14 @@ const routes: Routes = [
     }
   },
   { 
+    path: "members/view/:memberId", 
+    component: ViewMemberComponent,
+    canActivate: [AuthGuard, PermissionGuard],
+    data: {
+      permission: { resource: ResourceType.BRANCHES, action: ActionType.READ }
+    }
+  },
+  { 
     path: ":branchId/members/add", 
     component: AddMemberComponent,
     canActivate: [AuthGuard, PermissionGuard],
