@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 
 export interface User {
   id?: number;
+  branch_id?: number;
   name: string;
   email: string;
   contact_number?: string;

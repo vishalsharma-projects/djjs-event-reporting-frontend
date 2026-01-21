@@ -1,14 +1,24 @@
 import { Component, OnInit, Output, EventEmitter, Input } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { UserService } from 'src/app/core/services/branch-assistance.service';
+import { LocationService, Branch } from 'src/app/core/services/location.service';
+import { ChildBranchService, ChildBranch } from 'src/app/core/services/child-branch.service';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 import { MessageService } from 'primeng/api';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 interface Role {
   id: number;
   name: string;
   description?: string;
+}
+
+interface BranchOption {
+  id: number;
+  name: string;
+  isChildBranch: boolean;
 }
 
 @Component({
@@ -24,6 +34,9 @@ export class AddBranchAssistanceComponent implements OnInit {
 
   userForm: FormGroup;
   roles: Role[] = [];
+  allBranches: BranchOption[] = [];
+  branches: Branch[] = [];
+  childBranches: ChildBranch[] = [];
   errorMessage: string = '';
   successMessage: string = '';
   submitting: boolean = false;
@@ -31,6 +44,8 @@ export class AddBranchAssistanceComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private userService: UserService,
+    private locationService: LocationService,
+    private childBranchService: ChildBranchService,
     private http: HttpClient,
     private messageService: MessageService
   ) { }
@@ -64,6 +79,7 @@ export class AddBranchAssistanceComponent implements OnInit {
     };
 
     this.userForm = this.fb.group({
+      branch_id: ['', [Validators.required]],
       name: ['', [Validators.required, nameValidator]],
       email: ['', [Validators.required, Validators.email]],
       contact_number: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(13), contactValidator]],
@@ -71,8 +87,9 @@ export class AddBranchAssistanceComponent implements OnInit {
       password: ['', [Validators.required, Validators.minLength(8), passwordValidator]]
     });
 
-    // Fetch roles for dropdown
+    // Fetch roles and branches for dropdowns
     this.loadRoles();
+    this.loadBranches();
   }
 
   loadRoles(): void {
@@ -80,12 +97,49 @@ export class AddBranchAssistanceComponent implements OnInit {
     this.http.get<Role[]>(apiUrl).subscribe(
       (roles) => {
         this.roles = roles;
+        // Set default value to first role
+        if (this.roles.length > 0) {
+          this.userForm.patchValue({ role_id: this.roles[0].id });
+        }
       },
       (error) => {
         console.error('Error loading roles:', error);
         this.errorMessage = 'Failed to load roles. Please refresh the page.';
       }
     );
+  }
+
+  loadBranches(): void {
+    // Load all branches (parent and child) and combine them
+    forkJoin({
+      branches: this.locationService.getAllBranches().pipe(catchError(() => of([]))),
+      childBranches: this.childBranchService.getAllChildBranches().pipe(catchError(() => of([])))
+    }).subscribe({
+      next: (result) => {
+        this.branches = result.branches || [];
+        this.childBranches = result.childBranches || [];
+        
+        // Combine all branches into a single list for the dropdown
+        this.allBranches = [
+          // Parent branches (no parent_branch_id)
+          ...(this.branches
+            .filter(b => !b.parent_branch_id && b.id)
+            .map(b => ({ id: b.id!, name: b.name, isChildBranch: false }))),
+          // Child branches (have parent_branch_id)
+          ...(this.childBranches
+            .filter(b => b.id)
+            .map(b => ({ id: b.id!, name: b.name, isChildBranch: true })))
+        ].sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically
+        
+        // Set default value to first branch
+        if (this.allBranches.length > 0) {
+          this.userForm.patchValue({ branch_id: this.allBranches[0].id });
+        }
+      },
+      error: (error) => {
+        console.error('Error loading branches:', error);
+      }
+    });
   }
 
   openModal(): void {
@@ -102,11 +156,22 @@ export class AddBranchAssistanceComponent implements OnInit {
   }
 
   resetForm(): void {
-    this.userForm.reset();
+    this.userForm.reset({
+      branch_id: '',
+      role_id: ''
+    });
     this.errorMessage = '';
     this.successMessage = '';
     this.submitting = false;
     this.userForm.markAsUntouched();
+  }
+
+  onlyNumbersAndPlus(event: KeyboardEvent): void {
+    const char = String.fromCharCode(event.which);
+    // Allow only numbers (0-9), plus sign (+), and hyphen (-)
+    if (!/[0-9+\-]/.test(char)) {
+      event.preventDefault();
+    }
   }
 
   onSubmit(): void {
@@ -117,6 +182,7 @@ export class AddBranchAssistanceComponent implements OnInit {
 
       // Transform form data to match backend expectations
       const userData = {
+        branch_id: Number(this.userForm.value.branch_id),
         name: this.userForm.value.name,
         email: this.userForm.value.email,
         contact_number: this.userForm.value.contact_number,

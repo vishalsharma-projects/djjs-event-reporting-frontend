@@ -33,6 +33,50 @@
 
         <form [formGroup]="updateUserForm" (ngSubmit)="onSubmit()" autocomplete="off" *ngIf="!loading">
           <div class="row mb-3">
+            <!-- Email Field -->
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+              <input 
+                type="email" 
+                class="form-control" 
+                id="email"
+                formControlName="email" 
+                placeholder="Enter email address" 
+                [ngClass]="{'is-invalid': updateUserForm.get('email')?.touched && updateUserForm.get('email')?.invalid}"
+                required 
+              />
+                <div *ngIf="updateUserForm.get('email')?.touched && updateUserForm.get('email')?.invalid" class="invalid-feedback">
+                  <div *ngIf="updateUserForm.get('email')?.hasError('required')">Email is required.</div>
+                  <div *ngIf="updateUserForm.get('email')?.hasError('email')">Please enter a valid email address.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Branch Field -->
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="branch_id" class="form-label">Branch <span class="text-danger">*</span></label>
+              <select 
+                class="form-select" 
+                id="branch_id"
+                formControlName="branch_id" 
+                [ngClass]="{'is-invalid': updateUserForm.get('branch_id')?.touched && updateUserForm.get('branch_id')?.invalid}"
+                required
+              >
+                <option value="" disabled selected>Select a Branch</option>
+                <option *ngFor="let branch of allBranches" [value]="branch.id">
+                  {{ branch.name }}{{ branch.isChildBranch ? ' (Child Branch)' : '' }}
+                </option>
+              </select>
+                <div *ngIf="updateUserForm.get('branch_id')?.touched && updateUserForm.get('branch_id')?.invalid" class="invalid-feedback">
+                  <div>Branch is required.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row mb-3">
             <!-- Name Field -->
             <div class="col-md-6">
               <div class="mb-3">
@@ -54,30 +98,27 @@
               </div>
             </div>
 
-            <!-- Email Field -->
+            <!-- Role Field (Read-only for display) -->
             <div class="col-md-6">
               <div class="mb-3">
-                <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                <label for="role_display" class="form-label">Role</label>
               <input 
-                type="email" 
+                type="text" 
                 class="form-control" 
-                id="email"
-                formControlName="email" 
-                placeholder="Enter email address" 
-                [ngClass]="{'is-invalid': updateUserForm.get('email')?.touched && updateUserForm.get('email')?.invalid}"
-                required 
+                id="role_display"
+                [value]="userRoleName || 'N/A'"
+                readonly
+                disabled
+                style="background-color: #e9ecef;"
               />
-                <div *ngIf="updateUserForm.get('email')?.touched && updateUserForm.get('email')?.invalid" class="invalid-feedback">
-                  <div *ngIf="updateUserForm.get('email')?.hasError('required')">Email is required.</div>
-                  <div *ngIf="updateUserForm.get('email')?.hasError('email')">Please enter a valid email address.</div>
-                </div>
+                <small class="form-text text-muted">Role cannot be changed from here</small>
               </div>
             </div>
           </div>
 
           <div class="row mb-3">
             <!-- Contact Number Field -->
-            <div class="col-md-6">
+            <div class="col-md-12">
               <div class="mb-3">
                 <label for="contact_number" class="form-label">Contact Number <span class="text-danger">*</span></label>
               <input 
@@ -96,23 +137,6 @@
                   <div *ngIf="updateUserForm.get('contact_number')?.hasError('maxlength')">Contact number cannot exceed 13 characters.</div>
                   <div *ngIf="updateUserForm.get('contact_number')?.hasError('invalidFormat')">Invalid format. Use 10 digits or +91XXXXXXXXXX.</div>
                 </div>
-              </div>
-            </div>
-
-            <!-- Role Field (Read-only for display) -->
-            <div class="col-md-6">
-              <div class="mb-3">
-                <label for="role_display" class="form-label">Role</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                id="role_display"
-                [value]="userRoleName || 'N/A'"
-                readonly
-                disabled
-                style="background-color: #e9ecef;"
-              />
-                <small class="form-text text-muted">Role cannot be changed from here</small>
               </div>
             </div>
           </div>
