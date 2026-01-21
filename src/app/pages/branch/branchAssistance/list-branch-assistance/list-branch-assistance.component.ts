@@ -3,8 +3,18 @@ import { Router } from '@angular/router';
 import { UserService } from 'src/app/core/services/branch-assistance.service';
 import { MessageService } from 'primeng/api';
 import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
+import { LocationService, Branch } from 'src/app/core/services/location.service';
+import { ChildBranchService, ChildBranch } from 'src/app/core/services/child-branch.service';
 import { AddBranchAssistanceComponent } from '../add-branch-assistance/add-branch-assistance.component';
 import { EditBranchAssistanceComponent } from '../edit-branch-assistance/edit-branch-assistance.component';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+
+interface BranchOption {
+  id: number;
+  name: string;
+  isChildBranch: boolean;
+}
 
 @Component({
   selector: 'app-list-branch-assistance',
@@ -21,6 +31,9 @@ export class ListBranchAssistanceComponent implements OnInit {
   filteredUsersData: any[] = []; // Store filtered users
   expandedRows: { [key: string]: boolean } = {};
   loading: boolean = false;
+  allBranches: BranchOption[] = [];
+  branches: Branch[] = [];
+  childBranches: ChildBranch[] = [];
 
   // Pagination & Filters
   first = 0;
@@ -38,7 +51,9 @@ export class ListBranchAssistanceComponent implements OnInit {
     private userService: UserService,
     private router: Router,
     private messageService: MessageService,
-    private confirmationDialog: ConfirmationDialogService
+    private confirmationDialog: ConfirmationDialogService,
+    private locationService: LocationService,
+    private childBranchService: ChildBranchService
   ) { }
 
 ngOnInit(): void {
@@ -55,13 +70,16 @@ ngOnInit(): void {
   this.users = [];
   this.expandedRows = {};
   
+  // Load branches first
+  this.loadBranches();
+  
   // Load users from API
   this.fetchUsers();
 }
 
 
-  // Fetch users from backend (optionally can pass filters, pagination)
-  fetchUsers(sortField?: string, sortOrder?: number) {
+  // Fetch users from backend
+  fetchUsers() {
     this.loading = true;
     this.userService.getUsers().subscribe({
       next: (data) => {
@@ -246,10 +264,65 @@ ngOnInit(): void {
     // PrimeNG handles pagination automatically, no need to manually slice
   }
 
-  // Sorting
+  // Sorting (client-side, no API call)
   onSort(event: any) {
     const { field, order } = event;
-    this.fetchUsers(field, order);
+    
+    console.log('Sort event - field:', field, 'order:', order);
+    
+    // Guard against undefined field
+    if (!field) {
+      console.warn('Sort field is undefined');
+      return;
+    }
+    
+    // Sort allUsersData
+    this.allUsersData.sort((a: any, b: any) => {
+      let aValue: any;
+      let bValue: any;
+      
+      // Special handling for branchName - sort by branch name
+      if (field === 'branchName') {
+        aValue = this.getBranchName(a.branch_id);
+        bValue = this.getBranchName(b.branch_id);
+        console.log('Branch sort - comparing:', aValue, 'vs', bValue);
+      }
+      // Handle nested properties (e.g., role.name)
+      else if (field && field.includes('.')) {
+        const parts = field.split('.');
+        aValue = a;
+        bValue = b;
+        for (const part of parts) {
+          aValue = aValue?.[part];
+          bValue = bValue?.[part];
+        }
+      } else {
+        aValue = a[field];
+        bValue = b[field];
+      }
+      
+      // Handle null/undefined values
+      if (aValue == null && bValue == null) return 0;
+      if (aValue == null) return order === 1 ? 1 : -1;
+      if (bValue == null) return order === 1 ? -1 : 1;
+      
+      // Convert to string and lowercase for case-insensitive comparison
+      const aStr = String(aValue).toLowerCase();
+      const bStr = String(bValue).toLowerCase();
+      
+      // String comparison
+      if (order === 1) {
+        return aStr.localeCompare(bStr);
+      } else {
+        return bStr.localeCompare(aStr);
+      }
+    });
+    
+    console.log('After branch sort, first 5 users:', this.allUsersData.slice(0, 5).map(u => ({ id: u.id, branch_id: u.branch_id, name: this.getBranchName(u.branch_id) })));
+    
+    // Re-apply any active filters
+    this.applyFilters();
+    this.updatePaginatedUsers();
   }
 
   // Apply global + per-column filter
@@ -293,5 +366,41 @@ ngOnInit(): void {
     } else {
       this.pinnedColumns.push(column);
     }
+  }
+
+  loadBranches(): void {
+    // Load all branches (parent and child) and combine them
+    forkJoin({
+      branches: this.locationService.getAllBranches().pipe(catchError(() => of([]))),
+      childBranches: this.childBranchService.getAllChildBranches().pipe(catchError(() => of([])))
+    }).subscribe({
+      next: (result) => {
+        this.branches = result.branches || [];
+        this.childBranches = result.childBranches || [];
+        
+        // Combine all branches into a single list
+        this.allBranches = [
+          // Parent branches (no parent_branch_id)
+          ...(this.branches
+            .filter(b => !b.parent_branch_id && b.id)
+            .map(b => ({ id: b.id!, name: b.name, isChildBranch: false }))),
+          // Child branches (have parent_branch_id)
+          ...(this.childBranches
+            .filter(b => b.id)
+            .map(b => ({ id: b.id!, name: b.name, isChildBranch: true })))
+        ].sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically
+      },
+      error: (error) => {
+        console.error('Error loading branches:', error);
+      }
+    });
+  }
+
+  getBranchName(branchId?: number): string {
+    if (!branchId) {
+      return '-';
+    }
+    const branch = this.allBranches.find(b => b.id === branchId);
+    return branch ? branch.name : '-';
   }
 }

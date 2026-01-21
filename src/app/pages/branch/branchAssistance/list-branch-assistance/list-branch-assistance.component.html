@@ -29,7 +29,7 @@
                   <i class="fas fa-search"></i>
                 </span>
                 <input type="text" class="form-control" [(ngModel)]="globalFilterValue"
-                  placeholder="Search by email, name, type" (input)="applyFilter()">
+                  placeholder="Search by email, name, role" (input)="applyFilter()">
               </div>
             </div>
           </div>
@@ -47,10 +47,10 @@
           <ng-template pTemplate="header">
             <tr>
               <th pSortableColumn="email">Email <p-sortIcon field="email"></p-sortIcon></th>
+              <th>Branch</th>
               <th pSortableColumn="name">Name <p-sortIcon field="name"></p-sortIcon></th>
-              <th pSortableColumn="role">Role <p-sortIcon field="role"></p-sortIcon></th>
-              <th pSortableColumn="created_by">Created By <p-sortIcon field="created_by"></p-sortIcon></th>
-              <th pSortableColumn="updated_by">Updated By <p-sortIcon field="updated_by"></p-sortIcon></th>
+              <th pSortableColumn="role.name">Role <p-sortIcon field="role.name"></p-sortIcon></th>
+              <th pSortableColumn="contact_number">Contact Number <p-sortIcon field="contact_number"></p-sortIcon></th>
               <th>Actions</th>
             </tr>
           </ng-template>
@@ -59,10 +59,10 @@
           <ng-template pTemplate="body" let-user>
             <tr>
               <td>{{ user.email || '-' }}</td>
+              <td>{{ getBranchName(user.branch_id) || '-' }}</td>
               <td>{{ user.name || '-' }}</td>
               <td>{{ user.role?.name || '-' }}</td>
-              <td>{{ user.created_by || '-' }}</td>
-              <td>{{ user.updated_by || '-' }}</td>
+              <td>{{ user.contact_number || '-' }}</td>
               <td>
                 <div class="d-flex gap-1 table-actions">
                   <!-- Phase 4 Final Polish: Improved ARIA labels with human-readable names -->
@@ -92,7 +92,7 @@
           <!-- Empty Message -->
           <ng-template pTemplate="emptymessage">
             <tr>
-              <td colspan="6" class="text-center p-4 text-muted">No users found.</td>
+              <td colspan="5" class="text-center p-4 text-muted">No users found.</td>
             </tr>
           </ng-template>
           </p-table>

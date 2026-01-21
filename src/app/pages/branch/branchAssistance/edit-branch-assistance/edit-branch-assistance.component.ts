@@ -2,6 +2,17 @@ import { Component, OnInit, Output, EventEmitter, Input } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 import { UserApiService, User } from 'src/app/core/services/user-api.service';
+import { LocationService, Branch } from 'src/app/core/services/location.service';
+import { ChildBranchService, ChildBranch } from 'src/app/core/services/child-branch.service';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+
+interface BranchOption {
+  id: number;
+  name: string;
+  isChildBranch: boolean;
+}
 
 @Component({
   selector: 'app-edit-branch-assistance',
@@ -16,19 +27,28 @@ export class EditBranchAssistanceComponent implements OnInit {
   updateUserForm: FormGroup;
   userId: number | null = null;
   userRoleName: string = '';
+  userBranchId: number | null = null;
+  userBranchName: string = '';
   errorMessage: string = '';
   successMessage: string = '';
   submitting: boolean = false;
   loading: boolean = false;
+  allBranches: BranchOption[] = [];
+  branches: Branch[] = [];
+  childBranches: ChildBranch[] = [];
 
   constructor(
     private fb: FormBuilder,
     private userApiService: UserApiService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private locationService: LocationService,
+    private childBranchService: ChildBranchService,
+    private http: HttpClient
   ) { }
 
   ngOnInit(): void {
     this.initForm();
+    this.loadBranches();
   }
 
   initForm() {
@@ -71,6 +91,7 @@ export class EditBranchAssistanceComponent implements OnInit {
     };
 
     this.updateUserForm = this.fb.group({
+      branch_id: ['', [Validators.required]],
       name: ['', [Validators.required, Validators.minLength(2), nameValidator]],
       email: ['', [Validators.required, Validators.email]],
       contact_number: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(13), contactValidator]],
@@ -136,6 +157,8 @@ export class EditBranchAssistanceComponent implements OnInit {
     this.submitting = false;
     this.loading = false;
     this.userRoleName = '';
+    this.userBranchId = null;
+    this.userBranchName = '';
     this.updateUserForm.markAsUntouched();
   }
 
@@ -148,7 +171,37 @@ export class EditBranchAssistanceComponent implements OnInit {
     this.loading = false;
     this.userId = null;
     this.userRoleName = '';
+    this.userBranchId = null;
+    this.userBranchName = '';
     this.updateUserForm.markAsUntouched();
+  }
+
+  loadBranches(): void {
+    // Load all branches (parent and child) and combine them
+    forkJoin({
+      branches: this.locationService.getAllBranches().pipe(catchError(() => of([]))),
+      childBranches: this.childBranchService.getAllChildBranches().pipe(catchError(() => of([])))
+    }).subscribe({
+      next: (result) => {
+        this.branches = result.branches || [];
+        this.childBranches = result.childBranches || [];
+        
+        // Combine all branches into a single list for the dropdown
+        this.allBranches = [
+          // Parent branches (no parent_branch_id)
+          ...(this.branches
+            .filter(b => !b.parent_branch_id && b.id)
+            .map(b => ({ id: b.id!, name: b.name, isChildBranch: false }))),
+          // Child branches (have parent_branch_id)
+          ...(this.childBranches
+            .filter(b => b.id)
+            .map(b => ({ id: b.id!, name: b.name, isChildBranch: true })))
+        ].sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically
+      },
+      error: (error) => {
+        console.error('Error loading branches:', error);
+      }
+    });
   }
 
   // Load user data based on the ID to be edited
@@ -159,12 +212,19 @@ export class EditBranchAssistanceComponent implements OnInit {
         this.loading = false;
         // Pre-fill form with user data
         this.updateUserForm.patchValue({
+          branch_id: user.branch_id || '',
           name: user.name || '',
           email: user.email || '',
           contact_number: user.contact_number || ''
         });
-        // Store role name for display
+        // Store role name and branch info for display
         this.userRoleName = user.role?.name || 'N/A';
+        this.userBranchId = user.branch_id || null;
+        // Find branch name from allBranches
+        if (user.branch_id) {
+          const branch = this.allBranches.find(b => b.id === user.branch_id);
+          this.userBranchName = branch ? branch.name : 'N/A';
+        }
       },
       error: (error) => {
         this.loading = false;
@@ -182,11 +242,12 @@ export class EditBranchAssistanceComponent implements OnInit {
 
   onSubmit() {
     // Check if form is invalid (excluding optional password fields)
+    const branchValid = this.updateUserForm.get('branch_id')?.valid;
     const nameValid = this.updateUserForm.get('name')?.valid;
     const emailValid = this.updateUserForm.get('email')?.valid;
     const contactValid = this.updateUserForm.get('contact_number')?.valid;
     
-    if (!nameValid || !emailValid || !contactValid) {
+    if (!branchValid || !nameValid || !emailValid || !contactValid) {
       this.updateUserForm.markAllAsTouched();
       return;
     }
@@ -242,6 +303,7 @@ export class EditBranchAssistanceComponent implements OnInit {
 
     // Prepare update data (only include fields that can be updated)
     const userData: Partial<User> = {
+      branch_id: Number(this.updateUserForm.value.branch_id),
       name: this.updateUserForm.value.name,
       email: this.updateUserForm.value.email,
       contact_number: this.updateUserForm.value.contact_number
