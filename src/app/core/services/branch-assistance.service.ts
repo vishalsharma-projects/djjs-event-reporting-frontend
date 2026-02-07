@@ -15,7 +15,7 @@ export class UserService {
   constructor(private http: HttpClient) { }
 
   // Create a new user
-  createUser(user: { name: string; email: string; contact_number: string; role_id: number }): Observable<any> {
+  createUser(user: { branch_id: number; name: string; email: string; contact_number: string; role_id: number; password: string }): Observable<any> {
     return this.http.post(this.apiUrl, user).pipe(
       catchError(this.handleError)
     );
